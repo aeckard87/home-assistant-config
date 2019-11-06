@@ -1,0 +1,146 @@
+title: Sensors
+icon: mdi:smoke-detector
+path: sensors
+cards:
+
+  - type: entity-filter
+    show_empty: false
+    card:
+      columns: 3
+      title: Sensor Alerts
+      type: glance
+    state_filter:
+      - 'on'
+    entities:
+      - entity: binary_sensor.smoke_alarm
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/sensors
+      - entity: binary_sensor.co_alarm
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/sensors
+      - entity: binary_sensor.water_leak_alert
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/sensors
+
+  - type: glance
+    title: Side Entrance Sensor
+    columns: 4
+    entities:
+      - entity: binary_sensor.side_entrance_motion
+        name: Motion
+      - entity: sensor.side_entrance_temperature
+        name: Temperature
+      - entity: sensor.side_entrance_humidity
+        name: Humidity
+      - entity: sensor.side_entrance_light_level
+        name: Light
+      - entity: sensor.side_entrance_ultraviolet
+        name: UV
+      - entity: sensor.side_entrance_burglar
+        name: Burglar
+      - entity: sensor.side_entrance_alarm_type
+        name: Alarm Type
+      - entity: sensor.side_entrance_alarm_level
+        icon: 'mdi:gauge'
+        name: Alarm Level
+
+  - type: glance
+    title: Upstairs Bathroom Sensor
+    columns: 4
+    entities:
+      - entity: binary_sensor.upstairs_bathroom_motion
+        name: Motion
+      - entity: sensor.upstairs_bathroom_temperature
+        name: Temperature
+      - entity: sensor.upstairs_bathroom_humidity
+        name: Humidity
+      - entity: sensor.upstairs_bathroom_light_level
+        name: Light
+      - entity: sensor.upstairs_bathroom_ultraviolet
+        name: UV
+      - entity: sensor.upstairs_bathroom_burglar
+        name: Burglar
+      - entity: sensor.upstairs_bathroom_alarm_type
+        name: Alarm Type
+      - entity: sensor.upstairs_bathroom_alarm_level
+        icon: 'mdi:gauge'
+        name: Alarm Level
+
+  - type: glance
+    title: Upstairs Protect
+    columns: 4
+    entities:
+      - entity: sensor.upstairs_nest_protect_smoke_status
+        name: Smoke
+      - entity: sensor.upstairs_nest_protect_co_status
+        name: CO Level
+      - entity: sensor.upstairs_nest_protect_color_status
+        name: Protect Status
+      - entity: sensor.upstairs_nest_protect_battery_health
+        name: Battery
+
+  - type: glance
+    title: Downstairs Protect
+    columns: 4
+    entities:
+      - entity: sensor.downstairs_nest_protect_smoke_status
+        name: Smoke
+      - entity: sensor.downstairs_nest_protect_co_status
+        name: CO Level
+      - entity: sensor.downstairs_nest_protect_color_status
+        name: Protect Status
+      - entity: sensor.downstairs_nest_protect_battery_health
+        name: Battery
+
+  - type: conditional
+    conditions:
+      - entity: input_boolean.advanced_view
+        state: 'on'
+    card:
+      type: entities
+      title: Sensor Settings
+      show_header_toggle: false
+      entities:
+        - entity: binary_sensor.upstairs_nest_protect_online
+          icon: 'mdi:smoke-detector'
+          name: Upstairs Protect
+        - entity: binary_sensor.downstairs_nest_protect_online
+          icon: 'mdi:smoke-detector'
+          name: Downstairs Protect
+        - entity: zwave.upstairs_bathroom_sensor
+          name: Upstairs Bathroom ZWave
+        - entity: zwave.side_entrance_sensor
+          name: Side Entrance ZWave
+
+        - type: custom:auto-entities
+          card:
+            type: custom:fold-entity-row
+            head: input_boolean.sensor_automation
+          filter:
+            include:
+              - entity_id: "automation.sensor_*"
+
+  - type: history-graph
+    title: Sensor History
+    hours_to_show: 12
+    refresh_interval: 300
+    entities:
+      - entity: sensor.downstairs_nest_protect_color_status
+        name: DS Color
+      - entity: sensor.downstairs_nest_protect_co_status
+        name: DS CO
+      - entity: sensor.downstairs_nest_protect_smoke_status
+        name: DS Smoke
+      - entity: binary_sensor.downstairs_nest_protect_online
+        name: DS Online
+      - entity: sensor.upstairs_nest_protect_color_status
+        name: US Color
+      - entity: sensor.upstairs_nest_protect_co_status
+        name: US CO
+      - entity: sensor.upstairs_nest_protect_smoke_status
+        name: US Smoke
+      - entity: binary_sensor.upstairs_nest_protect_online
+        name: DS Online

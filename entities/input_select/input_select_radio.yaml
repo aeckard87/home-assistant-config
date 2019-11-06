@@ -1,0 +1,98 @@
+##################################################################################################
+## Media Players Radio
+##################################################################################################
+  media_player_radio:
+    name: Radio Speaker
+    icon: mdi:speaker-wireless
+    options: &radio_media_player_names
+        - All Speakers
+        - Broadcast Speakers
+        - Music Speakers
+        - Dining Room Speaker
+        - Bedroom Speaker
+        - Living Room TV
+        - Bedroom TV
+        - Deck TV
+        - Jason Phone
+        - Jason Laptop
+        - Jason Work
+        - Sheri Phone
+
+##################################################################################################
+## Media Players Morning
+##################################################################################################
+  media_player_radio_morning:
+    name: Morning Radio Speaker
+    icon: mdi:speaker-wireless
+    options: *radio_media_player_names
+
+##################################################################################################
+## Media Players Night
+##################################################################################################
+  media_player_radio_night:
+    name: Night Radio Speaker
+    icon: mdi:speaker-wireless
+    options: *radio_media_player_names
+
+##################################################################################################
+## Jason Media Player
+##################################################################################################
+  media_player_radio_jason:
+    name: Jason Radio Speaker
+    icon: mdi:speaker-wireless
+    options: *radio_media_player_names
+
+##################################################################################################
+## Sheri Media Player
+##################################################################################################
+  media_player_radio_sheri:
+    name: Sheri Radio Speaker
+    icon: mdi:speaker-wireless
+    options: *radio_media_player_names
+
+##################################################################################################
+## Streaming Radio Stations
+##################################################################################################
+  radio_station:
+    name: Radio Station
+    icon: mdi:radio-tower
+    options: &radio_stations
+        - Magic 80s Florida
+        - Smooth Jazz Florida
+        - WCSX Classic - Rock
+        - WDRQ Nash FM - Country
+        - WYCD Detroit - Country
+        - 977 FM - Smooth Jazz
+        - 977 FM - Oldies
+        - 977 FM - 1990s
+        - 977 FM - Alternative Rock
+        - 977 FM - Classic Rock
+        - 977 FM - Country
+        - 977 FM - Mix
+        - 977 FM - Smooth Jazz
+        - 977 FM - Jamz
+        - 977 FM - Hits
+        - 100 Hitz - Urban
+        - 110 FM - Classic Rock
+        - 181 FM - 90s Dance
+        - 181 FM - The Mix
+
+  radio_station_morning:
+    name: Morning Radio Station
+    icon: mdi:radio-tower
+    options: *radio_stations
+
+  radio_station_night:
+    name: Night Radio Station
+    icon: mdi:radio-tower
+    options: *radio_stations
+
+  radio_station_jason:
+    name: Jason Radio Station
+    icon: mdi:radio-tower
+    options: *radio_stations
+
+  radio_station_sheri:
+    name: Sheri Radio Station
+    icon: mdi:radio-tower
+    options: *radio_stations

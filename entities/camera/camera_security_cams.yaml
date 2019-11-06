@@ -1,0 +1,73 @@
+  - platform: combined
+    name: My Cameras
+    base_address: !secret BASE_URL
+    entities:
+      - camera.side_drive
+      - camera.side_door
+      - camera.front_door
+      - camera.garage_inside
+
+  - platform: ffmpeg
+    name: SIDE DRIVE
+    input: !secret CAM1_URL
+    extra_arguments: -analyzeduration 99999999
+
+  - platform: ffmpeg
+    name: SIDE DOOR
+    input: !secret CAM2_URL
+    extra_arguments: -analyzeduration 99999999
+
+  - platform: ffmpeg
+    name: FRONT DRIVE
+    input: !secret CAM3_URL
+    extra_arguments: -analyzeduration 99999999
+
+  - platform: ffmpeg
+    name: FRONT DOOR
+    input: !secret CAM4_URL
+    extra_arguments: -analyzeduration 99999999
+
+  - platform: generic #generic
+    name: FRONT YARD
+    #input: !secret CAM5_URL
+    still_image_url: !secret CAM5_URL
+    #stream_source: !secret CAM5_STREAM_URL
+
+#disable some cams they are not all loading
+#DISABLED  - platform: ffmpeg #generic
+#    name: SIDE GATE FRONT
+#    input: !secret CAM6_URL
+#    still_image_url: !secret CAM6_URL
+#    stream_source: !secret CAM6_STREAM_URL
+
+#DISABLED  - platform: ffmpeg #generic
+#    name: SIDE GATE BACK
+#    input: !secret CAM7_URL
+#    still_image_url: !secret CAM7_URL
+#    stream_source: !secret CAM7_STREAM_URL
+
+#DISABLED  - platform: ffmpeg #generic
+#    name: BACK YARD
+#    input: !secret CAM8_URL
+#    still_image_url: !secret CAM8_URL
+#    stream_source: !secret CAM8_STREAM_URL
+
+  - platform: ffmpeg
+    name: BACK DOOR
+    input: !secret CAM9_URL
+    extra_arguments: -analyzeduration 99999999
+
+  - platform: ffmpeg
+    name: PATIO DOOR
+    input: !secret CAM10_URL
+    extra_arguments: -analyzeduration 99999999
+
+  - platform: ffmpeg
+    name: BACK HOUSE
+    input: !secret CAM11_URL
+    extra_arguments: -analyzeduration 99999999
+
+  - platform: ffmpeg
+    name: GARAGE INSIDE
+    input: !secret CAM12_URL
+    extra_arguments: -analyzeduration 99999999

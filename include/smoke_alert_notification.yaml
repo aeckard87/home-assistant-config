@@ -1,0 +1,21 @@
+service: notify.push
+data_template:
+  title: "Active Smoke Alert"
+  message: "Get out of the house!"
+
+  target:
+    - jphone
+    - sphone
+    - jlaptop
+  data:
+    tag: 'smoke_alert'
+    timestamp: "{{ as_timestamp(now()) }}"
+    renotify: true
+    ttl: 6000
+    priority: high
+    requireInteraction: true
+    silent: false
+    url: '/lovelace/sensors'
+    icon: !secret SMOKE_ICON
+    image: !secret SMOKE_IMAGE
+    badge: !secret SMOKE_BADGE

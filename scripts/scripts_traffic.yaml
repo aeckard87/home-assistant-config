@@ -1,0 +1,54 @@
+###################################################################################################
+## Update Jason Home Travel Time
+## - manual update of travel time sensor
+###################################################################################################
+  manual_traffic_update_jason_home_travel_time:
+    sequence:
+    - service: homeassistant.update_entity
+      data:
+        entity_id: sensor.jason_time_to_home
+
+###################################################################################################
+## Update Sheri Home Travel Time
+## - manual update of travel time sensor
+###################################################################################################
+  manual_traffic_update_sheri_home_travel_time:
+    sequence:
+    - service: homeassistant.update_entity
+      data:
+        entity_id: sensor.sheri_time_to_home
+
+###################################################################################################
+## Update Jason Work Travel Time
+## - manual update of travel time sensor
+###################################################################################################
+  manual_update_jason_work_travel_time:
+    sequence:
+    - service: homeassistant.update_entity
+      data:
+        entity_id: sensor.jason_time_to_work
+
+###################################################################################################
+## Update Sheri Work Travel Time
+## - manual update of travel time sensor
+###################################################################################################
+  manual_update_sheri_work_travel_time:
+    sequence:
+
+    - service: homeassistant.update_entity
+      data:
+        entity_id: sensor.sheri_time_to_work
+
+###################################################################################################
+## Manual Update All Traffic Sensors
+## - manual update of all traffic sensors
+###################################################################################################
+  manual_update_all_traffic:
+    sequence:
+    - service: homeassistant.update_entity
+      data:
+        entity_id:
+          - sensor.jason_time_to_work
+          - sensor.jason_time_to_home
+          - sensor.sheri_time_to_work
+          - sensor.sheri_time_to_home

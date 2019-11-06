@@ -1,0 +1,52 @@
+##################################################################################################
+## Traffic Cameras
+## http://www.mto.gov.on.ca/english/traveller/compass/camera/windsor-camhome1.shtml
+##################################################################################################
+
+  - platform: generic
+    name: 'EC ROW BANWELL'
+    still_image_url: !secret TRAFFIC_CAM1_URL
+
+  - platform: generic
+    name: 'EC ROW LAUZON PARKWAY'
+    still_image_url: !secret TRAFFIC_CAM2_URL
+
+  - platform: generic
+    name: 'EC ROW JEFFERSON'
+    still_image_url: !secret TRAFFIC_CAM3_URL
+
+  - platform: generic
+    name: 'EC ROW CENTRAL'
+    still_image_url: !secret TRAFFIC_CAM4_URL
+
+  - platform: generic
+    name: 'EC ROW WALKER'
+    still_image_url: !secret TRAFFIC_CAM5_URL
+
+  - platform: generic
+    name: 'EC ROW HOWARD'
+    still_image_url: !secret TRAFFIC_CAM6_URL
+
+  - platform: generic
+    name: 'TECUMSEH CENTRAL'
+    still_image_url: !secret TRAFFIC_CAM7_URL
+
+  - platform: generic
+    name: 'TECUMSEH DROUILLARD'
+    still_image_url: !secret TRAFFIC_CAM8_URL
+
+  - platform: generic
+    name: 'TECUMSEH WALKER'
+    still_image_url: !secret TRAFFIC_CAM9_URL
+
+  - platform: generic
+    name: 'TECUMSEH HALL'
+    still_image_url: !secret TRAFFIC_CAM10_URL
+
+  - platform: generic
+    name: 'TECUMSEH HOWARD'
+    still_image_url: !secret TRAFFIC_CAM11_URL
+
+  - platform: generic
+    name: 'TECUMSEH OUELLETTE'
+    still_image_url: !secret TRAFFIC_CAM12_URL

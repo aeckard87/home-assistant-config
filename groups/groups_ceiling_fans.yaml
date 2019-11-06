@@ -1,0 +1,21 @@
+##################################################################################################
+## Ceiling Fans
+##################################################################################################
+  ceiling_fans:
+    icon: mdi:fan
+    control: hidden
+    all: true
+    entities:
+      - fan.upstairs_bedroom_fan
+      - fan.office_fan
+
+##################################################################################################
+## Ceiling Fan In Use Booleans
+## - used for ceiling_fans_in_use binary sensor
+##################################################################################################
+  ceiling_fans_in_use:
+    icon: mdi:fan
+    control: hidden
+    entities:
+      - input_boolean.upstairs_bedroom_fan
+      - input_boolean.office_fan

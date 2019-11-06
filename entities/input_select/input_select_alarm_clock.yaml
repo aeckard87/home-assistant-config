@@ -1,0 +1,124 @@
+###################################################################################################
+## Auto Alarm Clock Media Player
+###################################################################################################
+  alarm_clock_media_player:
+    name: Media Player
+    icon: mdi:speaker
+    options: &alarm_clock_media_player_names
+        - All Speakers
+        - Broadcast Speakers
+        - Music Speakers
+        - Dining Room Speaker
+        - Bedroom Speaker
+        - Living Room TV
+        - Bedroom TV
+        - Deck TV
+        - Jason Phone
+        - Jason Laptop
+        - Jason Work
+        - Sheri Phone
+
+###################################################################################################
+## Auto Alarm Clock Media Player
+###################################################################################################
+  alarm_clock_media_player_auto:
+    name: Media Player
+    icon: mdi:speaker
+    options: *alarm_clock_media_player_names
+
+###################################################################################################
+## Manual Alarm Clock Media Player
+###################################################################################################
+  alarm_clock_media_player_manual:
+    name: Media Player
+    icon: mdi:speaker
+    options: *alarm_clock_media_player_names
+
+###################################################################################################
+## Nap Alarm Clock Media Player
+###################################################################################################
+  alarm_clock_media_player_nap:
+    name: Media Player
+    icon: mdi:speaker
+    options: *alarm_clock_media_player_names
+
+###################################################################################################
+## Alarm Clock Sound
+## - 'None' will prevent alarm clock from running
+###################################################################################################
+  alarm_clock_sound: &alarm_sound
+    name: Alarm Sound
+    icon: mdi:file-music
+    options:
+      - None
+      - Radio
+      - Digital
+      - Gentle
+      - Loud
+      - Pager
+      - Rooster
+
+###################################################################################################
+## Auto Alarm Clock Sound
+###################################################################################################
+  alarm_clock_sound_auto: *alarm_sound
+
+###################################################################################################
+## Manual Alarm Clock Sound
+###################################################################################################
+  alarm_clock_sound_manual: *alarm_sound
+
+###################################################################################################
+## Nap Alarm Clock Sound
+###################################################################################################
+  alarm_clock_sound_nap: *alarm_sound
+
+###################################################################################################
+## Auto Alarm Clock Radio Stations
+###################################################################################################
+  alarm_clock_radio_station:
+    name: Alarm Clock Radio Station
+    icon: mdi:radio-tower
+    options: &alarm_clock_stations
+        - Magic 80s Florida
+        - Smooth Jazz Florida
+        - WCSX Classic - Rock
+        - WDRQ Nash FM - Country
+        - WYCD Detroit - Country
+        - 977 FM - Smooth Jazz
+        - 977 FM - Oldies
+        - 977 FM - 1990s
+        - 977 FM - Alternative Rock
+        - 977 FM - Classic Rock
+        - 977 FM - Country
+        - 977 FM - Mix
+        - 977 FM - Smooth Jazz
+        - 977 FM - Jamz
+        - 977 FM - Hits
+        - 100 Hitz - Urban
+        - 110 FM - Classic Rock
+        - 181 FM - 90s Dance
+        - 181 FM - The Mix
+
+###################################################################################################
+## Auto Alarm Clock Radio Stations
+###################################################################################################
+  alarm_clock_radio_station_auto:
+    name: Radio Station
+    icon: mdi:radio-tower
+    options: *alarm_clock_stations
+###################################################################################################
+## Manual Alarm Clock Radio Stations
+###################################################################################################
+  alarm_clock_radio_station_manual:
+    name: Radio Station
+    icon: mdi:radio-tower
+    options: *alarm_clock_stations
+
+###################################################################################################
+## Nap Alarm Clock Radio Stations
+###################################################################################################
+  alarm_clock_radio_station_nap:
+    name: Radio Station
+    icon: mdi:radio-tower
+    options: *alarm_clock_stations

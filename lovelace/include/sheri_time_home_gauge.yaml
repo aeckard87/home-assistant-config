@@ -1,0 +1,10 @@
+type: gauge
+entity: sensor.sheri_time_to_home
+name: Sheri To Home
+unit: min
+min: 0
+max: 30
+severity:
+  green: 10
+  yellow: 15
+  red: 20

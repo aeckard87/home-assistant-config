@@ -1,0 +1,15 @@
+type: custom:fold-entity-row
+head: input_boolean.radio_on
+entities:
+  - entity: input_select.radio_station
+    name: Station
+  - entity: input_select.media_player_radio
+    name: Speakers
+  - entity: input_number.radio_volume
+    name: Volume
+  - entity: input_boolean.radio_paused
+    name: Pause Radio
+  - type: call-service
+    name: Play  Radio
+    service: script.play_radio
+    action_name: PLAY

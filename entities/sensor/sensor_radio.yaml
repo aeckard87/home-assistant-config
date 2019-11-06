@@ -1,0 +1,33 @@
+##################################################################################################
+## Radio Settings
+## - 'fake' sensor used to open radio settings popup on radio glance card
+##################################################################################################
+  - platform: template
+    sensors:
+      radio_settings:
+        friendly_name: Radio Settings
+        icon_template: mdi:settings
+        value_template: ''
+
+##################################################################################################
+## Radio Media Player
+##################################################################################################
+      radio_media_player:
+        friendly_name: Radio Media Player
+        icon_template: mdi:animation-play
+        entity_id: input_select.radio_media_player
+        value_template:  >-
+            {% set entities = state_attr('group.all_media_players', 'entity_id') %}
+            {% set mplayer =  states.media_player | selectattr('entity_id', 'in', entities)
+                                  | selectattr( 'name','eq',states('input_select.media_player_radio'))
+                                  | map(attribute='entity_id')
+                                  | join(',') %}
+            {{ mplayer }}
+
+##################################################################################################
+## Radio Media Player State
+##################################################################################################
+      radio_media_player_state:
+        friendly_name: Radio Media Player State
+        icon_template: mdi:animation-play
+        value_template: "{{ states(states('sensor.radio_media_player')) }}"

@@ -1,0 +1,25 @@
+##################################################################################################
+## Notification - Announcement Media Players
+##################################################################################################
+  announcement_media_players:
+    icon: mdi:voice
+    control: hidden
+    all: true
+    entities:
+      - media_player.broadcast_speakers
+      - media_player.dining_room_speaker
+      - media_player.bedroom_speaker
+
+##################################################################################################
+## Notification - Alert Media Players
+##################################################################################################
+  alert_media_players:
+    icon: mdi:voice
+    control: hidden
+    all: true
+    entities:
+      - media_player.dining_room_speaker
+      - media_player.bedroom_speaker
+      - media_player.living_room_tv
+      - media_player.bedroom_tv
+      - media_player.deck_tv

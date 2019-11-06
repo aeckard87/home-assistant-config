@@ -1,0 +1,76 @@
+##################################################################################################
+## Ceiling Fan On
+## fan_name: fan entity w/no domain
+## new_speed: low, medium, high
+##################################################################################################
+  ceiling_fan_on:
+    sequence:
+      # only run if ceiling fan automation is enabled
+      - condition: state
+        entity_id: input_boolean.ceiling_fan_automation
+        state: 'on'
+
+      # don't run if fan in use by occupant
+      - condition: template
+        value_template: >-
+          {% if ignore_user_state == 'true' %} true
+          {% elif is_state('input_boolean.' + fan_name, 'off') %} true
+          {% else %} false
+          {% endif %}
+
+      # turn off fan user state automation
+      - service: automation.turn_off
+        data_template:
+          entity_id: automation.automation_set_device_user_state
+
+      # turn the fan on
+      - service: fan.turn_on
+        data_template:
+          entity_id: "fan.{{ fan_name }}"
+          speed: "{{ new_speed }}"
+
+      # delay to allow state changes to register
+      - delay: '00:00:01'
+
+      # turn fan user state automation back on
+      - service: automation.turn_on
+        data_template:
+          entity_id: automation.automation_set_device_user_state
+
+##################################################################################################
+## Ceiling Fan Off
+## ignore_user_state: true/false
+## fan_name: fan entity w/no domain
+##################################################################################################
+  ceiling_fan_off:
+    sequence:
+      # only run if ceiling fan automation is enabled
+      - condition: state
+        entity_id: input_boolean.ceiling_fan_automation
+        state: 'on'
+
+      # don't run if fan in use by occupant
+      - condition: template
+        value_template: >-
+          {% if ignore_user_state == 'true' %} true
+          {% elif is_state('input_boolean.' + fan_name, 'off') %} true
+          {% else %} false
+          {% endif %}
+
+      # turn off fan user state automation
+      - service: automation.turn_off
+        data_template:
+          entity_id: automation.automation_set_device_user_state
+
+      # turn the fan off
+      - service: fan.turn_off
+        data_template:
+          entity_id: "fan.{{ fan_name }}"
+
+      # delay to allow state changes to register
+      - delay: '00:00:01'
+
+      # turn light user state automation back on
+      - service: automation.turn_on
+        data_template:
+          entity_id: automation.automation_set_device_user_state

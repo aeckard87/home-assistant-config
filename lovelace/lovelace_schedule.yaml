@@ -1,0 +1,277 @@
+title: Household Schedule
+icon: mdi:calendar
+path: schedule
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - type: entity-filter
+        show_empty: false
+        state_filter:
+          - 'on'
+          - 'Set'
+          - 'Active'
+          - 'Snooze'
+          - 'Days'
+          - 'Afternoons'
+        card:
+          title: Schedule Alerts
+          type: glance
+          style: |
+            ha-card {
+              font-size: 12px;
+            }
+        entities:
+          - entity: binary_sensor.work_schedule_disabled
+          - entity: binary_sensor.work_today
+          - entity: binary_sensor.work_tomorrow
+          - entity: binary_sensor.days_work_commute
+          - entity: binary_sensor.afternoons_work_commute
+          - entity: binary_sensor.days_home_commute
+          - entity: binary_sensor.afternoons_home_commute
+          - entity: binary_sensor.work_commute_alert_jason
+            tap_action:
+              action: call-service
+              service: browser_mod.popup
+              service_data:
+                deviceID: this
+                title: Jason Time To Home
+                card:
+                  type: custom:entity-attributes-card
+                  filter:
+                    include:
+                      - sensor.jason_time_to_home.duration
+                      - sensor.jason_time_to_home.duration_in_traffic
+                      - sensor.jason_time_to_home.mode
+                      - sensor.jason_time_to_home.distance
+                      - sensor.jason_time_to_home.origin_addresses
+                      - sensor.jason_time_to_home.destination_addresses
+
+          - entity: binary_sensor.work_commute_alert_sheri
+            tap_action:
+              action: call-service
+              service: browser_mod.popup
+              service_data:
+                deviceID: this
+                title: Sheri Time To Home
+                card:
+                  type: custom:entity-attributes-card
+                  filter:
+                    include:
+                      - sensor.sheri_time_to_home.duration
+                      - sensor.sheri_time_to_home.duration_in_traffic
+                      - sensor.sheri_time_to_home.mode
+                      - sensor.sheri_time_to_home.distance
+                      - sensor.sheri_time_to_home.origin_addresses
+                      - sensor.sheri_time_to_home.destination_addresses
+
+          - entity: calendar.garbage
+          - entity: calendar.recycle
+          - entity: calendar.yardwaste
+          - entity: binary_sensor.garbage_tomorrow
+          - entity: binary_sensor.recycle_tomorrow
+          - entity: binary_sensor.yardwaste_tomorrow
+
+          - entity: sensor.alarm_clock_status_auto
+            name: Auto Alarm
+            tap_action: !include /config/lovelace/include/popup_auto_alarm.yaml
+            hold_action:
+              action: call-service
+              service: input_boolean.toggle
+              service_data:
+                entity_id: input_boolean.alarm_clock_active
+
+          - entity: sensor.alarm_clock_status_manual
+            name: Manual Alarm
+            tap_action: !include /config/lovelace/include/popup_manual_alarm.yaml
+            hold_action:
+              action: call-service
+              service: input_boolean.toggle
+              service_data:
+                entity_id: input_boolean.alarm_clock_active
+
+          - entity: sensor.alarm_clock_status_nap
+            name: Nap Alarm
+            tap_action: !include /config/lovelace/include/popup_nap_alarm.yaml
+            hold_action:
+              action: call-service
+              service: input_boolean.toggle
+              service_data:
+                entity_id: input_boolean.alarm_clock_active
+
+      - type: entities
+        title: House Schedule
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.household_calendar_connected
+          - entity: sensor.garbage_day
+            name: Next Garbage Day
+          - entity: sensor.recycle_day
+            name: Next Recycle Day
+          - entity: sensor.yardwaste_day
+            name: Next Yardwaste Day
+
+          - type: section
+            label: Alarms and Reminders
+
+          - type: custom:fold-entity-row
+            head: input_boolean.alarm_clock_auto
+            entities:
+              - entity: input_boolean.alarm_clock_auto_weekends
+              - entity: input_select.alarm_clock_sound_auto
+              - entity: input_select.alarm_clock_radio_station_auto
+              - entity: input_select.alarm_clock_media_player_auto
+              - entity: input_number.alarm_clock_volume_auto
+              - entity: input_number.alarm_clock_snooze_time
+              - entity: input_boolean.alarm_clock_active_auto
+                name: Play Auto Alarm
+
+          - type: custom:fold-entity-row
+            head: input_boolean.alarm_clock_manual
+            entities:
+              - entity: input_datetime.alarm_clock_manual_time
+              - entity: input_select.alarm_clock_sound_manual
+              - entity: input_select.alarm_clock_radio_station_manual
+              - entity: input_select.alarm_clock_media_player_manual
+              - entity: input_number.alarm_clock_volume_manual
+              - entity: input_number.alarm_clock_snooze_time
+              - entity: input_boolean.alarm_clock_active_manual
+                name: Play Manual Alarm
+
+          - type: custom:fold-entity-row
+            head: input_boolean.alarm_clock_nap
+            entities:
+              - entity: input_number.alarm_clock_nap_time
+              - entity: input_select.alarm_clock_sound_nap
+              - entity: input_select.alarm_clock_radio_station_nap
+              - entity: input_select.alarm_clock_media_player_nap
+              - entity: input_number.alarm_clock_volume_nap
+              - entity: input_boolean.alarm_clock_active_nap
+              - entity: input_number.alarm_clock_snooze_time
+              - entity: timer.alarm_clock_nap
+                name: Play Nap Alarm
+
+          - type: custom:fold-entity-row
+            head: input_boolean.buster_medication_enabled
+            entities:
+              - entity: input_datetime.buster_medication_days_pill_1
+              - entity: input_datetime.buster_medication_days_pill_2
+              - entity: input_datetime.buster_medication_afternoons_pill_1
+              - entity: input_datetime.buster_medication_afternoons_pill_2
+              - entity: input_datetime.buster_medication_weekends_pill_1
+              - entity: input_datetime.buster_medication_weekends_pill_2
+
+          - !include /config/lovelace/include/morning_radio_settings_entity.yaml
+          - !include /config/lovelace/include/night_radio_settings_entity.yaml
+
+      - type: conditional
+        conditions:
+          - entity: input_boolean.advanced_view
+            state: 'on'
+        card:
+          type: entities
+          title: Schedule Settings
+          show_header_toggle: false
+          entities:
+            - type: custom:fold-entity-row
+              head:
+                type: custom:dummy-entity-row
+                entity: binary_sensor.radio_on
+                icon: mdi:clock
+                name: Wake Times
+              entities:
+                - entity: input_datetime.days_waketime
+                - entity: input_datetime.afternoons_waketime
+                - entity: input_datetime.weekend_waketime
+                - entity: input_datetime.house_waketime
+
+            - type: custom:fold-entity-row
+              head: sensor.bed_times
+              entities:
+                - entity: input_datetime.days_bedtime
+                - entity: input_datetime.afternoons_bedtime
+                - entity: input_datetime.weekend_days_bedtime
+                - entity: input_datetime.weekend_afternoons_bedtime
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.schedule_automation
+              filter:
+                include:
+                  - entity_id: "automation.schedule_*"
+
+
+  - type: vertical-stack
+    cards:
+
+      - !include /config/lovelace/include/alarm_clock_picture_glance.yaml
+      - !include /config/lovelace/include/radio_glance_card.yaml
+      - !include /config/lovelace/include/media_player_conditional_card.yaml
+      - !include /config/lovelace/include/buster_picture_glance.yaml
+
+
+  - type: vertical-stack
+    cards:
+
+      - type: entities
+        title: Work Schedule
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.work_calendar_connected
+          - entity: sensor.current_shift
+          - entity: sensor.work_holiday
+            name: Next Work Holiday
+          - entity: input_boolean.work_schedule
+          - entity: input_boolean.saturday_workday
+
+          - type: call-service
+            name: Update Traffic Sensors
+            service: script.manual_update_all_traffic
+            action_name: UPDATE
+
+
+      - type: conditional
+        conditions:
+          - entity: input_boolean.advanced_view
+            state: 'on'
+        card:
+          type: entities
+          show_header_toggle: false
+          entities:
+            - entity: input_boolean.shift_override
+            - entity: input_select.shift_selection
+
+            - type: custom:fold-entity-row
+              head: sensor.work_traffic
+              tap_action: !include /config/lovelace/include/popup_traffic.yaml #ISSUE fold entity tap action doesn't work here
+
+              items:
+                - entity: input_number.commute_warning_time
+                  tap_action: !include /config/lovelace/include/popup_traffic.yaml
+                - type: section
+                  label: Days Commute Times
+                - entity: input_datetime.days_leave_home_time
+                - entity: input_datetime.days_arrive_work_time
+                - entity: input_datetime.days_leave_work_time
+                - entity: input_datetime.days_arrive_home_time
+                - type: section
+                  label: Afternoons Commute Times
+                - entity: input_datetime.afternoons_leave_home_time
+                - entity: input_datetime.afternoons_arrive_work_time
+                - entity: input_datetime.afternoons_leave_work_time
+                - entity: input_datetime.afternoons_arrive_home_time
+
+      - type: horizontal-stack
+        cards:
+
+          - !include /config/lovelace/include/jason_time_work_gauge.yaml
+          - !include /config/lovelace/include/sheri_time_work_gauge.yaml
+
+      - type: horizontal-stack
+        cards:
+          - !include /config/lovelace/include/jason_time_home_gauge.yaml
+          - !include /config/lovelace/include/sheri_time_home_gauge.yaml
+
+      - !include /config/lovelace/include/traffic_cameras_glance.yaml

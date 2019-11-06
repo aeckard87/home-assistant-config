@@ -1,0 +1,1002 @@
+##################################################################################################
+## Garage Climate - Auto Off
+##################################################################################################
+  - id: garage_climate_auto_off
+    alias: "[Garage Climate] Auto Off"
+    description: "Turn garage furnace off when conditions are met."
+    initial_state: 'on'
+
+    trigger:
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Night'
+
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Away'
+
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Vacation'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if garage climate automation is enabled
+          - condition: state
+            entity_id: input_boolean.garage_climate_automation
+            state: 'on'
+
+          # only run if the garage thermostat isn't turned off
+          - condition: template
+            value_template: "{{ not is_state('climate.garage_thermostat','off') }}"
+
+    action:
+      # turn off garage heat boolean to turn off garage climate
+      # use boolean instead of setting thermostat direct so boolean doesn't get stuck on and we don't bybass freeze protection
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.garage_heat
+
+##################################################################################################
+## Garage Climate - Door Open Heat On
+## - delay to allow door open scripts to run and allow delay
+## - don't run if door closed after delay
+##################################################################################################
+  - id: garage_climate_door_open_heat_on
+    alias: "[Garage Climate] Door Open Heat On"
+    initial_state: 'on'
+    description: "Turn heat back off until garage door closed."
+    trigger:
+      # run when garage door is opened
+      - platform: state
+        entity_id: binary_sensor.garage_door_open
+        to: 'on'
+        for:
+          seconds: 90
+
+    condition:
+      # only run if garage climate automation is enabled
+      - condition: state
+        entity_id: input_boolean.garage_climate_automation
+        state: 'on'
+
+      # only run if heat is on
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: input_boolean.garage_heat
+          state: 'on'
+        - condition: state
+          entity_id: input_boolean.garage_freeze_protection
+          state: 'on'
+
+    action:
+      # only run if garage door is still open
+      - condition: state
+        entity_id: binary_sensor.garage_door_open
+        state: 'on'
+
+      # turn off garage heat, do not turn off boolean switch here or heat won't turn back on when door closes
+      - service: script.garage_climate_off
+
+      # wait for garage heat to turn off, takes a while to register sometimes
+      # stop here if heat doesn't turn off
+      - wait_template: "{{ is_state('climate.garage_thermostat', 'off') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: false
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      # if quiet hours on true no delay announcement won't be playing
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on')}}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "The garage heat has been turned off because the door has opened."
+          quiet_play: 'false'
+
+      # wait 15 min, if door doesn't close quit - heat stays off
+      - wait_template: "{{ is_state('binary_sensor.garage_door_open', 'off') }}"
+        timeout: '00:15:00'
+        continue_on_timeout: false
+
+      # turn the garage heat back on
+      - service: script.garage_climate_on
+
+      # allow temperature change to register
+      # heat may have been turned off/adjusted in hassio while door was open
+      - wait_template: >
+          {% if is_state('climate.garage_thermostat', 'heat') %}
+            {% if is_state('input_boolean.garage_heat','on') %}
+              {% if state_attr('climate.garage_thermostat', 'temperature') | float ==  states('input_number.garage_heat_temperature') | float %}
+                true
+              {% endif %}
+            {% else %}
+              {% if state_attr('climate.garage_thermostat', 'temperature') | float ==  states('input_number.garage_freeze_temperature') | float %}
+                true
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        timeout: '00:05:00'
+        continue_on_timeout: false
+
+      # allow other announcments to finish
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "The garage heat has been turned back on. The thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees. The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature')}} degrees."
+          quiet_play: 'false'
+
+##################################################################################################
+## Garage Climate - Heat On Door Open
+##################################################################################################
+  - id:  garage_climate_heat_on_door_open
+    alias: "[Garage Climate] Heat On Door Open"
+    description: "Turn garage heat back off until garage door closed."
+    initial_state: 'on'
+
+    trigger:
+      # heat turned on
+      - entity_id: climate.garage_thermostat
+        platform: state
+        to: 'heat'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if garage climate automation is enabled
+          - condition: state
+            entity_id: input_boolean.garage_climate_automation
+            state: 'on'
+
+          # only run if garage door is open
+          - condition: state
+            entity_id: binary_sensor.garage_door_open
+            state: 'on'
+
+    action:
+     # turn off garage heat, do not turn off boolean switch here or heat won't turn on when door closes
+      - service: script.garage_climate_off
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      # if quiet hours on true no delay announcement won't be playing
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on')}}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "The heat will turn on when the garage door closes."
+          quiet_play: 'false'
+
+      # wait 15 min for door to close to try again, if door still isn't closed cancel
+      - wait_template: "{{ is_state('binary_sensor.garage_door_open', 'off') }}"
+        timeout: '00:15:00'
+        continue_on_timeout: false
+
+      # turn the garage heat on
+      - service: script.garage_climate_on
+
+##################################################################################################
+## Garage Climate - Freeze Protection Changed
+##################################################################################################
+  - id: garage_freeze_protection_chanaged
+    alias: "[Garage Climate] Freeze Protection Changed"
+    description: "Update thermostat, play announcement."
+    initial_state: 'on'
+
+    trigger:
+      - entity_id: input_boolean.garage_freeze_protection
+        platform: state
+
+    condition:
+      # only set if garage heat not already on
+      - condition: state
+        entity_id: input_boolean.garage_heat
+        state: 'off'
+
+    action:
+      # wait for previous climate on/off script to finish
+      - wait_template: >
+          {% if is_state('script.garage_climate_on','on') %}
+            false
+          {% elif is_state('script.garage_climate_off','on') %}
+            false
+          {% else %}
+            true
+          {% endif %}
+        timeout: '00:02:00'
+        continue_on_timeout: false
+
+      - service_template: >
+          {% if is_state('input_boolean.garage_freeze_protection','on') %}
+            script.garage_climate_on
+          {% else %}
+            script.garage_climate_off
+          {% endif %}
+
+      # allow thermostat state change to register
+      # if garage door open heat should still be off - test first or we get stuck waiting!
+      - wait_template: >
+          {% if is_state('binary_sensor.garage_door_open','on') %}
+            {{ is_state('climate.garage_thermostat', 'off') }}
+          {% elif is_state('input_boolean.garage_freeze_protection','on') %}
+            {{ is_state('climate.garage_thermostat', 'heat') }}
+          {% else %}
+            {{ is_state('climate.garage_thermostat', 'off') }}
+          {% endif %}
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # allow temperature change to register on thermostat before continuing or wrong temp reported
+      - wait_template: >
+          {% if is_state('climate.garage_thermostat', 'heat') %}
+            {% if is_state('input_boolean.garage_freeze_protection','on') %}
+              {% if state_attr('climate.garage_thermostat', 'temperature') | float ==  states('input_number.garage_freeze_temperature') | float %}
+                true
+              {% else %}
+                false
+              {% endif %}
+            {% else %}
+              true
+            {% endif %}
+          {% else %}
+            true
+          {% endif %}
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # turn off freeze protection boolean if thermostat not in heat mode (thermostat didn't switch modes)
+      - service_template: >
+          {% if not is_state('climate.garage_thermostat','heat') %}
+            input_boolean.turn_off
+          {% else %}
+            script.null_script
+          {% endif %}
+        data:
+          entity_id: input_boolean.garage_freeze_protection
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      - service: script.play_announcement
+        data_template:
+          play_message: >
+            {% if is_state('input_boolean.garage_freeze_protection','on') %}
+              {% if is_state('climate.garage_thermostat','heat') %}
+                The garage freeze protection has been turned on.
+                The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature') }} degrees.
+              {% else %}
+                The garage freeze protection could not be turned on.
+              {% endif %}
+            {% else %}
+                The garage freeze protection has been turned off.
+            {% endif %}
+          quiet_play: 'false'
+
+##################################################################################################
+## Garage Climate - Heat Changed
+##################################################################################################
+  - id: garage_climate_heat_changed
+    alias: "[Garage Climate] Heat Changed"
+    description: "Garage heat turned on or off.  Update thermostat, play announcement."
+    initial_state: 'on'
+
+    trigger:
+      - entity_id: input_boolean.garage_heat
+        platform: state
+
+    action:
+      # wait for previous climate on/off script to finish
+      - wait_template: >
+          {% if is_state('script.garage_climate_on','on') %}
+            false
+          {% elif is_state('script.garage_climate_off','on') %}
+            false
+          {% else %}
+            true
+          {% endif %}
+        timeout: '00:02:00'
+        continue_on_timeout: false
+
+      - service_template: >
+          {% if is_state('input_boolean.garage_heat','on') %}
+            script.garage_climate_on
+          {% else %}
+            script.garage_climate_off
+          {% endif %}
+
+      # allow thermostat state change to register
+      # if garage door is open heat should be off even if boolean is on - test first or we get stuck waiting!
+      - wait_template: >
+          {% if is_state('binary_sensor.garage_door_open','on') %}
+            {{ is_state('climate.garage_thermostat', 'off') }}
+          {% elif is_state('input_boolean.garage_heat','on') %}
+            {{ is_state('climate.garage_thermostat', 'heat') }}
+          {% else %}
+            {{ is_state('climate.garage_thermostat', 'off') }}
+          {% endif %}
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # if heat on allow temperature change to register before continuing or wrong set temp reported
+      # if heat is off but freeze on, allow temp to change to freeze temp before continuing or wrong set temp reported
+      # just continue if thermostat is off
+      - wait_template: >
+          {% if is_state('climate.garage_thermostat', 'heat') %}
+            {% if is_state('input_boolean.garage_heat','on') %}
+              {% if state_attr('climate.garage_thermostat', 'temperature') | float ==  states('input_number.garage_heat_temperature') | float %}
+                true
+              {% endif %}
+            {% else %}
+              {% if state_attr('climate.garage_thermostat', 'temperature') | float ==  states('input_number.garage_freeze_temperature') | float %}
+                true
+              {% endif %}
+            {% endif %}
+          {% else %}
+            true
+          {% endif %}
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # turn off garage heat boolean if thermostat not in heat mode (thermostat didn't switch modes)
+      - service_template: >
+          {% if not is_state('climate.garage_thermostat','heat') %}
+            input_boolean.turn_off
+          {% else %}
+            script.null_script
+          {% endif %}
+        data:
+          entity_id: input_boolean.garage_heat
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      - service: script.play_announcement
+        data_template:
+          play_message: >
+            {% if is_state('input_boolean.garage_heat','on') %}
+              {% if is_state('climate.garage_thermostat','heat') %}
+                The garage heat has been turned on.
+                The thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees.
+                The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature') }} degrees.
+              {% else %}
+                The garage heat could not be turned on.
+              {% endif %}
+            {% elif is_state('input_boolean.garage_freeze_protection','on') %}
+              {% if is_state('climate.garage_thermostat','heat') %}
+                The garage freeze protection has been turned back on.
+                The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature') }} degrees.
+              {% else %}
+                The garage freeze protection could not be turned back on.
+              {% endif %}
+            {% else %}
+                The garage heat has been turned off.
+            {% endif %}
+          quiet_play: 'false'
+
+##################################################################################################
+## Garage Climate - Thermostat Adjusted
+##################################################################################################
+  - id: garage_climate_thermostat_adjusted
+    alias: "[Garage Climate] Thermostat Adjusted"
+    description: "Garage thermostat turned on or off, update hassio."
+    initial_state: 'on'
+
+    trigger:
+      # heat has been turned on
+      - entity_id: climate.garage_thermostat
+        platform: state
+        to: 'heat'
+
+      # heat has been turned off
+      - entity_id: climate.garage_thermostat
+        platform: state
+        to: 'off'
+
+    action:
+      # disable garage_heat/freeze automations to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.garage_climate_heat_changed
+
+      # turn heat on if thermostat turned on or else turn it off
+      - service_template: >
+          {% if is_state('climate.garage_thermostat', 'heat') %}
+            input_boolean.turn_on
+          {% else %}
+            input_boolean.turn_off
+          {% endif %}
+        entity_id: input_boolean.garage_heat
+
+      # turn garage_heat_/freeze automation back on
+      - service: automation.turn_on
+        entity_id: automation.garage_climate_heat_changed
+
+##################################################################################################
+## Garage Climate - Heat Temp Adjusted
+##################################################################################################
+  - id: garage_climate_heat_temp_adjusted
+    alias: "[Garage Climate] Heat Temp Adjusted"
+    description: "Heat temperature adjusted, update thermostat and play announcement."
+    initial_state: 'on'
+
+    trigger:
+      # heat temperature has been adjusted
+      - entity_id: input_number.garage_heat_temperature
+        platform: state
+
+    condition:
+      # only run if heat boolean is on
+      - condition: state
+        entity_id: input_boolean.garage_heat
+        state: 'on'
+
+    action:
+      # wait for zwave to be ready, cancel if not
+      #BUGFIX - zwave dropping out
+      - wait_template: "{{ is_state('zwave.garage_thermostat', 'ready') }}"
+        timeout: '00:05:00'
+        continue_on_timeout: false
+
+      # adjust the thermostat temperature
+      - service: climate.set_temperature
+        data_template:
+          entity_id: climate.garage_thermostat
+          temperature: "{{ states('input_number.garage_heat_temperature') | int}}"
+
+      # wait for thermostat temp = set temp
+      - wait_template: "{{ states('input_number.garage_heat_temperature') | float == state_attr('climate.garage_thermostat','temperature') | float }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # allow other announcments to finish
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement - garage heat not turned on
+      - service: script.play_announcement
+        data_template:
+          play_message: >-
+              The garage thermostat has been set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees.
+              The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature') }} degrees.
+          quiet_play: 'false'
+
+
+##################################################################################################
+## Garage Climate - Freeze Temp Adjusted (Hassio)
+##################################################################################################
+  - id: garage_climate_freeze_temp_adjusted
+    alias: "[Garage Climate] Freeze Temp Adjusted"
+    description: "Freeze temperature adjusted, update thermostat and play announcement."
+    initial_state: 'on'
+
+    trigger:
+      # freeze temperature has been adjusted
+      - entity_id: input_number.garage_freeze_temperature
+        platform: state
+
+    condition:
+      - condition: and
+        conditions:
+          # do not run in silent mode
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+          # only run if freeze protection on
+          - condition: state
+            entity_id: input_boolean.garage_freeze_protection
+            state: 'on'
+          # only run if heat is off (heat temp takes precedence)
+          - condition: state
+            entity_id: input_boolean.garage_heat
+            state: 'off'
+
+    action:
+      # wait for zwave to be ready, cancel if not
+      - wait_template: "{{ is_state('zwave.garage_thermostat', 'ready') }}"
+        timeout: '00:05:00'
+        continue_on_timeout: false
+
+      # adjust the thermostat temperature
+      - service: climate.set_temperature
+        data_template:
+          entity_id: climate.garage_thermostat
+          temperature: "{{ states('input_number.garage_freeze_temperature') | int }}"
+
+      # wait for thermostat temp = set temp
+      - wait_template: "{{ states('input_number.garage_freeze_temperature') | float == state_attr('climate.garage_thermostat','temperature') | float }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement - garage heat not turned on
+      - service: script.play_announcement
+        data_template:
+          play_message: >-
+              The garage thermostat has been set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees.
+              The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature') }} degrees.
+          quiet_play: 'false'
+
+##################################################################################################
+## Garage Climate - Extended Heat Alert
+##################################################################################################
+  - id: garage_climate_extended_heat_alert
+    alias: "[Garage Climate] Extended Heat Alert"
+    description: "Send notification if garage heat on for extended period."
+    initial_state: 'on'
+
+    trigger:
+      # furnace heat has been on for 2 hours
+      - entity_id: climate.garage_thermostat
+        platform: state
+        to: 'heat'
+        for:
+          hours: 2
+
+    condition:
+      # do not run in silent mode
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Garage Heat On"
+          message: "The garage heat has been on for a while. The current garage temperature is {{ states('sensor.garage_thermostat_temperature') }} degrees."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'garage_heat_off'
+                title: "Turn Off Heat"
+                icon: !secret TURN_OFF_BUTTON
+
+              - action: 'garage_extended_heat_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+
+            tag: 'garage_extended_heat'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/garage'
+            icon: !secret HIGH_TEMP_ICON
+            image: !secret HIGH_TEMP_IMAGE
+            badge: !secret HIGH_TEMP_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! The garage heat has been on for a while. The current garage temperature is  {{ states('sensor.garage_thermostat_temperature') }} degrees."
+          quiet_play: 'true'
+
+###################################################################################################
+## Garage Climate - Extended Heat Notification Closed
+###################################################################################################
+  - id: garage_climate_extended_heat_notification_closed
+    alias: "[Garage Climate] Extended Heat Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'garage_extended_heat'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_extended_heat'
+
+##################################################################################################
+## Garage Climate - Extended Heat Alert Cancelled
+##################################################################################################
+  - id: garage_climate_extended_heat_alert_cancelled
+    alias: "[Garage Climate] Extended Heat Alert Cancelled"
+    description: "Dismiss notifications when garage heat turns off."
+    initial_state: 'on'
+
+    trigger:
+      # garage thermostat heat mode is turned off
+      - entity_id: climate.garage_thermostat
+        platform: state
+        to: 'off'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_extended_heat'
+
+##################################################################################################
+## Garage Climate - Turn Off Heat Extended Heat
+##################################################################################################
+  - id: garage_climate_turn_off_heat
+    alias: "[Garage Climate] Turn Off Heat"
+    description: "Turn garage heat off and dismiss alerts when button clicked in notification."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'garage_heat_off'
+
+    action:
+      # turn garage heat off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.garage_heat
+
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_extended_heat'
+
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_high_temp'
+
+##################################################################################################
+## Garage Climate - Extended Heat Alert Off
+##################################################################################################
+  - id: garage_climate_extended_heat_alert_pause
+    alias: "[Garage Climate] Extended Heat Alert Off"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'garage_extended_heat_alert_pause'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_extended_heat'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.garage_climate_extended_heat_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.garage_climate_extended_heat_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.garage_climate_extended_heat_alert
+
+##################################################################################################
+## Garage Climate - High Temperature Alert
+## - allow 5 minutes for temperature fluxuation
+## - turn off the garage climate (freeze protection should stay on but temp should reset)
+##################################################################################################
+  - id: garage_climate_high_temperature_alert
+    alias: "[Garage Climate] High Temperature Alert"
+    description: "Send notification when garage high temperature turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when garage high temp sensor turns on
+      - platform: state
+        entity_id: binary_sensor.garage_high_temperature
+        to: 'on'
+        for:
+          minutes: 5
+
+    condition:
+      # do not run in silent mode
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+    action:
+      # turn the garage climate off - something is wrong!
+      #DISABLED no thermostat - service: script.garage_climate_off
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Garage High Temperature"
+          message: "The temperature is {{ states('sensor.garage_thermostat_temperature')}} degrees, and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              # heat should turn off automatically but give option here
+              - action: 'garage_heat_off'
+                title: "Turn Off Heat"
+                icon: !secret TURN_OFF_BUTTON
+
+              - action: 'garage_high_temp_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+
+            tag: 'garage_high_temp'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/garage'
+            icon: !secret HIGH_TEMP_ICON
+            image: !secret HIGH_TEMP_IMAGE
+            badge: !secret HIGH_TEMP_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: >-
+            Attention! The garage high temperature alert is active.
+            The garage heat has been turned off.
+            The current garage temperature is {{ states('sensor.garage_thermostat_temperature') }} degrees,
+            and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees.
+          quiet_play: 'true'
+
+###################################################################################################
+## Garage Climate - High Temperature Notification Closed
+###################################################################################################
+  - id: garage_climate_high_temperature_notification_closed
+    alias: "[Garage Climate] High Temperature Notification Closed"
+    description: Dismiss notifications on all devices when closed on one.
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'garage_high_temp'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_high_temp'
+
+##################################################################################################
+## Garage Climate - High Temperature Alert Cancelled
+##################################################################################################
+  - id: garage_climate_high_temperature_alert_cancelled
+    alias: "[Garage Climate] High Temperature Alert Cancelled"
+    description: "Dismiss notifications when garage high temperature alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.garage_high_temperature
+        to: 'off'
+        for:
+          minutes: 5
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_high_temp'
+
+##################################################################################################
+## Garage Climate - High Temperature Alert Pause
+##################################################################################################
+  - id: garage_climate_high_temperature_alert_pause
+    alias: "[Garage Climate] High Temperature Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'garage_high_temp_alert_pause'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_high_temp'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.garage_climate_high_temperature_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.garage_climate_high_temperature_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.garage_climate_high_temperature_alert
+
+##################################################################################################
+## Garage Climate - Low Temperature Alert
+## - allow 30 minutes for garage to warm up when heat turned on
+##################################################################################################
+  - id: garage_climate_low_temperature_alert
+    alias: "[Garage Climate] Low Temperature Alert"
+    description: "Send notification when garage low temperature alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.garage_low_temperature
+        to: 'on'
+        for:
+          minutes: 30
+
+    condition:
+      # do not run in silent mode
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Garage Low Temperature"
+          message: "The temperature is {{ states('sensor.garage_thermostat_temperature')}} degrees, and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'garage_low_temp_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'garage_low_temp_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/garage'
+            icon: !secret LOW_TEMP_ICON
+            image: !secret LOW_TEMP_IMAGE
+            badge: !secret LOW_TEMP_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: >-
+            Attention! The garage low temperature alert is active.
+            The current garage temperature is {{ states('sensor.garage_thermostat_temperature')}} degrees,
+            and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees.
+          quiet_play: 'true'
+
+###################################################################################################
+## Garage Climate - Low Temperature Notification Closed
+###################################################################################################
+  - id: garage_climate_low_temperature_notification_closed
+    alias: "[Garage Climate] Low Temperature Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: garage_low_temp
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: garage_low_temp
+
+##################################################################################################
+## Garage Climate - Low Temperature Alert Cancelled
+##################################################################################################
+  - id: garage_climate_low_temperature_alert_cancelled
+    alias: "[Garage Climate] Low Temperature Alert Cancelled"
+    description: "Dismiss notifications when garage low temperature alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.garage_low_temperature
+        to: 'off'
+        for:
+          minutes: 5
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_low_temp'
+
+##################################################################################################
+## Garage Climate - Low Temperature Alert Pause
+##################################################################################################
+  - id: garage_climate_low_temperature_alert_pause
+    alias: "[Garage Climate] Low Temperature Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'garage_low_temp_alert_pause'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_low_temp'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.garage_climate_low_temperature_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.garage_climate_low_temperature_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.garage_climate_low_temperature_alert

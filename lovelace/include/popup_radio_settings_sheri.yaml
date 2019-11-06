@@ -1,0 +1,23 @@
+action: call-service
+service: browser_mod.popup
+service_data:
+  deviceID: this
+  title: Sheri Radio
+  large: false
+  card:
+    type: entities
+    show_header_toggle: false
+    entities:
+      - entity: input_select.radio_station_sheri
+        name: Station
+      - entity: input_select.media_player_radio_sheri
+        name: Speaker
+      - entity: input_number.radio_volume_sheri
+        name: Volume
+      - entity: input_boolean.radio_enabled_sheri
+      - type: call-service
+        name: Play Sheri's Radio
+        service: script.play_radio
+        data:
+          preset: Sheri
+        action_name: PLAY

@@ -1,0 +1,21 @@
+###################################################################################################
+## High Temperature Threshold (degrees)
+###################################################################################################
+  weather_high_temperature_threshold:
+    name: High Temperature Threshold
+    icon: mdi:thermometer-lines
+    min: 0
+    max: 100
+    step: 5
+    unit_of_measurement: '°F'
+
+###################################################################################################
+## Low Temperature Threshold (degrees)
+###################################################################################################
+  weather_low_temperature_threshold:
+    name: Low Temperature Threshold
+    icon: mdi:thermometer-lines
+    min: 0
+    max: 70
+    step: 5
+    unit_of_measurement: '°F'

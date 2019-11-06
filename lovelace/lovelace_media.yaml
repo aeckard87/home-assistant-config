@@ -1,0 +1,115 @@
+title: Media
+icon: mdi:library-music
+path: media
+cards:
+
+  - !include /config/lovelace/include/media_players_entities_card.yaml
+
+  - type: vertical-stack
+    cards:
+
+      - !include /config/lovelace/include/radio_glance_card.yaml
+
+    #DISABLED until I figure out referrer error
+    # - type: custom:spotify-card
+    #   client_id: !secret SPOTIFY_CLIENTID
+    #   limit: 20
+    #   device: Dining Room Speaker
+
+    #DISABLED pointles without the spotify card
+    # - type: 'custom:mini-media-player'
+    #   entity: media_player.spotify
+    #   name: Spotify
+    #   icon: 'mdi:google-home'
+    #   more_info: true
+    #   group: true
+    #   artwork: full-cover
+    #   source: full
+    #   info: scroll
+    #   volume_stateless: false
+    #   max_volume: 100
+    #   replace_mute: false
+    #   toggle_power: true
+    #   idle_view: when_idle
+
+  - type: conditional
+    conditions:
+      - entity: input_boolean.advanced_view
+        state: 'on'
+    card:
+      type: vertical-stack
+      cards:
+        - type: entities
+          title: Notification Settings
+          show_header_toggle: false
+          entities:
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.silent_mode
+              filter:
+                include:
+                  - entity_id: "automation.*_alert"
+
+            - type: custom:fold-entity-row
+              head: input_boolean.announcement_playing
+              entities:
+                - entity: input_select.announcement_media_player
+                - entity: input_number.announcement_volume
+                - entity: input_number.night_announcement_volume
+
+            - type: custom:fold-entity-row
+              head: binary_sensor.quiet_hours_active
+              entities:
+                - entity: input_boolean.enable_quiet_hours
+                - entity: input_number.quiet_hours_volume
+                - entity: input_datetime.quiet_hours_start
+                - entity: input_datetime.quiet_hours_end
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.notification_automation
+              filter:
+                include:
+                  - entity_id: "automation.notification_*"
+
+        - type: entities
+          title: Media Settings
+          show_header_toggle: false
+          entities:
+            - entity: binary_sensor.media_player_alert
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.media_player_automation
+              filter:
+                include:
+                  - entity_id: "automation.media_player_*"
+
+            - !include /config/lovelace/include/radio_settings_entity.yaml
+            - !include /config/lovelace/include/morning_radio_settings_entity.yaml
+            - !include /config/lovelace/include/night_radio_settings_entity.yaml
+            - !include /config/lovelace/include/jason_radio_settings_entity.yaml
+            - !include /config/lovelace/include/radio_settings_sheri_entity.yaml
+
+            - type: custom:fold-entity-row
+              head:
+                type: custom:dummy-entity-row
+                entity: binary_sensor.silent_mode
+                icon: mdi:volume-high
+                name: Media Player Volumes
+              entities:
+                - entity: input_number.all_speakers_volume
+                - entity: input_number.broadcast_speakers_volume
+                - entity: input_number.music_speakers_volume
+                - entity: input_number.dining_room_speaker_volume
+                - entity: input_number.bedroom_speaker_volume
+                - entity: input_number.living_room_tv_volume
+                - entity: input_number.bedroom_tv_volume
+                - entity: input_number.deck_tv_volume
+                - entity: input_number.jlaptop_volume
+                - entity: input_number.jwork_volume
+                - entity: input_number.jphone_volume
+                - entity: input_number.sphone_volume

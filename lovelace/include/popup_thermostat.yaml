@@ -1,0 +1,9 @@
+action: call-service
+service: browser_mod.popup #ISSUE
+service_data:
+  deviceID: this
+  title: Upstairs Thermostat
+  large: false
+  card:
+    type: thermostat
+    entity: climate.upstairs_thermostat

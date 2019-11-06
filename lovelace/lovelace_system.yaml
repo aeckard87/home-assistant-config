@@ -1,0 +1,415 @@
+title: System
+icon: mdi:desktop-classic
+path: system
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - type: entity-filter
+        show_empty: false
+        state_filter:
+          - 'on'
+        card:
+          columns: 3
+          title: System Alerts
+          type: glance
+        entities:
+          - entity: binary_sensor.device_connection_alert
+            name: Connection
+          - entity: binary_sensor.processor_use_alert
+            name: Processor
+          - entity: binary_sensor.memory_use_alert
+            name: Memory
+          - entity: binary_sensor.disk_usage_alert
+            name: Disk Use
+          - entity: binary_sensor.rpi_power_alert
+            name: RPi Power
+          - entity: binary_sensor.cpu_temperature_alert
+            name: RPi CPU Temp
+          - entity: binary_sensor.battery_status_alert
+            name: Battery
+          - entity: binary_sensor.manual_mode
+            name: Manual Mode
+            hold_action:
+              action: call-service
+              service: input_boolean.toggle
+              service_data:
+                entity_id: input_boolean.manual_mode
+
+      - type: horizontal-stack
+        cards:
+
+          - type: custom:bar-card
+            entity: sensor.processor_use
+            title: CPU
+            align: center-split
+            unit_of_measurement: '%'
+            min: 0
+            max: 100
+            target: 15
+            height: 140px
+            width: 60px
+            direction: up
+            title_position: bottom
+            indicator: auto-vertical
+            show_icon: true
+            icon: mdi:developer-board
+            severity:
+            - value: 10
+              color: '#009933'
+            - value: 30
+              color: '#ffff66'
+            - value: 40
+              color: '#ff3300'
+            - value: 100
+              color: '#770f0f'
+
+          - type: custom:bar-card
+            entity: sensor.memory_use_percent
+            title: Memory
+            align: center-split
+            unit_of_measurement: '%'
+            min: 0
+            max: 100
+            target: 25
+            height: 140px
+            width: 60px
+            direction: up
+            title_position: bottom
+            indicator: auto-vertical
+            show_icon: true
+            icon: mdi:developer-board
+            severity:
+            - value: 0
+              color: '#ffffff'
+            - value: 20
+              color: '#009933'
+            - value: 40
+              color: '#ffff66'
+            - value: 60
+              color: '#ff3300'
+            - value: 100
+              color: '#770f0f'
+
+          - type: custom:bar-card
+            entity: sensor.rpi_cpu_temperature
+            title: CPU Temp
+            align: center-split
+            unit_of_measurement: '°C'
+            min: 0
+            max: 100
+            target: 55
+            height: 140px
+            width: 60px
+            direction: up
+            title_position: bottom
+            indicator: auto-vertical
+            show_icon: true
+            icon: mdi:thermometer
+            severity:
+            - value: 60
+              color: '#228B22'
+            - value: 65
+              color: '#DAA520'
+            - value: 70
+              color: '#FF8C00'
+            - value: 75
+              color: '#FF0000'
+            - value: 80
+              color: '#DC143C'
+            - value: 85
+              color: '#8B0000'
+
+          - type: custom:bar-card
+            entity: sensor.disk_use_percent_home
+            title: Disk
+            align: center-split
+            unit_of_measurement: '%'
+            min: 0
+            max: 100
+            target: 60
+            height: 140px
+            width: 60px
+            direction: up
+            title_position: bottom
+            indicator: auto-vertical
+            show_icon: true
+            icon: mdi:developer-board
+            severity:
+            - value: 40
+              color: '#009933'
+            - value: 60
+              color: '#ffff66'
+            - value: 70
+              color: '#ff3300'
+            - value: 100
+              color: '#770f0f'
+
+      - type: horizontal-stack
+        cards:
+
+          - type: custom:mini-graph-card
+            name: Processor Use
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            color_thresholds:
+              - value: 10
+                color: '#009933'
+              - value: 30
+                color: '#ffff66'
+              - value: 40
+                color: '#ff3300'
+              - value: 100
+                color: '#770f0f'
+            entities:
+              - entity: sensor.processor_use
+
+          - type: custom:mini-graph-card
+            name: Memory Use
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            lower_bound: 0
+            upper_bound: 100
+            color_thresholds:
+              - value: 20
+                color: '#009933'
+              - value: 40
+                color: '#ffff66'
+              - value: 60
+                color: '#ff3300'
+              - value: 100
+                color: '#770f0f'
+            entities:
+              - entity: sensor.memory_use_percent
+
+          - type: custom:mini-graph-card
+            name: CPU Temperature
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            lower_bound: 0
+            upper_bound: 100
+            color_thresholds:
+              - value: 0
+                color: '#009933'
+              - value: 60
+                color: '#228B22'
+              - value: 65
+                color: '#DAA520'
+              - value: 70
+                color: '#FF8C00'
+              - value: 75
+                color: '#FF0000'
+              - value: 80
+                color: '#DC143C'
+              - value: 85
+                color: '#8B0000'
+            entities:
+              - entity: sensor.rpi_cpu_temperature
+
+  - type: entities
+    title: System Settings
+    show_header_toggle: false
+    entities:
+      - entity: input_boolean.manual_mode
+      - entity: input_boolean.advanced_view
+
+  - type: conditional
+    conditions:
+      - entity: input_boolean.advanced_view
+        state: 'on'
+    card:
+      type: entities
+      show_header_toggle: false
+      entities:
+        - type: custom:auto-entities
+          card:
+            type: custom:fold-entity-row
+            head: input_boolean.system_automation
+          filter:
+            include:
+              - entity_id: "automation.system_*"
+
+  - type: entities
+    title: Hassio Monitor
+    show_header_toggle: false
+    entities:
+      - entity: binary_sensor.hassio_connected
+      - entity: sensor.hassio_version
+      - entity: binary_sensor.updater
+
+      - entity: sensor.uptime
+        type: "custom:secondaryinfo-entity-row"
+        secondary_info: "<b style='color:red'>[[ sensor.ha_uptime ]]</b>"
+
+      - entity: input_select.log_level
+
+      - type: custom:fold-entity-row
+        head: sensor.home_assistant_v2_db
+        name: Hassio Database
+        entities:
+          - type: call-service
+            service: script.purge_hassio_database
+            name: Purge Hassio Database
+            icon: mdi:database-refresh
+            action_name: PURGE
+
+      - type: custom:fold-entity-row
+        head: sensor.tts
+        name: TTS Cache Folder
+        entities:
+          - type: call-service
+            service: shell_command.haclean_tts
+            icon: mdi:database-refresh
+            name: Purge TTS Cache
+            action_name: PURGE
+
+      - type: custom:fold-entity-row
+        head: sensor.capture
+        name: Motion Capture Folder
+        entities:
+          - type: call-service
+            service: shell_command.haclean_capture
+            icon: mdi:database-refresh
+            name: Purge Motion Capture
+            action_name: PURGE
+
+      - type: custom:fold-entity-row
+        head: input_boolean.node_red
+        name: Enable Node Red Watchdog
+        icon: mdi:alpha-n-circle
+        entities:
+          - entity: sensor.node_red
+          - entity: script.nodered_restart
+
+  - type: entities
+    title: Server Monitor
+    show_header_toggle: false
+    entities:
+      - entity: sensor.rpi_uptime
+        type: "custom:secondaryinfo-entity-row"
+        secondary_info: "<b style='color:red'>[[ sensor.last_boot_date_time ]]</b>"
+      - entity: sensor.rpi_power_status
+      - entity: sensor.rpi_cpu_temperature
+      - entity: sensor.ipv4_address_eth0
+        name: IPV4
+      - entity: sensor.ipv6_address_eth0
+        name: IPV6
+
+  - type: entities
+    title: Network Monitor #TODO - work on this
+    show_header_toggle: false
+    entities:
+      - entity: binary_sensor.wan
+      - entity: sensor.myip
+      - entity: sensor.ssl_certificate_expiry
+
+      - type: custom:auto-entities
+        card:
+          type: custom:fold-entity-row
+          head: sensor.online_devices
+        filter:
+          include:
+            - group: group.all_devices
+              options:
+                secondary_info: last-changed
+          exclude:
+            #- state: Away
+            #- state: unknown
+            #- state: not_home
+            #- domain: person
+            - name: "Bluetooth *"
+
+  - type: entities
+    title: Device Monitor
+    show_header_toggle: false
+    entities:
+      - type: custom:fold-entity-row
+        head: binary_sensor.device_connection
+        group_config:
+          secondary_info: last-changed
+        items:
+          - entity: binary_sensor.hassio_connected
+          - entity: binary_sensor.wan
+          - entity: binary_sensor.house_alarm_connected
+          - entity: binary_sensor.upstairs_thermostat_connected
+          - entity: binary_sensor.upstairs_protect_connected
+          - entity: binary_sensor.downstairs_protect_connected
+          - entity: binary_sensor.lutron_connected
+          - entity: binary_sensor.garage_door_connected
+          - entity: binary_sensor.work_calendar_connected
+          - entity: binary_sensor.household_calendar_connected
+          - entity: binary_sensor.traffic_sensor_connected
+          - entity: binary_sensor.hyrdrawise_connected
+          - entity: binary_sensor.pollen_connected
+          - entity: binary_sensor.dark_sky_connected
+          - entity: binary_sensor.openuv_connected
+          - entity: binary_sensor.waqi_connected
+          - entity: binary_sensor.noaa_connected
+          - entity: binary_sensor.envcan_connected
+
+      - type: custom:fold-entity-row
+        head: binary_sensor.zwave_status
+        group_config:
+          secondary_info: last-changed
+        items:
+          - type: custom:text-divider-row
+            text: Z-Wave Devices
+
+          - type: custom:button-entity-row
+            buttons:
+              - icon: mdi:medical-bag
+                icon_color: red
+                name: 'HEAL'
+                service: zwave.heal_network
+
+              - icon: mdi:restart
+                icon_color: blue
+                name: RESET
+                service: zwave.soft_reset
+
+          - entity: zwave.zwave_hub
+          - entity: zwave.upstairs_bedroom_fan
+          - entity: zwave.office_fan
+          - entity: zwave.side_entrance_sensor
+          - entity: zwave.upstairs_bathroom_sensor
+
+      - type: custom:fold-entity-row
+        head: binary_sensor.battery_status_alert
+        group_config:
+          secondary_info: last-changed
+        items:
+          - entity: input_number.battery_alert_threshold
+          - entity: sensor.upstairs_nest_protect_battery_health
+          - entity: sensor.downstairs_nest_protect_battery_health
+          - entity: sensor.side_entrance_sensor_battery_level
+          - entity: sensor.upstairs_bathroom_sensor_battery_level
+
+  - type: history-graph
+    title: System Alert History
+    hours_to_show: 72
+    refresh_interval: 0
+    entities:
+      - entity: binary_sensor.device_connection_alert
+        name: Device
+      - entity: binary_sensor.processor_use_alert
+        name: CPU Use
+      - entity: binary_sensor.memory_use_alert
+        name: Mem Use
+      - entity: binary_sensor.disk_usage_alert
+        name: Disk Use
+      - entity: binary_sensor.rpi_power_alert
+        name: RPi Power
+      - entity: binary_sensor.cpu_temperature_alert
+        name: CPU Temp
+      - entity: binary_sensor.battery_status_alert
+        name: Battery

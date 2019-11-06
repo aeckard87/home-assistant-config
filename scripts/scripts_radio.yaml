@@ -1,0 +1,497 @@
+##################################################################################################
+## Play Radio
+## preset:  Morning, Night, Jason, Sheri
+##################################################################################################
+  play_radio:
+    sequence:
+      - condition: and
+        conditions:
+
+          # don't run if silent mode active
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # don't run if alert is active
+          - condition: state
+            entity_id: binary_sensor.house_alarm_active_alert
+            state: 'off'
+
+      # wait for announcement to finish
+      # radio automations will turn back on if announcement not finished
+      - wait_template: "{{ is_state('input_boolean.announcement_playing', 'off') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # disable radio/media player automations to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: &radio_automations group.radio_automations
+
+      # cancel radio timers
+      - service: timer.cancel
+        entity_id:
+          - timer.radio_morning_volume
+          - timer.radio_sleep
+
+      # set radio station to passed value
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.radio_station
+          option: >-
+            {% if preset == "Jason" %}{{ states('input_select.radio_station_jason') }}
+            {% elif preset == "Sheri" %}{{ states('input_select.radio_station_sheri') }}
+            {% elif preset == "Morning" %}{{ states('input_select.radio_station_morning') }}
+            {% elif preset == "Night" %}{{ states('input_select.radio_station_night') }}
+            {% else %}{{ states('input_select.radio_station') }}
+            {% endif %}
+
+      # set media player to passed value
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.media_player_radio
+          option: >-
+            {% if preset == "Jason" %}{{ states('input_select.media_player_radio_jason') }}
+            {% elif preset == "Sheri" %}{{ states('input_select.media_player_radio_sheri') }}
+            {% elif preset == "Morning" %}{{ states('input_select.media_player_radio_morning') }}
+            {% elif preset == "Night" %}{{ states('input_select.media_player_radio_night') }}
+            {% else %}{{ states('input_select.media_player_radio') }}
+            {% endif %}
+
+      # set volume input_number to passed value
+      # if in night mode and requested volume > night announcement volume use night announcement volume
+      # volume is float decimal, input_number is int percent
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.radio_volume
+          value: >-
+            {% if preset == "Jason" %}{% set volume = states('input_number.radio_volume_jason') %}
+            {% elif preset == "Sheri" %}{% set volume = states('input_number.radio_volume_sheri') %}
+            {% elif preset == "Morning" %}{% set volume = states('input_number.radio_volume_wake') %}
+            {% elif preset == "Night" %}{% set volume = states('input_number.radio_volume_night') %}
+            {% else %}{% set volume = states('input_number.radio_volume') %}
+            {% endif %}
+
+            {% if is_state('sensor.occupancy_mode', 'Night') %}
+              {% if volume | int > states('input_number.night_announcement_volume') | int %}{{ states('input_number.night_announcement_volume') | int }}
+              {% else %}{{ volume | int }}
+              {% endif %}
+            {% else %}{{ volume | int }}
+            {% endif %}
+
+      # turn radio power button on to keep in sync if called by script
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.radio_on
+
+      # if morning preset boolean on and preset is not morning turn it off
+      - service_template: >-
+          {% if is_state('input_boolean.radio_morning_preset','on') and not preset == 'Morning'  %}
+            input_boolean.turn_off
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_boolean.radio_morning_preset
+
+      # if night preset boolean on and preset is not night turn it off
+      - service_template: >-
+          {% if is_state('input_boolean.radio_night_preset','on') and not preset == 'Night'  %}
+            input_boolean.turn_off
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_boolean.radio_night_preset
+
+      # update media player sensors because we just changed the values
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.alarm_clock_media_player
+          - sensor.radio_media_player
+          - sensor.radio_media_player_state
+
+      # run script.radio_off to reset radio booleans, disabled automations if alarm clock is active and same media player as radio
+      - service_template: >-
+          {% if is_state('input_boolean.alarm_clock_active','on') and ( states('sensor.radio_media_player') == states('sensor.alarm_clock_media_player') ) %}
+            script.radio_off
+          {% else %}
+            script.null_script
+          {% endif %}
+
+      # don't continue if alarm clock is active and same media player as radio
+      - condition: template
+        value_template: >-
+          {% if is_state('input_boolean.alarm_clock_active','on') %}
+            {{ not states('sensor.radio_media_player') == states('sensor.alarm_clock_media_player') }}
+          {% else %}
+            true
+          {% endif %}
+
+      # run script.radio_off to reset radio booleans, disabled automations if radio media player 'None' or is unavailable
+      - service_template: >-
+          {% if is_state('sensor.radio_media_player','unknown')
+               or is_state('sensor.radio_media_player','unavailable')
+               or is_state('sensor.radio_media_player','')
+               or is_state('sensor.radio_media_player','None') %} script.radio_off
+          {% else %} script.null_script
+          {% endif %}
+
+      # only continue if selected media player is available
+      - condition: template
+        value_template: >-
+           {{ not is_state('sensor.radio_media_player','unknown')
+               and not is_state('sensor.radio_media_player','unavailable')
+               and not is_state('sensor.radio_media_player','')
+               and not is_state('sensor.radio_media_player','None') }}
+
+      # turn off current active radio media player so we don't leave it stranded on
+      # this is previous player if radio was on (input_text.active_radio_media_player)
+      - service: script.active_radio_media_player_off
+
+      # turn on radio media player
+      - service: media_player.turn_on
+        data_template:
+          entity_id: "{{ states('sensor.radio_media_player') }}"
+
+      # set radio media player volume - convert int percent to float decimal
+      - service: media_player.volume_set
+        data_template:
+          entity_id: "{{ states('sensor.radio_media_player') }}"
+          volume_level: "{{ states('input_number.radio_volume') | float / 100 }}"
+
+      # play selected media
+      - service: media_player.play_media
+        data_template:
+          entity_id: "{{ states('sensor.radio_media_player') }}"
+          media_content_id: >
+            {% if is_state("input_select.radio_station", "Magic 80s Florida") %} http://airspectrum.cdnstream1.com:8018/1606_192
+            {% elif is_state("input_select.radio_station", "Smooth Jazz Florida") %} http://us4.internet-radio.com:8266/stream
+            {% elif is_state("input_select.radio_station", "WCSX Classic - Rock") %} http://17643.live.streamtheworld.com:3690/WCSXFM_SC
+            {% elif is_state("input_select.radio_station", "WRIF - Rock") %} http://18093.live.streamtheworld.com:3690/WRIFFMMOBILE_SC
+            {% elif is_state("input_select.radio_station", "WDRQ Nash FM - Country") %} http://18053.live.streamtheworld.com:3690/WDRQFMAAC_SC
+            {% elif is_state("input_select.radio_station", "WYCD Detroit - Country") %} http://17603.live.streamtheworld.com:80/WYCDFMAAC_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Smooth Jazz") %} http://20703.live.streamtheworld.com:3690/977_SMOOJAZZ_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Oldies") %} http://19353.live.streamtheworld.com/977_OLDIES_SC
+            {% elif is_state("input_select.radio_station", "977 FM - 1990s") %} http://19353.live.streamtheworld.com:3690/977_90_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Alternative Rock") %} http://20703.live.streamtheworld.com:3690/977_ALTERN_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Classic Rock") %} http://20703.live.streamtheworld.com:3690/977_CLASSROCK_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Country") %} http://20703.live.streamtheworld.com:3690/977_COUNTRY_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Mix") %}http://19353.live.streamtheworld.com/977_MIX_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Smooth Jazz") %}http://19763.live.streamtheworld.com/977_SMOOJAZZ_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Jamz") %}http://19763.live.streamtheworld.com:3690/977_JAMZ_SC
+            {% elif is_state("input_select.radio_station", "977 FM - Hits") %}http://19763.live.streamtheworld.com/977_HITS_SC
+            {% elif is_state("input_select.radio_station", "100 Hitz - Urban") %} http://173.244.215.162:8180/;stream
+            {% elif is_state("input_select.radio_station", "110 FM - Classic Rock") %} http://66.85.88.18:5116/
+            {% elif is_state("input_select.radio_station", "181 FM - 90s Dance") %} http://listen.181fm.com/181-90sdance_128k.mp3
+            {% elif is_state("input_select.radio_station", "181 FM - The Mix") %} http://listen.181fm.com/181-themix_128k.mp3
+            {% endif %}
+          media_content_type: 'audio/mp4'
+
+      # turn on update radio sensor automation for wait template
+      - service: automation.turn_on
+        entity_id: automation.radio_sensors_update
+
+      # wait for radio media player to begin playing
+      - wait_template: "{{ states('sensor.radio_media_player_state') == 'playing' }}"
+        timeout: '00:00:10'
+        continue_on_timeout: true
+
+      # populate active media player input text
+      # don't populate until state is playing (hopefully)
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.active_radio_media_player
+          value: "{{ states('sensor.radio_media_player') }}"
+
+      # turn off radio sensor update automation
+      - service: automation.turn_off
+        entity_id: automation.radio_sensors_update
+
+      # turn disabled automation back on
+      - service: automation.turn_on
+        entity_id: *radio_automations
+
+##################################################################################################
+## Pause Radio
+##################################################################################################
+  pause_radio:
+    sequence:
+      # only run if radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+      # turn off radio paused automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.radio_hassio_paused
+
+      # turn pause boolean on, still off if called from auto pause
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.radio_paused
+
+     # pause if active media player is playing
+      - service_template: >-
+         {% if is_state(states('sensor.active_radio_media_player'), 'playing') %} media_player.media_pause
+         {% else %} script.null_script
+         {% endif %}
+        data_template:
+          entity_id: "{{ states('sensor.active_radio_media_player') }}"
+
+      # turn on radio sensor update automation so wait template updates
+      - service: automation.turn_on
+        entity_id: automation.radio_sensors_update
+
+      # wait until media player paused before turning automations back on
+      - wait_template: "{{ states('sensor.radio_media_player_state') == 'paused' }}"
+        timeout: '00:00:05'
+        continue_on_timeout: true
+
+      # turn off radio sensor update automation
+      - service: automation.turn_off
+        entity_id: automation.radio_sensors_update
+
+      # turn disabled automations back on
+      # don't turn back on if announcement playing, turn back on when announcement finished
+      - service_template: >-
+          {% if is_state('input_boolean.announcement_playing','off') %} automation.turn_on
+          {% else %} script.null_script
+          {% endif %}
+        entity_id: automation.radio_hassio_paused
+
+##################################################################################################
+## Resume Radio
+##################################################################################################
+  resume_radio:
+    sequence:
+      # only run if radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+      # don't run if alarm is active
+      - condition: state
+        entity_id: binary_sensor.house_alarm_active_alert
+        state: 'off'
+
+      # wait for any announcements to finish playing
+      - wait_template: "{{ is_state('input_boolean.announcement_playing','off') }}"
+        timeout: '0:01:00'
+        continue_on_timeout: true
+
+      # update sensor.radio_media_player_state for condition test
+      - service: homeassistant.update_entity
+        entity_id: sensor.radio_media_player_state
+
+      # don't run if active radio is already playing
+      - condition: template
+        value_template: "{{ not states(states('sensor.active_radio_media_player')) == 'playing' }}"
+
+      # turn off radio resumed automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.radio_hassio_resumed
+
+      # turn off radio pause boolean in case called from script
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.radio_paused
+
+      # wait until state changes have registered
+      - wait_template: "{{ is_state('input_boolean.radio_paused', 'off') }}"
+        timeout: '00:00:05'
+        continue_on_timeout: true
+
+      # turn radio resumed automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_hassio_resumed
+
+      # must resume radio play here, pause automation is turned off
+      - service: script.play_radio
+
+##################################################################################################
+## Radio Off
+# - turn off radio, stop timers
+##################################################################################################
+  radio_off:
+    sequence:
+      # turn off radio changed automations to avoid recursive calls
+      # include radio_hassio_resumed if radio paused boolean gets turned off
+      - service: automation.turn_off
+        entity_id: *radio_automations
+
+      # make sure radio sensors automation isn't left on if we stop alarm_clock_play mid script
+      # automation will never turn off if not stopped here
+      - service: automation.turn_off
+        entity_id: automation.radio_sensors_update
+
+      # turn off active media player
+      - service: script.active_radio_media_player_off
+
+      # cancel radio timers
+      - service: timer.cancel
+        entity_id:
+          - timer.radio_morning_volume
+          - timer.radio_sleep
+
+      # turn radio, radio paused input boolean off
+      - service: input_boolean.turn_off
+        entity_id:
+          - input_boolean.radio_on
+          - input_boolean.radio_paused
+          - input_boolean.radio_morning_preset
+          - input_boolean.radio_night_preset
+
+      # wait until state changes have registered
+      - wait_template: "{{ is_state('input_boolean.radio_on', 'off') and is_state('input_boolean.radio_paused', 'off') }}"
+        timeout: '00:00:05'
+        continue_on_timeout: true
+
+      # turn on radio sensor update automation so wait template updates
+      - service: automation.turn_on
+        entity_id: automation.radio_sensors_update
+
+     # wait until media player state change has registered
+      - wait_template: >-
+          {{ is_state(states('sensor.active_radio_media_player'), 'off' )
+            or is_state(states('sensor.active_radio_media_player'), 'idle' )
+            or is_state(states('sensor.active_radio_media_player'), 'unavailable' )
+            or is_state(states('sensor.active_radio_media_player'), 'unknown' ) }}
+        timeout: '00:00:05'
+        continue_on_timeout: true
+
+      # clear active media player input text
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.active_radio_media_player
+          value: ''
+
+      # turn off radio sensor update automation
+      - service: automation.turn_off
+        entity_id: automation.radio_sensors_update
+
+      # turn disabled automations back on
+      - service: automation.turn_on
+        entity_id: *radio_automations
+
+##################################################################################################
+## Adjust Radio Volume
+##################################################################################################
+  adjust_radio_volume:
+    sequence:
+      # don't run if silent mode active
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+      # update media player sensors
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.radio_media_player
+          - sensor.radio_media_player_state
+
+      # set media player volume - convert int percent to float decimal
+      - service: media_player.volume_set
+        data_template:
+          entity_id: "{{ states('sensor.radio_media_player') }}"
+          volume_level: "{{ new_volume | float / 100 }}"
+
+##################################################################################################
+## Active Radio Media Player Off
+## - turn current active media player off
+## - browser media players won't turn off so pause first
+## - can't turn all media players off user might have Spotify, Neflix etc. on
+##################################################################################################
+  active_radio_media_player_off:
+    sequence:
+      # check to see if input_text populated before trying to turn off media player
+      - condition: template
+        value_template: "{{ not is_state('input_text.active_radio_media_player','') }}"
+
+     #BUGFIX pause if active media player is playing (broswer players don't turn off)
+      - service_template: >-
+         {% if is_state(states('input_text.active_radio_media_player'), 'playing') %} media_player.media_pause
+         {% else %} script.null_script
+         {% endif %}
+        data_template:
+          entity_id: "{{ states('input_text.active_radio_media_player') }}"
+
+      # turn off the active media player
+      - service: media_player.turn_off
+        data_template:
+          entity_id: "{{ states('input_text.active_radio_media_player') }}"
+
+##################################################################################################
+## Play Morning Radio
+## - play morning radio preset with volume increase timer
+#IDEA - gradually turn up volume - see morning lights
+##################################################################################################
+  play_radio_morning:
+    sequence:
+      # only run if morning radio enabled
+      - condition: state
+        entity_id: input_boolean.radio_enabled_morning
+        state: 'on'
+
+      # play morning preset radio
+      - service: script.play_radio
+        data:
+          preset: 'Morning'
+
+      # wait for script.play_radio to finish or we kill volume timer in script
+      - wait_template: "{{ is_state('script.play_radio','off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # turn off morning radio automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.radio_morning_preset_on
+
+      # turn morning radio boolean on
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.radio_morning_preset
+
+      # turn night radio automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_morning_preset_on
+
+      # start radio morning volume timer
+      - service: timer.start
+        data_template:
+          entity_id: timer.radio_morning_volume
+          duration: '00:{{ states.input_number.morning_radio_volume_delay.state | int }}:00'
+
+##################################################################################################
+## Play Night Radio
+## - play night radio preset with sleep timer
+##################################################################################################
+  play_radio_night:
+    sequence:
+      # only run if night radio enabled
+      - condition: state
+        entity_id: input_boolean.radio_enabled_night
+        state: 'on'
+
+      # play sleep preset radio
+      - service: script.play_radio
+        data:
+          preset: 'Night'
+
+      # wait for script.play_radio to finish so we don't kill timer
+      - wait_template: "{{ is_state('script.play_radio','off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # start radio sleep timer
+      - service: timer.start
+        data_template:
+          entity_id: timer.radio_sleep
+          duration: '00:{{ states.input_number.radio_sleep_time.state | int }}'
+
+      # turn off night radio automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.radio_night_preset_on
+
+      # turn night radio boolean on
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.radio_night_preset
+
+      # turn night radio automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_night_preset_on

@@ -1,0 +1,21 @@
+###################################################################################################
+## Template Binary Sensors
+###################################################################################################
+  - platform: template
+    sensors:
+
+###################################################################################################
+## Media Player Alert
+## - alarm/radio/announcement media player offline
+## - check if announcement media player set to None, can't use sensor - state is blank for None
+##   and also if media player doesn't exist (broswer players)
+###################################################################################################
+      media_player_alert:
+        friendly_name: Media Player Alert
+        icon_template: mdi:monitor-speaker-off
+        device_class: problem
+        value_template: >-
+          {{ ( ( is_state('sensor.announcement_media_player_state','unavailable') or is_state('sensor.announcement_media_player_state','unknown') )
+              and not is_state('input_select.announcement_media_player','None') )
+            or is_state('sensor.alarm_clock_media_player_state','unavailable') or is_state('sensor.alarm_clock_media_player_state','unknown')
+            or is_state('sensor.radio_media_player_state','unavailable') or is_state('sensor.radio_media_player_state','unknown') }}

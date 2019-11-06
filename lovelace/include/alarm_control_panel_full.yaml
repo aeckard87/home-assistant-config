@@ -1,0 +1,7 @@
+type: alarm-panel
+name: House Alarm
+entity: alarm_control_panel.house
+states:
+  - arm_home
+  - arm_away
+  #- arm_night  #DISABLED - not compatible with MQTT alarm app

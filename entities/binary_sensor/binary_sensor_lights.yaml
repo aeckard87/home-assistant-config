@@ -1,0 +1,69 @@
+##################################################################################################
+## Template Binary Sensors
+##################################################################################################
+  - platform: template
+    sensors:
+
+##################################################################################################
+## Lutron Bridge Connected
+## test a lutron light for unknown status to see if lutron is connected
+##################################################################################################
+      lutron_connected:
+        friendly_name: Lutron Bridge
+        icon_template: >
+         {% if is_state('binary_sensor.lutron_connected','on') %} mdi:server-network
+         {% else %} mdi:server-network-off
+         {% endif %}
+        device_class: connectivity
+        value_template: "{{ not states('light.living_room_pot_lights') | lower == 'unknown' }}"
+
+##################################################################################################
+## Lights State
+## used for lovelace fold entity
+##################################################################################################
+      lights:
+        friendly_name: Lights
+        icon_template: mdi:lightbulb
+        value_template: >-
+          {% set entities = state_attr('group.lights', 'entity_id') %}
+          {% set active = states.light | selectattr('entity_id', 'in', entities)
+                                       | selectattr('state','eq','on')
+                                       | map(attribute='entity_id')
+                                       | list
+                                       | length %}
+          {{ active >= 1 }}
+
+##################################################################################################
+## Ceiling Fan In Use State
+## used for lovelace fold entity
+##################################################################################################
+      lights_in_use:
+        friendly_name: Lights In Use
+        icon_template: mdi:light-switch
+        value_template: >-
+          {% set entities = state_attr('group.lights_in_use', 'entity_id') %}
+          {% set active = states.input_boolean | selectattr('entity_id', 'in', entities)
+                                               | selectattr('state','eq','on')
+                                               | map(attribute='entity_id')
+                                               | list
+                                               | length %}
+          {{ active >= 1 }}
+
+
+##################################################################################################
+## Allow Lights On
+## switch to allow lights to turn on by automation/script when if sun has set
+## https://www.home-assistant.io/cookbook/automation_sun/
+##################################################################################################
+      auto_light_on:
+        friendly_name: Auto Lights On
+        icon_template: mdi:lightbulb-on
+        value_template: >
+          {% if (states('sensor.sun_elevation') | float < states('input_number.lighting_on_sun_elevation') | int)
+            and (states('sensor.time') > '12:00')
+            or (states('sensor.sun_elevation') | float < states('input_number.lighting_off_sun_elevation') | int)
+            and (states('sensor.time') < '12:00') %}
+            true
+          {% else %}
+            false
+          {% endif %}

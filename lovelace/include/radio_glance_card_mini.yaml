@@ -1,0 +1,51 @@
+type: vertical-stack
+cards:
+  - type: picture-glance
+    entity: input_boolean.radio_on
+    image: /local/images/radio.jpg
+    tap_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.radio_on
+    hold_action: !include /config/lovelace/include/popup_radio_settings.yaml
+    entities:
+      - entity: input_boolean.radio_morning_preset
+        hold_action: !include /config/lovelace/include/popup_morning_radio_settings.yaml
+      - entity: input_boolean.radio_night_preset
+        hold_action: !include /config/lovelace/include/popup_night_radio_settings.yaml
+      - entity: input_boolean.radio_jason_preset
+        hold_action: !include /config/lovelace/include/popup_jason_radio_settings.yaml
+      - entity: input_boolean.radio_sheri_preset
+        hold_action: !include /config/lovelace/include/popup_radio_settings_sheri.yaml
+      - entity: input_boolean.radio_paused
+
+  # only show morning volume timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.radio_morning_volume
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.radio_morning_volume
+          name: Volume
+      style: |
+        ha-card {
+          font-size: 12px;
+        }
+
+  # only show sleep timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.radio_sleep
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.radio_sleep
+          name: Sleep
+      style: |
+        ha-card {
+          font-size: 12px;
+        }

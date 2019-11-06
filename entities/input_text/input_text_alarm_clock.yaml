@@ -1,0 +1,9 @@
+##################################################################################################
+## Active Alarm Clock Media Player
+## - store active alarm clock media player entity id for pause, stop etc.
+##################################################################################################
+  active_alarm_clock_media_player:
+    name: Active Alarm Clock Media Player
+    icon: mdi:speaker-wireless
+    initial: ''
+    max: 500

@@ -1,0 +1,56 @@
+###################################################################################################
+## Weather Report
+## - use | replace("<"," less than ") | replace(">","greater than") filter to prevent malformed SSML
+## - skip UV if risk level is low
+## - skip air quailty if risk level is good
+## - called in morning so quiet_play is true
+###################################################################################################
+  weather_report:
+    sequence:
+      # only run if dark sky component is connected
+      - condition: state
+        entity_id: binary_sensor.dark_sky_connected
+        state: 'on'
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play weather report announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: >-
+            It is currently {{ states('sensor.dark_sky_temperature') | replace("<"," less than ") | replace(">","greater than") }} degrees and {{ states('sensor.dark_sky_summary') | replace("<"," less than ") | replace(">","greater than") }}
+            It will be  {{ states('sensor.dark_sky_minutely_summary') | replace("<"," less than ") | replace(">","greater than") }}
+            Today will be {{ states('sensor.dark_sky_hourly_summary') | replace("<"," less than ") | replace(">","greater than") }}
+            The forcast calls for {{ states('sensor.dark_sky_daily_summary') | replace("<"," less than ") | replace(">","greater than") }}
+            {% if not is_state('sensor.current_uv_level', 'Low') and not states('sensor.current_uv_level') | lower == 'unknown' %}
+            The current UV risk is {{ states('sensor.current_uv_level') }}
+            {% endif %}
+            {% if not is_state('sensor.uv_max_level', 'Low') and not states('sensor.uv_max_level') | lower == 'unknown' %}
+             The forecasted UV risk for today is {{ states('sensor.uv_max_level') }}
+            {% endif %}
+            {% if not is_state('sensor.aqi_risk_level', 'Good') and not states('sensor.aqi_risk_level') | lower == 'unknown' %}
+            The current air quality index is {{ states('sensor.aqi_risk_level') }}
+            {% endif %}
+            Have a peachy day!
+          quiet_play: 'true'
+
+###################################################################################################
+## Turn Off Storm Alerts
+###################################################################################################
+  turn_off_storm_alerts:
+    sequence:
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.weather_local_storm_warning_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.weather_local_storm_warning_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.weather_local_storm_warning_alert

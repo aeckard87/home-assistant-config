@@ -1,0 +1,62 @@
+###################################################################################################
+## Delayed Automations
+## - automations delayed at startup
+###################################################################################################
+  delayed_automations:
+    icon: mdi:google-circles-group
+    control: hidden
+    all: true
+    entities:
+      - group.alarm_clock_delayed_automations
+      - group.radio_delayed_automations
+      - automation.alarm_clock_player_offline
+      - automation.radio_player_offline
+      - automation.notification_announcement_player_offline
+      - automation.automation_set_device_user_state
+      - automation.house_alarm_occupancy_mode_control
+      - automation.garage_door_lights
+      - automation.light_sun_is_up
+      - automation.light_sun_is_down
+      - automation.media_player_volume_change
+      - automation.presence_someone_arrives_home
+      - automation.presence_someone_leaves_home
+      - automation.schedule_auto_shift_select
+
+###################################################################################################
+## User State Contols
+## - used to reset user state controls (away_state, manual mode)
+###################################################################################################
+  user_state_controls:
+    icon: mdi:google-circles-group
+    control: hidden
+    all: true
+    entities:
+      - input_boolean.living_room_pot_lights
+      - input_boolean.office_fan
+      - input_boolean.upstairs_bedroom_fan
+      - input_boolean.upstairs_bathroom_fan
+
+###################################################################################################
+## Automation Contols
+## - used to show disabled automations in lovelace
+###################################################################################################
+  automation_controls:
+    icon: mdi:google-circles-group
+    control: hidden
+    all: true
+    entities:
+      - input_boolean.ceiling_fan_automation
+      - input_boolean.house_alarm_enabled
+      - input_boolean.house_climate_automation
+      - input_boolean.garage_climate_automation
+      - input_boolean.garage_door_automation
+      - input_boolean.light_automation
+      - input_boolean.media_player_automation
+      - input_boolean.notification_automation
+      - input_boolean.presence_automation
+      - input_boolean.schedule_automation
+      - input_boolean.sensor_automation
+      - input_boolean.radio_automation
+      - input_boolean.system_automation
+      - input_boolean.weather_automation
+      - input_boolean.vent_fan_automation

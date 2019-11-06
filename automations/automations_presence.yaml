@@ -1,0 +1,1092 @@
+###################################################################################################
+## Presence - Hassio Startup
+###################################################################################################
+  - id: presence_hassio_startup
+    alias: "[Presence] Hassio Startup"
+    description: "Sync home/away presence booleans at startup."
+    initial_state: 'on'
+
+    trigger:
+      # run when home assistant started
+      - platform: homeassistant
+        event: start
+
+    action:
+      # wait for delayed automations to turn on
+      - wait_template: "{{ is_state('group.delayed_automations', 'on') }}"
+        timeout: '00:05:00'
+        continue_on_timeout: true
+
+      # sync presence booleans to current state
+      # this fires even if override presence turned on at startup
+      - service: automation.trigger
+        entity_id:
+          - automation.presence_jason_home_away
+          - automation.presence_sheri_home_away
+
+##################################################################################################
+## Presence - Occupancy Mode Changed
+##################################################################################################
+  - id: presence_occupancy_mode_changed
+    alias: "[Presence] Occupancy Mode Changed"
+    description: "Trigger events/scripts when occupancy mode is changed."
+    initial_state: 'on'
+
+    trigger:
+      # run when occupancy mode has changed
+      # use input_select to avoid trigger on restart
+      - platform: state
+        entity_id: input_select.occupancy_mode
+
+    condition:
+      # only run if presence automation is enabled
+      - condition: state
+        entity_id: input_boolean.presence_automation
+        state: 'on'
+
+    action:
+      # wait for any prior away/night state script instance to finish
+      # required if occupancy mode switches quickly
+      - wait_template: "{{ is_state('script.away_state', 'off') and is_state('script.night_state', 'off') }}"
+        timeout: '0:03:00'
+        continue_on_timeout: false
+
+      # cancel active occupancy mode timers
+      - service: timer.cancel
+        entity_id: timer.goodnight
+
+      # reset occupancy mode to guest if nobody is home
+      - service_template: >-
+          {% if ( is_state('input_select.occupancy_mode', 'Home') or is_state('input_select.occupancy_mode', 'Night') )
+              and ( not is_state('binary_sensor.jason_home','on') and not is_state('binary_sensor.sheri_home','on') ) %}
+            input_select.select_option
+          {% else %}
+            script.null_script
+          {% endif %}
+        data:
+          entity_id: input_select.occupancy_mode
+          option: Guest
+
+      # run night/away script if required
+      - service_template: >-
+          {% if states('input_select.occupancy_mode') == 'Night' %}
+            script.night_state
+          {% elif states('input_select.occupancy_mode') == 'Away'
+            or states('input_select.occupancy_mode') == 'Vacation' %}
+            script.away_state
+          {% else %}
+            script.null_script
+          {% endif %}
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "The house is now in {{ states('input_select.occupancy_mode') }} mode."
+          quiet_play: 'false'
+
+##################################################################################################
+## Presence - Someone Arrives Home
+## - group.delayed_automations
+##################################################################################################
+  - id: presence_someone_arrives_home
+    alias: "[Presence] Someone Arrives Home"
+    description: "Detect who arrived home and run arrive home script."
+    initial_state: 'off'
+
+    trigger:
+      # need to use individual entities so we can determine who triggered automation
+      - platform: state
+        entity_id:
+          - binary_sensor.jason_home
+          - binary_sensor.sheri_home
+        to: 'on'
+
+      # account for guests arriving from away mode
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Guest'
+        from: 'Away'
+
+      # account for guests arriving from vacation mode
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Guest'
+        from: 'Vacation'
+
+      # account for guests arriving from override mode
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Guest'
+        from: 'Override'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # don't run if script already running (2 people arrived home at once)
+          - condition: state
+            entity_id: script.someone_arrives_home
+            state: 'off'
+
+    action:
+      # run arrive home script with appropriate person paramaeter
+      - service: script.someone_arrives_home
+        data_template:
+          person: >-
+            {% if trigger.entity_id == 'binary_sensor.jason_home' %} Jason
+            {% elif trigger.entity_id == 'binary_sensor.sheri_home' %} Sheri
+            {% elif trigger.entity_id == 'input_select.occupancy_mode' %} Guest
+            {% else %} Unknown
+            {% endif %}
+
+##################################################################################################
+## Presence - Someone Leaves Home
+## - group.delayed_automations
+##################################################################################################
+  - id: presence_someone_leaves_home
+    alias: "[Presence] Someone Leaves Home"
+    description: "Detect if someome leaves home then run leave home script."
+    initial_state: 'off'
+
+    trigger:
+      # use individual entities so we can determine who triggered automation
+      - platform: state
+        entity_id:
+          - binary_sensor.jason_home
+          - binary_sensor.sheri_home
+        to: 'off'
+
+      # account for guests leaving
+      # guest must arm alarm to change occupancy mode
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Away'
+        from: 'Guest'
+
+    condition:
+      # only run if presence automation is enabled
+      - condition: state
+        entity_id: input_boolean.presence_automation
+        state: 'on'
+
+    action:
+      # leave home script with person paramaeter
+      - service: script.someone_leaves_home
+        data_template:
+          person: >-
+            {% if trigger.entity_id == 'binary_sensor.jason_home' %} Jason
+            {% elif trigger.entity_id == 'binary_sensor.sheri_home' %} Sheri
+            {% elif trigger.entity_id == 'input_select.occupancy_mode' %} Guest
+            {% else %} Unknown
+            {% endif %}
+
+##################################################################################################
+## Presence - Jason Home Away
+##################################################################################################
+  - id: presence_jason_home_away
+    alias: "[Presence] Jason Home Away"
+    description: "Keep occupancy booleans in sync with current person state (home/away)."
+    initial_state: 'on'
+
+    trigger:
+      # run when jason comes home
+      - platform: state
+        entity_id: person.jason
+        to: 'home'
+
+      # run when jason leaves home
+      - platform: state
+        entity_id: person.jason
+        from: 'home'
+
+    condition:
+      # only run when presence override is off
+      - condition: state
+        entity_id: input_boolean.override_presence
+        state: 'off'
+
+    action:
+      # switch boolean to current state
+      - service_template: >-
+          {% if is_state('person.jason','home') %}
+            input_boolean.turn_on
+          {% else %}
+            input_boolean.turn_off
+          {% endif %}
+        data_template:
+          entity_id: input_boolean.jason_home
+
+##################################################################################################
+## Presence - Sheri Home Away
+##################################################################################################
+  - id: presence_sheri_home_away
+    alias: "[Presence] Sheri Home Away"
+    description: "Keep occupancy booleans in sync with current person state (home/away)"
+    initial_state: 'on'
+
+    trigger:
+      # run when sheri comes home
+      - platform: state
+        entity_id: person.sheri
+        to: 'home'
+
+      # run when sheri comes home
+      - platform: state
+        entity_id: person.sheri
+        from: 'home'
+
+    condition:
+      # only run when presence override is off
+      - condition: state
+        entity_id: input_boolean.override_presence
+        state: 'off'
+
+    action:
+      # switch boolean to current state
+      - service_template: >-
+          {% if is_state('person.sheri','home') %}
+            input_boolean.turn_on
+          {% else %}
+            input_boolean.turn_off
+          {% endif %}
+        data_template:
+          entity_id: input_boolean.sheri_home
+
+##################################################################################################
+## Presence - Override Turned Off
+##################################################################################################
+  - id: presence_override_turned_off
+    alias: "[Presence] Override Turned Off"
+    description: "Reset presence override booleans to actual state when override turned off."
+    initial_state: 'on'
+
+    trigger:
+      # run when override boolean is turned off
+      - platform: state
+        entity_id: input_boolean.override_presence
+        to: 'off'
+
+    action:
+      # sync presence booleans to current state
+      - service: automation.trigger
+        entity_id:
+          - automation.presence_jason_home_away
+          - automation.presence_sheri_home_away
+
+##################################################################################################
+## Presence - Jason Update Phone Connected
+##################################################################################################
+  - id: presence_jason_update_phone_connected
+    alias: "[Presence] Jason Update Phone Connected"
+    description: "Automation to update phone connected sensor at regular intervals."
+    initial_state: 'on'
+
+    trigger:
+      # run automation every 5 minutes
+      - platform: time_pattern
+        minutes: '/5'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode','Vacation') }}"
+
+          - condition: and
+            conditions:
+              # only run when phone is not on network
+              - condition: state
+                entity_id: device_tracker.jphone_ping
+                state: 'not_home'
+
+              # only run if phone is not connected to bluetooth
+              - condition: state
+                entity_id: device_tracker.jphone_bt
+                state: 'not_home'
+
+    action:
+      # update phone connected sensor
+      - service: homeassistant.update_entity
+        entity_id: binary_sensor.jason_phone_connected
+
+##################################################################################################
+## Presence - Sheri Update Phone Connected
+##################################################################################################
+  - id: presence_sheri_update_phone_connected
+    alias: "[Presence] Sheri Update Phone Connected"
+    description: "Automation to update phone connected sensor at regular intervals."
+    initial_state: 'on'
+
+    trigger:
+      # run automation every 5 minutes
+      - platform: time_pattern
+        minutes: '/5'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode','Vacation') }}"
+
+          - condition: and
+            conditions:
+              # only run when phone is not on network
+              - condition: state
+                entity_id: device_tracker.sphone_ping
+                state: 'not_home'
+
+              # only run if phone is not connected to bluetooth
+              - condition: state
+                entity_id: device_tracker.sphone_bt
+                state: 'not_home'
+
+    action:
+      # update phone connected sensor
+      - service: homeassistant.update_entity
+        entity_id: binary_sensor.sheri_phone_connected
+
+##################################################################################################
+## Presence - Away Lighting
+## - ignore_user_state - always if other conditions are met
+## - lights back on within 5 minutes if they get turned off
+##################################################################################################
+  - id: presence_away_lighting
+    alias: "[Presence] Away Lighting"
+    description: "Keep a few lights on when nobody home."
+    initial_state: 'on'
+
+    trigger:
+      # run every 5 minutes
+      - platform: time_pattern
+        minutes: '/5'
+        seconds: 00
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run if climate automation is enabled
+          - condition: state
+            entity_id: input_boolean.light_automation
+            state: 'on'
+
+          # only run if nobody is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'off'
+
+          # only run in away mode
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Away'
+
+          # only run when sun is down
+          - condition: state
+            entity_id: binary_sensor.auto_light_on
+            state: 'on'
+
+    action:
+      # turn away lighting group on
+      - service: script.turn_light_on
+        data:
+          light_name: 'away_lights'
+          ignore_user_state: 'true'
+          brightness: 10
+
+##################################################################################################
+## Presence - Someone Almost Home
+##################################################################################################
+  - id: presence_someone_almost_home
+    alias: "[Presence] Someone Almost Home"
+    description: "Go into override mode to turn off HVAC eco mode when someone is almost home."
+    initial_state: 'on'
+
+    trigger:
+      # run when someone is close to home
+      - platform: numeric_state
+        entity_id:
+          - proximity.jhome
+          - proximity.shome
+        below: 4  #km
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run if climate automation is enabled
+          - condition: state
+            entity_id: input_boolean.house_climate_automation
+            state: 'on'
+
+          # only run if nobody else is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'off'
+
+          # only run when person heading towards home
+          - condition: template
+            value_template: >-
+              {% if trigger.entity_id == 'proximity.jhome' %}
+                {{ states.proximity.jhome.attributes.dir_of_travel == 'towards' }}
+              {% elif trigger.entity_id == 'proximity.shome' %}
+                {{ states.proximity.shome.attributes.dir_of_travel == 'towards' }}
+              {% endif %}
+
+      - condition: or
+        conditions:
+          # only run if away/night mode
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Away'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Vacation'
+
+    action:
+      # occupancy mode to override so HVAC turns off eco mode
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Override'
+
+##################################################################################################
+## Presence - Jason Almost Home Alert
+##################################################################################################
+  - id: presence_jason_almost_home_alert
+    alias: "[Presence] Jason Almost Home Alert"
+    description: "Send alert when Jason is almost home."
+    initial_state: 'on'
+
+    trigger:
+      # run when Jason is close to home
+      - platform: numeric_state
+        entity_id: proximity.jhome
+        below: 4  #km
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if Jason not at home
+          - condition: state
+            entity_id: binary_sensor.jason_home
+            state: 'off'
+
+          # only run when Jason heading towards home
+          - condition: template
+            value_template: "{{ states.proximity.jhome.attributes.dir_of_travel == 'towards' }}"
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Jason Almost Home"
+          message: "Get ready for him!"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            tag: 'jason_almost_home'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 600
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/presence'
+
+###################################################################################################
+## Presence - Jason Almost Home Notification Closed
+###################################################################################################
+  - id: presence_jason_almost_home_notification_closed
+    alias: "[Presence] Jason Almost Home Notification Closed"
+    description: "Dismiss notification on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'jason_almost_home'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'jason_almost_home'
+
+##################################################################################################
+## Presence - Sheri Almost Home Alert
+##################################################################################################
+  - id: presence_sheri_almost_home_alert
+    alias: "[Presence] Sheri Almost Home Alert"
+    description: "Send alert when Sheri is almost home."
+    initial_state: 'on'
+
+    trigger:
+      # run when Sheri is close to home
+      - platform: numeric_state
+        entity_id: proximity.shome
+        below: 4  #km
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if Sheri not at home
+          - condition: state
+            entity_id: binary_sensor.sheri_home
+            state: 'off'
+
+          # only run when Sheri heading towards home
+          - condition: template
+            value_template: "{{ states.proximity.shome.attributes.dir_of_travel == 'towards' }}"
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Sheri Almost Home"
+          message: "Hide the hookers and cocaine!"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            tag: 'sheri_almost_home'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 600
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/presence'
+
+###################################################################################################
+## Presence - Sheri Almost Home Notification Closed
+###################################################################################################
+  - id: presence_sheri_almost_home_notification_closed
+    alias: "[Presence] Sheri Almost Home Notification Closed"
+    description: "Dismiss notification on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'sheri_almost_home'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'sheri_almost_home'
+
+##################################################################################################
+## Presence - Occupancy Mode Changed Alert
+##################################################################################################
+  - id: presence_occupancy_mode_changed_alert
+    alias: "[Presence] Occupancy Mode Changed Alert"
+    description: "Send notification when occupancy mode has changed."
+    initial_state: 'on'
+
+    trigger:
+      # run when occupancy sensor has changed
+      - platform: state
+        entity_id: input_select.occupancy_mode
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run of occupancy mode alerts are enabled
+          - condition: state
+            entity_id: input_boolean.occupancy_mode_alerts
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Occupancy Mode"
+          message: "The house went into {{ states('input_select.occupancy_mode') }} mode at {{ now().strftime('%H:%M  %Y-%m-%d') }}."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'occupancy_mode_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'occupancy_mode'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true # must be true to update occupancy mode
+            ttl: 43200
+            priority: high
+            requireInteraction: false
+            silent: true
+            url: '/lovelace/presence'
+            icon: !secret OCCUPANCY_ICON_TEMPLATE
+            image: !secret OCCUPANCY_IMAGE_TEMPLATE
+            badge: !secret OCCUPANCY_BADGE_TEMPLATE
+
+##################################################################################################
+## Presence - Home Occupancy Mode Alert
+##################################################################################################
+  - id: presence_home_occupancy_mode_alert
+    alias: "[Presence] Home Occupancy Mode Alert"
+    description: "Send notification when someone home but house is in away, guest or vacation mode."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/15'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run of occupancy mode alerts are enabled
+          - condition: state
+            entity_id: input_boolean.occupancy_mode_alerts
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if someone is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'on'
+
+      # only run if in away, vacation, guest, and override mode
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Away'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Vacation'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Someone Home - Occupancy Mode"
+          message: "Someone is home and the house is in {{ states('input_select.occupancy_mode') }} mode.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'occupancy_mode_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'occupancy_mode'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/presence'
+            icon: !secret HOME_ICON
+            badge: !secret HOME_BADGE
+
+##################################################################################################
+## Presence - Away Occupancy Mode Alert
+##################################################################################################
+  - id: presence_away_occupancy_mode_alert
+    alias: "[Presence] Away Occupancy Mode Alert"
+    description: "Send notification when nobody home but house is in home, night, or guest mode."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/15'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+          # only run of occupancy mode alerts are enabled
+          - condition: state
+            entity_id: input_boolean.occupancy_mode_alerts
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if nobody is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'off'
+
+      # only run in home, night, or guest mode
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Home'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Guest'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Nobody Home - Occupancy Mode"
+          message: "Nobody is home and the house is in {{ states('input_select.occupancy_mode') }} mode.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'occupancy_mode_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'occupancy_mode'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/presence'
+            icon: !secret AWAY_ICON
+            badge: !secret AWAY_BADGE
+
+###################################################################################################
+## Presence - Occupancy Mode Notification Closed
+## - affects occupancy mode and home/away occupancy alerts
+###################################################################################################
+  - id: presence_occupancy_mode_notification_closed
+    alias: "[Presence] Occupancy Mode Notification Closed"
+    description: "Dismiss notification on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'occupancy_mode'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'occupancy_mode'
+
+##################################################################################################
+## Presence - Occupancy Mode Alert Pause
+## - includes occupancy mode and home/away occupancy alerts
+## - doesn't reset if turned off in UI
+##################################################################################################
+  - id: presence_occupancy_mode_alert_pause
+    alias: "[Presence] Occupancy Mode Alert Pause"
+    description: "Temporarily turn off all occupancy mode alerts."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'occupancy_mode_alert_pause'
+
+      # run when alerts boolean turned off
+      - platform: state
+        entity_id: input_boolean.occupancy_mode_alerts
+        to: 'off'
+
+    action:
+      # start timer to re-enable alerts if triggered by notification
+      # cancel timer if triggered from input_boolean
+      - service_template: >-
+          {% if not trigger.entity_id == 'input_boolean.occupancy_mode_alerts' %} timer.start
+          {% else %} timer.cancel
+          {% endif %}
+        data:
+          entity_id: timer.occupancy_mode_alerts
+
+      # turn off occupancy alerts boolean (req if triggered from push notification)
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.occupancy_mode_alerts
+
+      # turn off alert automations
+      - service: automation.turn_off
+        entity_id: &occupancy_alert_automations
+          - automation.presence_occupancy_mode_changed_alert
+          - automation.presence_home_occupancy_mode_alert
+          - automation.presence_away_occupancy_mode_alert
+
+###################################################################################################
+## Presence - Occupancy Mode Alerts On
+## - includes occupancy mode and home/away occupancy alerts
+###################################################################################################
+  - id: presence_occupancy_mode_alerts_on
+    alias: "[Presence] Occupancy Mode Alerts On"
+    description: "Turn occupancy alerts back on when timer finished or turned on in UI."
+    initial_state: 'on'
+
+    trigger:
+      # run when restart timer has finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.occupancy_mode_alerts
+
+      # run when alerts boolean turned on
+      - platform: state
+        entity_id: input_boolean.occupancy_mode_alerts
+        to: 'on'
+
+    action:
+      # cancel the occupancy mode alert reset timer if still running
+      - service: timer.cancel
+        entity_id: timer.occupancy_mode_alerts
+
+      # turn occupancy mode alerts boolean back on
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.occupancy_mode_alerts
+
+      # turn alert automations back on
+      - service: automation.turn_on
+        entity_id: *occupancy_alert_automations
+
+##################################################################################################
+## Presence - Phone Offline Alert
+## - phone offline sensor turns on 15 min after last seen so add that time to delay time here
+##################################################################################################
+  - id: presence_phone_offline_alert
+    alias: "[Presence] Phone Offline Alert"
+    description: "Send notification if someones phone goes offline."
+    initial_state: 'on'
+
+    trigger:
+      # run when someone's phone goes offline
+      - platform: state
+        entity_id:
+          - binary_sensor.jason_phone_connected
+          - binary_sensor.sheri_phone_connected
+        to: 'off'
+        for:
+          minutes: 15
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if silent mode not on
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if presence automation is enabled
+          - condition: state
+            entity_id: input_boolean.presence_automation
+            state: 'on'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Phone Offline"
+          message: >-
+            {% if 'jason' in trigger.entity_id %} Jason's
+            {% elif 'sheri' in trigger.entity_id %} Sheri's
+            {% else %} Unknown
+              {{- Unknown -}}
+            {% endif %}
+            phone is offline.
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'phone_offline_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'phone_offline'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/presence'
+            icon: !secret OFFLINE_ICON
+            image: !secret OFFLINE_IMAGE
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Presence - Phone Offline Notification Closed
+###################################################################################################
+  - id: presence_phone_offline_notification_closed
+    alias: "[Presence] Phone Offline Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'phone_offline'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'phone_offline'
+
+##################################################################################################
+## Presence - Phone Offline Alert Cancelled
+##################################################################################################
+  - id: presence_phone_offline_alert_cancelled
+    alias: "[Presence] Phone Offline Alert Cancelled"
+    description: "Dismiss phone offline notifications when all phones are back online."
+    initial_state: 'on'
+
+    trigger:
+      # run when a phone goes back online
+      - platform: state
+        entity_id:
+          - binary_sensor.jason_phone_connected
+          - binary_sensor.sheri_phone_connected
+        to: 'on'
+
+    condition:
+      # only run of both phones are connected
+      - condition: and
+        conditions:
+          - condition: state
+            entity_id: binary_sensor.jason_phone_connected
+            state: 'on'
+
+          - condition: state
+            entity_id: binary_sensor.jason_phone_connected
+            state: 'on'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'phone_offline'
+
+##################################################################################################
+## Presence - Phone Offline Alert Pause
+##################################################################################################
+  - id: presence_phone_offline_alert_pause
+    alias: "[Presence] Phone Offline Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'phone_offline_alert_pause'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'phone_offline'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.presence_phone_offline_alert
+
+      # delay to allow state changes to register
+      - delay: '0:00:02'
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.presence_phone_offline_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.presence_phone_offline_alert
+

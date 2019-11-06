@@ -1,0 +1,167 @@
+##################################################################################################
+## Sprinkler Zone Groups
+##################################################################################################
+  sprinkler_system:
+    control: hidden
+    icon: mdi:google-circles-group
+    all: true
+    entities:
+      - binary_sensor.hyrdrawise_connected
+      - binary_sensor.sprinklers_status
+      - binary_sensor.sprinklers_rain_sensor
+      - group.sprinker1
+      - group.sprinker2
+      - group.sprinker3
+      - group.sprinker4
+      - group.sprinker5
+      - group.sprinker6
+      - group.sprinker7
+      - group.sprinker8
+      - group.sprinker9
+      - group.sprinker10
+      - group.sprinker11
+      - group.sprinker12
+
+  sprinker1:
+    name: Back Garden Center
+    control: hidden
+    icon: mdi:fountain
+    all: true
+    entities:
+      - switch.back_garden_center_manual_watering
+      - switch.back_garden_center_automatic_watering
+      - binary_sensor.back_garden_center_watering
+      - sensor.back_garden_center_watering_time
+      - sensor.back_garden_center_next_cycle
+
+  sprinker2:
+    name: Back Garden Left
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.back_garden_left_manual_watering
+      - switch.back_garden_left_automatic_watering
+      - binary_sensor.back_garden_left_watering
+      - sensor.back_garden_left_watering_time
+      - sensor.back_garden_left_next_cycle
+
+  sprinker3:
+    name: Back Garden Right
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.back_garden_right_manual_watering
+      - switch.back_garden_right_automatic_watering
+      - binary_sensor.back_garden_right_watering
+      - sensor.back_garden_right_watering_time
+      - sensor.back_garden_right_next_cycle
+
+  sprinker4:
+    name: Back Garden Center
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.back_grass_center_manual_watering
+      - switch.back_grass_center_automatic_watering
+      - binary_sensor.back_grass_center_watering
+      - sensor.back_grass_center_watering_time
+      - sensor.back_grass_center_next_cycle
+
+  sprinker5:
+    name: Back Grass Left
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.back_grass_left_manual_watering
+      - switch.back_grass_left_automatic_watering
+      - binary_sensor.back_grass_left_watering
+      - sensor.back_grass_left_watering_time
+      - sensor.back_grass_left_next_cycle
+
+  sprinker6:
+    name: Back Grass Right
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.back_grass_right_manual_watering
+      - switch.back_grass_right_automatic_watering
+      - binary_sensor.back_grass_right_watering
+      - sensor.back_grass_right_watering_time
+      - sensor.back_grass_right_next_cycle
+
+  sprinker7:
+    name: Front Boulevard
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.front_boulevard_manual_watering
+      - switch.front_boulevard_automatic_watering
+      - binary_sensor.front_boulevard_watering
+      - sensor.front_boulevard_watering_time
+      - sensor.front_boulevard_next_cycle
+
+  sprinker8:
+    name: Front Garden
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.front_garden_manual_watering
+      - switch.front_garden_automatic_watering
+      - binary_sensor.front_garden_watering
+      - sensor.front_garden_watering_time
+      - sensor.front_garden_next_cycle
+
+  sprinker9:
+    name: Front House
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.front_house_manual_watering
+      - switch.front_house_automatic_watering
+      - binary_sensor.front_house_watering
+      - sensor.front_house_watering_time
+      - sensor.front_house_next_cycle
+
+  sprinker10:
+    name: Front Sidewalk
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.front_sidewalk_manual_watering
+      - switch.front_sidewalk_automatic_watering
+      - binary_sensor.front_sidewalk_watering
+      - sensor.front_sidewalk_watering_time
+      - sensor.front_sidewalk_next_cycle
+
+  sprinker11:
+    name: Side Grass & Garden Mister
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.side_grass_amp_garden_mister_manual_watering
+      - switch.side_grass_amp_garden_mister_automatic_watering
+      - binary_sensor.side_grass_amp_garden_mister_watering
+      - sensor.side_grass_amp_garden_mister_watering_time
+      - sensor.side_grass_amp_garden_mister_next_cycle
+
+  sprinker12:
+    name: Side Grass Mister
+    control: hidden
+    icon: mdi:fountain
+    all: true    
+    entities:
+      - switch.side_grass_mister_manual_watering
+      - switch.side_grass_mister_automatic_watering
+      - binary_sensor.side_grass_mister_watering
+      - sensor.side_grass_mister_watering_time
+      - sensor.side_grass_mister_next_cycle

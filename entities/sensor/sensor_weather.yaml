@@ -1,0 +1,133 @@
+###################################################################################################
+## Season Sensor
+###################################################################################################
+  - platform: season
+
+###################################################################################################
+## Moon Sensor
+###################################################################################################
+  - platform: moon
+
+###################################################################################################
+## Environment Canada Weather Sensor
+## https://www.home-assistant.io/integrations/environment_canada
+###################################################################################################
+  - platform: environment_canada
+    #latitude:
+    #longitude:
+    #station:
+    language: english
+    scan_interval: 600
+
+###################################################################################################
+## National Weather Service Alerts (NOAA)
+## https://github.com/dcshoecomp/noaa_alerts
+###################################################################################################
+  - platform: noaa_alerts
+    zoneid: MIZ076
+
+##################################################################################################
+## World Air Quality Index Sensor
+## http://aqicn.org/
+## https://www.home-assistant.io/components/sensor.waqi/
+## - waqi_windsor
+## - Windsor Downtown, Ontario, Canada
+## - Windsor West, Ontario, Canada
+##################################################################################################
+  - platform: waqi
+    token: !secret AQICN_APIKEY
+    locations:
+      - Windsor
+
+###################################################################################################
+## Season Sensor
+###################################################################################################
+  - platform: template
+    sensors:
+###################################################################################################
+## Local Storm Warning
+###################################################################################################
+      local_storm_warning:
+        value_template: >-
+          {{ not states('sensor.dark_sky_nearest_storm_distance') == 'unknown'
+            and states('sensor.dark_sky_nearest_storm_distance') | int < 2 }}
+
+###################################################################################################
+## Allergy Risk Today
+###################################################################################################
+      allergy_risk_today:
+        value_template: >-
+          {% if states('sensor.allergy_index_today') | float > 0 and states('sensor.allergy_index_today') | float <= 2.4 %} Low
+          {% elif states('sensor.allergy_index_today') | float >= 2.5 and states('sensor.allergy_index_today') | float <= 4.8 %} Low-Medium
+          {% elif states('sensor.allergy_index_today') | float >= 4.9 and states('sensor.allergy_index_today') | float <= 7.2 %} Medium
+          {% elif states('sensor.allergy_index_today') | float >= 7.3 and states('sensor.allergy_index_today') | float <= 9.6 %} Medium-High
+          {% elif states('sensor.allergy_index_today') | float >= 9.7 %} High
+          {% else %} Unknown
+          {% endif %}
+
+###################################################################################################
+## Allergy Risk Tomorrow
+###################################################################################################
+      allergy_risk_tomorrow:
+        value_template: >-
+          {% if states('sensor.allergy_index_tomorrow') | float > 0 and states('sensor.allergy_index_tomorrow') | float <= 2.4 %} Low
+          {% elif states('sensor.allergy_index_tomorrow') | float >= 2.5 and states('sensor.allergy_index_tomorrow') | float <= 4.8 %} Low-Medium
+          {% elif states('sensor.allergy_index_tomorrow') | float >= 4.9 and states('sensor.allergy_index_tomorrow') | float <= 7.2 %} Medium
+          {% elif states('sensor.allergy_index_tomorrow') | float >= 7.3 and states('sensor.allergy_index_tomorrow') | float <= 9.6 %} Medium-High
+          {% elif states('sensor.allergy_index_tomorrow') | float >= 9.7 %} High
+          {% else %} Unknown
+          {% endif %}
+
+###################################################################################################
+## Asthma Risk Today
+###################################################################################################
+      asthma_risk_today:
+        value_template: >-
+          {% if states('sensor.asthma_index_today') | float > 0 and states('sensor.asthma_index_today') | float <= 2.4 %} Low
+          {% elif states('sensor.asthma_index_today') | float >= 2.5 and states('sensor.asthma_index_today') | float <= 4.8 %} Low-Medium
+          {% elif states('sensor.asthma_index_today') | float >= 4.9 and states('sensor.asthma_index_today') | float <= 7.2 %} Medium
+          {% elif states('sensor.asthma_index_today') | float >= 7.3 and states('sensor.asthma_index_today') | float <= 9.6 %} Medium-High
+          {% elif states('sensor.asthma_index_today') | float >= 9.7 %} High
+          {% else %} Unknown
+          {% endif %}
+
+###################################################################################################
+## Asthma Risk Tomorrow
+###################################################################################################
+      asthma_risk_tomorrow:
+        value_template: >-
+          {% if states('sensor.asthma_index_tomorrow') | float > 0 and states('sensor.asthma_index_tomorrow') | float <= 2.4 %} Low
+          {% elif states('sensor.asthma_index_tomorrow') | float >= 2.5 and states('sensor.asthma_index_tomorrow') | float <= 4.8 %} Low-Medium
+          {% elif states('sensor.asthma_index_tomorrow') | float >= 4.9 and states('sensor.asthma_index_tomorrow') | float <= 7.2 %} Medium
+          {% elif states('sensor.asthma_index_tomorrow') | float >= 7.3 and states('sensor.asthma_index_tomorrow') | float <= 9.6 %} Medium-High
+          {% elif states('sensor.asthma_index_tomorrow') | float >= 9.7 %} High
+          {% else %} Unknown
+          {% endif %}
+
+###################################################################################################
+## Open UV Sensor
+## https://www.openuv.io/uvindex
+###################################################################################################
+      uv_max_level:
+        value_template: >-
+          {% if states('sensor.max_uv_index') | float <= 2 %} Low
+          {% elif states('sensor.max_uv_index') | float > 2 and states('sensor.max_uv_index') | float <= 6 %} Moderate
+          {% elif states('sensor.max_uv_index') | float > 6 and states('sensor.max_uv_index') | float < 8 %} High
+          {% else %} Very High
+          {% endif %}
+
+##################################################################################################
+## WAQI Risk Level Sensor
+##################################################################################################
+      aqi_risk_level:
+        friendly_name: AQI Risk Level
+        icon_template: mdi:factory
+        value_template: >-
+          {% if states('sensor.waqi_windsor') | int > 0 and states('sensor.waqi_windsor') | int < 51 %} Good
+          {% elif states('sensor.waqi_windsor') | int > 50 and states('sensor.waqi_windsor') | int < 101 %} Moderate
+          {% elif states('sensor.waqi_windsor') | int > 50 and states('sensor.waqi_windsor') | int < 101 %} Unhealthy Sensitive Groups
+          {% elif states('sensor.waqi_windsor') | int > 100 and states('sensor.waqi_windsor') | int < 201 %} Unhealthy
+          {% elif states('sensor.waqi_windsor') | int > 200 and states('sensor.waqi_windsor') | int < 301 %} Very Unhealthy
+          {% elif states('sensor.waqi_windsor') | int > 300 %} Hazardous
+          {% else %} Unknown
+          {% endif %}

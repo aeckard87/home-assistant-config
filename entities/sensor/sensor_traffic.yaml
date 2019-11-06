@@ -1,0 +1,68 @@
+###################################################################################################
+## Work Traffic Map
+## - placeholder sensor used to show trafic popup from person card
+###################################################################################################
+  - platform: template
+    sensors:
+      work_traffic:
+        friendly_name: Work Traffic
+        icon_template: mdi:car-multiple
+        value_template: ''
+
+##################################################################################################
+## Jason Time To Work Sensor
+## https://www.home-assistant.io/components/sensor.google_travel_time/
+## - tracking entity to entity
+## - normally update once an hour, automation to increase update schedule during commutes
+##################################################################################################
+  - platform: google_travel_time
+    name: Jason Time To Work
+    api_key: !secret GMAP_API
+    origin: device_tracker.jason_tracker
+    destination: zone.work
+    scan_interval: 3600
+    options:
+      mode: driving
+
+##################################################################################################
+## Sheri Time To Work Sensor
+## https://www.home-assistant.io/components/sensor.google_travel_time/
+## - tracking entity to entity
+## - normally update once an hour, automation to increase update schedule during commutes
+##################################################################################################
+  - platform: google_travel_time
+    name: Sheri Time To Work
+    api_key: !secret GMAP_API
+    origin: device_tracker.sheri_tracker
+    destination: zone.work
+    scan_interval: 3600
+    options:
+      mode: driving
+
+##################################################################################################
+## Jason Time To Home Sensor
+## - tracking entity to entity
+## - normally update every 5 minutes, automation to increase update schedule during commutes
+##################################################################################################
+  - platform: google_travel_time
+    name: Jason Time To Home
+    api_key: !secret GMAP_API
+    origin: device_tracker.jason_tracker
+    destination: zone.home
+    scan_interval: 3600
+    options:
+      mode: driving
+
+##################################################################################################
+## Sheri Time To Home Sensor
+## - tracking entity to entity
+## - normally update every 5 minutes, automation to increase update schedule during commutes
+##################################################################################################
+  - platform: google_travel_time
+    name: Sheri Time To Home
+    api_key: !secret GMAP_API
+    origin: device_tracker.sheri_tracker
+    destination: zone.home
+    scan_interval: 3600
+    options:
+      mode: driving

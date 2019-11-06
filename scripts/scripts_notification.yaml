@@ -1,0 +1,191 @@
+##################################################################################################
+## Play TTS Announcement
+## play_message: message to play (no double quotes - malfomred SSML)
+## quiet_play: true/false
+## override_away: true/false
+## volume: override volume level in %
+#IDEA override media player annoucement on a specific player all the time (eg garage)
+##################################################################################################
+  play_announcement:
+    sequence:
+      # update media player sensors
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.announcement_media_player
+          - sensor.announcement_media_player_state
+
+      - condition: and
+        conditions:
+          # do not run in silent mode
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # do not play during quiet hours unless quiet_play = true
+          - condition: template
+            value_template: >-
+              {% if quiet_play == 'true' %} true
+              {% elif is_state('binary_sensor.quiet_hours_active','off') %} true
+              {% else %} false
+              {% endif %}
+
+          # don't run if media player is set to 'None' (mutes audio announcements)
+          - condition: template
+            value_template: "{{ not is_state('input_select.announcement_media_player', 'None') }}"
+
+          # only run if somebody is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'on'
+
+          # do not run if there is an active house alarm
+          - condition: state
+            entity_id: binary_sensor.house_alarm_active_alert
+            state: 'off'
+
+          # do not run if media player is not available
+          - condition: template
+            value_template: "{{ not is_state('sensor.announcement_media_player_state', 'unavailable' ) and not is_state('sensor.announcement_media_player_state', 'unknown' ) }}"
+
+      # turn on announcement playing boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.announcement_playing
+
+      # turn on notification sensor update automation so wait template updates
+      - service: automation.turn_on
+        entity_id: automation.notification_sensors_update
+
+      # pause announcement media players so we don't get a volume jump
+      - service: script.pause_announcement_media_players
+
+      # delay to allow media players to pause
+      - delay: '00:00:02'
+
+      # wait for announcement media player to pause/stop
+      # continue when media player idle/off or after timeout
+      - wait_template: "{{ not states('sensor.announcement_media_player_state') == 'playing' }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # set normal/quiet/night volume
+      # input val % must be converted to decimal (/100), float value expected
+      - service: media_player.volume_set
+        data_template:
+          entity_id: "{{ states('sensor.announcement_media_player') }}"
+          volume_level: >-
+            {% if volume %}
+              {{ volume | int / 100 | float }}
+            {% elif is_state('sensor.occupancy_mode', 'Night') %}
+              {{ states('input_number.night_announcement_volume') | int / 100 | float }}
+            {% elif is_state('binary_sensor.quiet_hours_active', 'on') %}
+              {{ states('input_number.quiet_hours_volume') | int / 100 | float }}
+            {% else %}
+              {{ states('input_number.announcement_volume') | int / 100 | float }}
+            {% endif %}
+
+      # play the message on annoucment media player
+      - service: tts.google_say
+        data_template:
+          entity_id: "{{ states('sensor.announcement_media_player') }}"
+          message: "{{ play_message }}"
+
+      # delay to allow tts to connect, media players to begin playing, sensor to update
+      # delay not really noticable here, runs while announcement playing
+      - delay: '00:00:05'
+
+      # continue when media done playing or after timeout
+      - wait_template: "{{ not states('sensor.announcement_media_player_state') == 'playing' }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # turn off notification sensor update automation
+      - service: automation.turn_off
+        entity_id: automation.notification_sensors_update
+
+      # restore media player volumes
+      - service: script.restore_announcement_media_player_volumes
+
+      # radio/alarm clock auto resume on their own - this is for everything else
+      #DISABLED disabled because spotify, netflix etc can't resume
+      #- service: script.resume_announcement_media_players
+
+      # turn off announcement boolean off automation
+      # no need to trigger, we made it to end of script
+      - service: automation.turn_off
+        entity_id: automation.notification_announcement_boolean_off
+
+      # turn off announcement playing boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.announcement_playing
+
+      # turn notification sensor update automation back on
+      - service: automation.turn_on
+        entity_id: automation.notification_announcement_boolean_off
+
+##################################################################################################
+## Play Alert
+## - runs in silent mode
+## - pauses all media players
+## - full volume, current volumes stored then reset after alert
+## - radio should have auto turned off
+## - all media players paused - do not resume them automatically
+##################################################################################################
+  play_alert:
+    sequence:
+      # stop any announcement playing, alert has priority
+      - service: script.turn_off
+        entity_id: script.play_announcement
+
+      # turn on announcement playing boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.announcement_playing
+
+      # pause all media players so people hear the alert
+      - service: script.pause_media_players
+
+      # allow media players to pause (jump in volume if volume_set runs before player is paused)
+      - delay: '0:00:01'
+
+      # set alert player volumes to 100%
+      - service: media_player.volume_set
+        data_template:
+          entity_id: group.alert_media_players
+          volume_level: 1
+
+      # turn on radio sensor update automation so wait template updates
+      - service: automation.turn_on
+        entity_id: automation.notification_sensors_update
+
+      #play the message on alert media speakers
+      - service: tts.google_say
+        data_template:
+          entity_id: group.alert_media_players
+          message: "{{ play_message }}"
+
+      # delay to allow tts to connect, media players to begin playing
+      - delay: '0:00:05'
+
+      # wait for announcement media player to finish playing
+      - wait_template: "{{ not states('sensor.announcement_media_player_state') == 'playing' }}"
+        timeout: '00:00:10'
+        continue_on_timeout: true
+
+      # turn off notification sensor update automation
+      - service: automation.turn_off
+        entity_id: automation.notification_sensors_update
+
+      # restore media player volumes to prior level
+      - service: script.restore_media_player_volumes
+
+      # turn off announcement boolean off automation
+      # no need to trigger, we made it to end of script
+      - service: automation.turn_off
+        entity_id: automation.notification_announcement_boolean_off
+
+      # turn off announcement playing boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.announcement_playing
+
+      # turn notification sensor update automation back on
+      - service: automation.turn_on
+        entity_id: automation.notification_announcement_boolean_off

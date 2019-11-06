@@ -1,0 +1,17 @@
+type: conditional
+conditions:
+  - entity: binary_sensor.active_noaa_alert
+    state: 'on'
+  - entity: input_boolean.display_weather_alert
+    state: 'on'
+card:
+  type: markdown
+  title: NOAA Weather Alert
+  content: |
+    ## {{ state_attr('sensor.noaa_alerts_miz076', 'event_type') }} ##
+    **Urgency:** {{ state_attr('sensor.noaa_alerts_miz076', 'urgency') }}  **Severity:** {{ state_attr('sensor.noaa_alerts_miz076', 'event_severity') }}
+    **Effective:** {{ state_attr('sensor.noaa_alerts_miz076', 'effective') }}  **Expires:** {{ state_attr('sensor.noaa_alerts_miz076', 'expires') }}
+
+    **Description:** {{ state_attr('sensor.noaa_alerts_miz076', 'description') }}
+
+    **Instructions:** {{ state_attr('sensor.noaa_alerts_miz076', 'instruction') }}

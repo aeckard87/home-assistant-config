@@ -1,0 +1,159 @@
+##################################################################################################
+## DNS IP Sensor
+##################################################################################################
+  - platform: dnsip
+
+##################################################################################################
+## Rpi CPU Temperature
+##################################################################################################
+  - platform: command_line
+    name: RPi CPU Temperature
+    command: "cat /sys/class/thermal/thermal_zone0/temp"
+    value_template: "{{ value | multiply(0.001) | round(2) }}"
+
+##################################################################################################
+## Hassio Database File Size Sensor
+## https://www.home-assistant.io/components/sensor.filesize/
+##################################################################################################
+  - platform: filesize
+    file_paths:
+      - /config/home-assistant_v2.db
+
+  - platform: folder
+    folder: /config/www/capture
+    filter: '*'
+
+  - platform: folder
+    folder: /config/tts
+    filter: '*'
+
+##################################################################################################
+## Version Sensor
+## https://www.home-assistant.io/components/sensor.version/
+##################################################################################################
+  - platform: version
+    name: Hassio Version
+    image: raspberrypi3
+    source: local
+
+##################################################################################################
+## RPI Power Sensor
+## https://github.com/custom-components/sensor.rpi_power
+##################################################################################################
+  - platform: rpi_power
+    text_state: 'true'
+
+##################################################################################################
+## Uptime Sensor
+##################################################################################################
+  - platform: uptime
+
+##################################################################################################
+## System Monitor
+##################################################################################################
+  - platform: systemmonitor
+    resources:
+      - type: last_boot
+      - type: disk_use_percent
+        arg: /home
+      - type: memory_use_percent
+      - type: swap_use_percent
+      - type: processor_use
+      - type: ipv4_address
+        arg: eth0
+      - type: ipv6_address
+        arg: eth0
+
+##################################################################################################
+## Template Sensors
+##################################################################################################
+  - platform: template
+    sensors:
+##################################################################################################
+## Online Devices
+## count of online devices in network
+##################################################################################################
+      online_devices:
+        friendly_name: Online Devices
+        icon_template: mdi:devices
+        value_template: "{{ states|selectattr('entity_id','in',state_attr('group.all_devices','entity_id'))|selectattr('state','eq','home')|list|count }}"
+
+##################################################################################################
+## Rpi Uptime Sensor
+## display system uptime in friendly format
+##################################################################################################
+      rpi_uptime:
+        friendly_name: RPi Uptime
+        icon_template: mdi:clock-start
+        entity_id: sensor.time
+        value_template: >
+          {% set up_time = as_timestamp(now()) - as_timestamp(states('sensor.last_boot')) %}
+
+          {% set minutes = (up_time // 60) | int %}
+          {% set hours = (minutes // 60) %}
+          {% set days = (hours // 24) %}
+          {% set weeks = (days // 7) %}
+
+          {% set minutes = (minutes % 60) %}
+          {% set hours =  (hours % 24) %}
+          {% set days = (days % 7) %}
+
+          {% macro phrase(value, name) %}
+                    {%- set value = value %}
+                    {%- set end = 's' if value > 1 else '' %}
+                    {{- '{} {}{}'.format(value, name, end) if value | int > 0 else '' }}
+          {%- endmacro %}
+
+          {% set text = [ phrase(weeks, 'week'), phrase(days, 'day'), phrase(hours, 'hr'), phrase(minutes, 'min') ] | select('!=','') | list | join(', ') %}
+          {% set last_comma = text.rfind(',') %}
+          {% if last_comma != -1 %}
+            {% set text = text[:last_comma] + ' and' + text[last_comma + 1:] %}
+          {% endif %}
+
+          {{ text }}
+
+##################################################################################################
+## HA Uptime Sensor
+## display home assistant system uptime in friendly format
+##################################################################################################
+      ha_uptime:
+        friendly_name: HA Uptime
+        value_template: >
+          {% if states('sensor.uptime') == '0.0' %}
+            Just restarted...
+          {% else %}
+            {% macro phrase(value, name) %}
+            {%- set value = value | int %}
+            {%- set end = 's' if value > 1 else '' %}
+            {{- '{} {}{}'.format(value, name, end) if value | int > 0 else '' }}
+            {%- endmacro %}
+
+            {% set weeks = (states('sensor.uptime') | int / 7) | int %}
+            {% set days = (states('sensor.uptime') | int) - (weeks * 7) %}
+            {% set hours = (states('sensor.uptime') | float - states('sensor.uptime') | int) * 24 %}
+            {% set minutes = (hours - hours | int) * 60 %}
+
+            {{ [ phrase(weeks, 'week'), phrase(days, 'day'), phrase(hours, 'hr'), phrase(minutes, 'min') ] | select('!=','') | list | join(', ') }}
+          {% endif %}
+
+##################################################################################################
+## Last Boot Date & Time
+## display last boot date/time in friendly format
+##################################################################################################
+      last_boot_date_time:
+        friendly_name: Last Boot
+        value_template: >
+          {% set date = as_timestamp(states('sensor.last_boot')) | timestamp_custom('%d') %}
+          {% set date = '{:01}'.format(date | int) %}
+          {% if date in ('1', '21', '31') %}
+            {% set date = date ~ 'st' %}
+          {% elif now().day in ('2', '22') %}
+            {% set date = date ~ 'nd' %}
+          {% elif now().day in ('3', '23') %}
+            {% set date = date ~ 'rd' %}
+          {% else %}
+            {% set date = date ~ 'th' %}
+          {% endif %}
+
+          {{ as_timestamp(states('sensor.last_boot')) | timestamp_custom('%H:%M on %a') }} {{ date }} {{ as_timestamp(states('sensor.last_boot')) | timestamp_custom('%b %Y') }}
+

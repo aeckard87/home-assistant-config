@@ -1,0 +1,12 @@
+##################################################################################################
+## Announcement Media Players
+## - "None" value will mute audio announcements
+##################################################################################################
+  announcement_media_player:
+    name: Announcement Media Player
+    icon: mdi:speaker-wireless
+    options:
+      - None
+      - Broadcast Speakers
+      - Dining Room Speaker
+      - Bedroom Speaker

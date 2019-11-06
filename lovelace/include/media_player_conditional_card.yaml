@@ -1,0 +1,141 @@
+type: vertical-stack
+cards:
+  - type: conditional
+    conditions:
+      - entity: media_player.all_speakers
+        state_not: 'off'
+    card:
+      type: 'custom:mini-media-player'
+      entity: media_player.all_speakers
+      name: All Speakers
+      icon: 'mdi:google-home'
+      more_info: true
+      group: true
+      artwork: full-cover
+      source: full
+      info: scroll
+      volume_stateless: false
+      max_volume: 100
+      replace_mute: false
+      toggle_power: false
+      idle_view: when_idle
+
+  - type: conditional
+    conditions:
+      - entity: media_player.broadcast_speakers
+        state_not: 'off'
+    card:
+      type: 'custom:mini-media-player'
+      entity: media_player.broadcast_speakers
+      name: Braodcast Speakers
+      icon: 'mdi:google-home'
+      more_info: true
+      group: true
+      artwork: full-cover
+      source: full
+      info: scroll
+      volume_stateless: false
+      max_volume: 100
+      replace_mute: false
+      toggle_power: false
+      idle_view: when_idle
+
+  - type: conditional
+    conditions:
+      - entity: media_player.dining_room_speaker
+        state_not: 'off'
+    card:
+      type: 'custom:mini-media-player'
+      entity: media_player.dining_room_speaker
+      name: Dining Room Speaker
+      icon: 'mdi:google-home'
+      more_info: true
+      group: true
+      artwork: full-cover
+      source: full
+      info: scroll
+      volume_stateless: false
+      max_volume: 100
+      replace_mute: false
+      toggle_power: false
+      idle_view: when_idle
+
+  - type: conditional
+    conditions:
+      - entity: media_player.bedroom_speaker
+        state_not: 'off'
+    card:
+      type: 'custom:mini-media-player'
+      entity: media_player.bedroom_speaker
+      name: Bedroom Speaker
+      icon: 'mdi:google-home'
+      more_info: true
+      group: true
+      artwork: full-cover
+      source: full
+      info: scroll
+      volume_stateless: false
+      max_volume: 100
+      replace_mute: false
+      toggle_power: false
+      idle_view: when_idle
+
+  - card:
+      type: 'custom:mini-media-player'
+      entity: media_player.living_room_tv
+      name: Living Room TV
+      icon: 'mdi:cast-connected'
+      more_info: true
+      group: true
+      artwork: full-cover
+      source: full
+      info: scroll
+      volume_stateless: false
+      max_volume: 100
+      replace_mute: false
+      toggle_power: false
+      idle_view: when_idle
+    conditions:
+      - entity: media_player.living_room_tv
+        state_not: 'off'
+    type: conditional
+
+  - card:
+      type: 'custom:mini-media-player'
+      entity: media_player.bedroom_tv
+      name: Bedroom TV
+      icon: 'mdi:cast-connected'
+      more_info: true
+      group: true
+      artwork: full-cover
+      source: full
+      info: scroll
+      volume_stateless: false
+      max_volume: 100
+      replace_mute: false
+      toggle_power: false
+      idle_view: when_idle
+    conditions:
+      - entity: media_player.bedroom_tv
+        state_not: 'off'
+    type: conditional
+
+  - card:
+      type: 'custom:mini-media-player'
+      entity: media_player.deck_tv
+      name: Deck TV
+      icon: 'mdi:cast-connected'
+      more_info: true
+      group: true
+      artwork: full-cover
+      source: full
+      info: scroll
+      volume_stateless: false
+      max_volume: 100
+      replace_mute: false
+      toggle_power: false
+      idle_view: when_idle
+    conditions:
+      - entity: media_player.deck_tv
+        state_not: 'off'
+    type: conditional

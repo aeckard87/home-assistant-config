@@ -1,0 +1,29 @@
+title: Debugging
+icon: mdi:android-debug-bridge
+path: debugging
+cards:
+
+  - type: custom:auto-entities
+    show_empty: true
+    card:
+      type: entities
+      title: Disabled Automations
+      show_header_toggle: false
+    filter:
+      include:
+        - group: group.all_automations
+      exclude:
+        - state: 'on'
+
+  - type: custom:auto-entities
+    show_empty: true
+    card:
+      type: entities
+      title: Running Scripts
+      show_header_toggle: true
+    filter:
+      include:
+        - group: group.all_scripts
+
+      exclude:
+        - state: 'off'

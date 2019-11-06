@@ -1,0 +1,74 @@
+##################################################################################################
+## Light - Sun Is Down
+## - group.delayed_automations
+##################################################################################################
+  - id: light_sun_is_down
+    alias: "[Light] Sun Is Down"
+    description: "Turn selected lights on when the sun goes down and someone is home."
+    initial_state: 'off'
+
+    trigger:
+      # run when auto light sensor turns on
+      - platform: state
+        entity_id: binary_sensor.auto_light_on
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run when light automation is enabled
+          - condition: state
+            entity_id: input_boolean.light_automation
+            state: 'on'
+    
+          # only run when someone is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'on'
+
+    action:
+      # turn on sundown light group
+      - service: script.turn_light_on
+        data_template:
+          light_name: "{%- if is_state('binary_sensor.someone_home','on') -%}home_sunset_lights{%- else -%}away_sunset_lights{%- endif -%}"
+          ignore_user_state: 'false'
+          brightness: 20
+
+##################################################################################################
+## Light - Sun Is Up
+## - no in use conditions - we always want this to fire
+## - occupant can turn lights back on if required
+## - group.delayed_automations
+##################################################################################################
+  - id: light_sun_is_up
+    alias: "[Light] Sun Is Up"
+    description: "Turn off all lights when the sun comes up."
+    initial_state: 'off'
+
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.auto_light_on
+        to: 'off'
+
+    condition:
+      # only run when light automation is enabled
+      - condition: state
+        entity_id: input_boolean.light_automation
+        state: 'on'
+            
+    action:
+      # turn off user control automations
+      - service: automation.turn_off
+        entity_id: automation.automation_set_device_user_state
+
+      # turn off all the lights
+      - service: light.turn_off
+        data:
+          entity_id: group.all_lights
+
+      # delay to allow state changes to register
+      - delay: '00:00:01'
+
+      # turn user control automations back on
+      - service: automation.turn_on
+        entity_id: automation.automation_set_device_user_state

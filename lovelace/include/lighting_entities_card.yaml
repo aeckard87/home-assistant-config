@@ -1,0 +1,130 @@
+type: entities
+title: Light Controls
+show_header_toggle: false
+entities:
+  - type: custom:fold-entity-row
+    head: light.upstairs_lights
+    show_state: false
+    group_config:
+      secondary_info: last-changed
+    entities:
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Side Entrance
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights
+        name: Living Room Pots
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Living Room Cove
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Upstairs Hall Pots
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Dining Room Pots
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Kitchen Pots
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Kitchen Sink
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Kitchen Cabinets
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Upstairs Bathroom Vanity
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Upstairs Shower
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Office Pots
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Office Fan Light
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Bedroom Pots
+        full_row: false
+        toggle: true
+
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights #TEMP
+        name: Bedroom Fan Light
+        full_row: false
+        toggle: true
+
+  - type: custom:fold-entity-row
+    head: light.downstairs_lights
+    open: false
+    group_config:
+      secondary_info: last-changed
+    entities:
+    - type: custom:slider-entity-row
+      entity: light.living_room_pot_lights
+      name: Family Room Pots
+      full_row: false
+      toggle: true
+
+  - type: custom:fold-entity-row
+    head: light.outside_lights
+    open: false
+    group_config:
+      secondary_info: last-changed
+    entities:
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights
+        name: Front House Pots
+        full_row: false
+        toggle: true
+
+  - type: custom:fold-entity-row
+    head: light.garage_lights
+    open: false
+    group_config:
+      secondary_info: last-changed
+    entities:
+      - type: custom:slider-entity-row
+        entity: light.living_room_pot_lights
+        name: Garage Interior
+        full_row: false
+        toggle: true
+

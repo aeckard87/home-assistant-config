@@ -1,0 +1,121 @@
+title: Lighting
+icon: mdi:lightbulb-on
+path: lights
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - !include /config/lovelace/include/lighting_entities_card.yaml
+
+      - type: entities #TEST testing light entity row
+        title: Lights
+        entities:
+          - type: "custom:light-entity-row"
+            entity: light.living_room_pot_lights
+            icon: mdi:lamp  # optional
+            name: Lamp      # optional
+
+          - type: "custom:light-entity-row"
+            entity: light.living_room_pot_lights
+            showColorPicker: true # shows color picker if supported
+            showColorSliders: true # shows hue/saturation sliders if supported
+
+          - type: "custom:light-entity-row"
+            entity: light.living_room_pot_lights
+            buttons:        # optional
+              - name: Red
+                service_data:
+                  color_name: red
+              - name: Blue
+                service_data:
+                  color_name: blue
+
+  - type: vertical-stack
+    cards:
+
+      - type: glance
+        title: Sun Conditions
+        columns: 5
+        show_name: true
+        show_state: true
+        theme: backend_selected
+        entities:
+          - entity: sensor.sun_next_rising
+          - entity: sensor.sun_next_setting
+          - entity: sensor.sun_elevation
+          - entity: sensor.day_night
+          - entity: sensor.dark_sky_cloud_coverage
+
+      - type: custom:mini-graph-card
+        name: Inside Light Levels
+        more_info: true
+        hours_to_show: 72
+        points_per_hour: 50
+        animate: true
+        decimals: 1
+        font_size: 75
+        align_state: center
+        show:
+          name: false
+          icon: false
+          state: true
+          graph: true
+          fill: fade
+          points: false
+          legend: true
+          extrema: false
+          labels: true
+        entities:
+          - entity: sensor.side_entrance_light_level
+            name: Side Entrance
+            show_state: true
+          - entity: sensor.upstairs_bathroom_light_level
+            name: Upstairs Bathroom
+            show_state: true
+
+  - type: vertical-stack
+    cards:
+
+      - type: conditional
+        conditions:
+          - entity: input_boolean.advanced_view
+            state: 'on'
+        card:
+          type: entities
+          show_header_toggle: false
+          title: Light Settings
+          entities:
+            - entity: binary_sensor.lutron_connected
+              name: Lutron Bridge Connected
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.light_automation
+              filter:
+                include:
+                  - entity_id: "automation.light_*"
+
+            - type: custom:fold-entity-row
+              head: binary_sensor.auto_light_on
+              items:
+                - entity: input_number.lighting_on_sun_elevation
+                - entity: input_number.lighting_off_sun_elevation
+
+            - type: custom:fold-entity-row
+              head: binary_sensor.lights_in_use
+              group_config:
+                secondary_info: last-changed
+              items:
+                - entity: input_boolean.living_room_pot_lights
+
+      - type: history-graph
+        title: Lighting Usage History
+        hours_to_show: 72
+        refresh_interval: 300
+        entities:
+          - entity: light.living_room_pot_lights
+            name: Living Room Pots
+          - entity: input_boolean.living_room_pot_lights
+            name: L/R Pots In Use

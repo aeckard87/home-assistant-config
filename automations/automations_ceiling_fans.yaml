@@ -1,0 +1,65 @@
+##################################################################################################
+## Ceiling Fan - HVAC Ceiling Fans
+##################################################################################################
+  - id: ceiling_fan_hvac_automation
+    alias: "[Ceiling Fan] HVAC Automation"
+    description: "Turn ceiling fans on/off with HVAC fan."
+    initial_state: 'on'
+
+    trigger:
+      # run when thermostat state, fan state change
+      - platform: state
+        entity_id:
+          - binary_sensor.upstairs_thermostat_fan
+          - sensor.upstairs_thermostat_hvac_state
+
+    condition:
+      # only run if ceiling fan automations are enabled
+      - condition: state
+        entity_id: input_boolean.ceiling_fan_automation
+        state: 'on'
+
+    action:
+      # wait for any prior instance of hvac_ceiling_fan_on to finish
+      - wait_template: "{{ is_state('script.ceiling_fan_on','off') }}"
+        timeout: '0:00:30'
+        continue_on_timeout: true
+
+      # wait for any prior instance of hvac_ceiling_fan_off to finish
+      - wait_template: "{{ is_state('script.ceiling_fan_off','off') }}"
+        timeout: '0:00:30'
+        continue_on_timeout: true
+
+      - service_template: >-
+          {% if is_state('sensor.upstairs_thermostat_hvac_state', 'heat')
+            or is_state('sensor.upstairs_thermostat_hvac_state', 'cool')
+            or is_state('binary_sensor.upstairs_thermostat_fan', 'on') %}
+            script.ceiling_fan_on
+          {% else %}
+            script.ceiling_fan_off
+          {% endif %}
+        data_template:
+          fan_name: upstairs_bedroom_fan
+          new_speed: low
+
+      # wait for prior instance of hvac_ceiling_fan_on to finish
+      - wait_template: "{{ is_state('script.ceiling_fan_on','off') }}"
+        timeout: '0:00:30'
+        continue_on_timeout: true
+
+      # wait for prior instance of hvac_ceiling_fan_off to finish
+      - wait_template: "{{ is_state('script.ceiling_fan_off','off') }}"
+        timeout: '0:00:30'
+        continue_on_timeout: true
+
+      - service_template: >-
+          {% if is_state('sensor.upstairs_thermostat_hvac_state', 'heat')
+            or is_state('sensor.upstairs_thermostat_hvac_state', 'cool')
+            or is_state('binary_sensor.upstairs_thermostat_fan', 'on') %}
+            script.ceiling_fan_on
+          {% else %}
+            script.ceiling_fan_off
+          {% endif %}
+        data_template:
+          fan_name: office_fan
+          new_speed: low

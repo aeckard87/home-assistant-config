@@ -1,0 +1,14 @@
+  # Creates a template fan to be able to control the HVAC fan independently of heating and cooling.
+  - platform: template
+    fans:
+      hvac_fan:
+        friendly_name: "HVAC Fan"
+        value_template: "{{ states('binary_sensor.upstairs_thermostat_fan') }}"
+        turn_on:
+          service: script.turn_on
+          data:
+            entity_id: script.nest_fan_on
+        turn_off:
+          service: script.turn_on
+          data:
+            entity_id: script.nest_fan_off

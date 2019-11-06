@@ -1,0 +1,53 @@
+##################################################################################################
+## Climate Fan Schedule
+## - if duration = interval fan won't shut off
+##################################################################################################
+  climate_fan_schedule:
+    sequence:
+      # only run if the fan schedule is enabled
+      - condition: state
+        entity_id: input_boolean.climate_fan_schedule
+        state: 'on'
+
+      # start fan timer
+      - service: timer.start
+        data_template:
+          entity_id: timer.climate_fan
+          duration: '00:{{ states.input_number.climate_fan_schedule_interval.state | int }}'
+
+      # turn the thermostat fan on
+      - service: climate.set_fan_mode
+        data:
+          entity_id: climate.upstairs_thermostat
+          fan_mode: 'on'
+
+      # set delay to fan schedule duration
+      - delay: '00:{{  states.input_number.climate_fan_schedule_duration.state | int }}:00'
+
+      # if interval = duration don't turn fan off (continuous operation)
+      - condition: template
+        value_template: "{{ not states('input_number.climate_fan_schedule_interval') | int == states('input_number.climate_fan_schedule_duration') | int }}"
+
+      # put thermostat fan back into auto mode (turn off)
+      - service: climate.set_fan_mode
+        data:
+          entity_id: climate.upstairs_thermostat
+          fan_mode: 'auto'
+
+##################################################################################################
+## Restart Climate Fan Schedule
+## Called on hassio restart to trigger timer
+## Called on duration/interval change
+##################################################################################################
+  restart_climate_fan_schedule:
+    sequence:
+      # only run if the climate fan schedule is enabled
+      - condition: state
+        entity_id: input_boolean.climate_fan_schedule
+        state: 'on'
+
+      # start the climate fan interval timer
+      - service: timer.start
+        data_template:
+          entity_id: timer.climate_fan
+          duration: '00:{{ states.input_number.climate_fan_schedule_interval.state | int }}:05'

@@ -1,0 +1,630 @@
+###################################################################################################
+## Traffic - Update Jason Time To Work
+## - limit updates when not needed to avoid API charges
+###################################################################################################
+  - id: traffic_update_jason_time_to_work
+    alias: "[Traffic] Update Jason Time To Work"
+    description: "Increase update interval of sensor during commute times."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/2'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode', 'Vacation') }}"
+
+          # only run if phone connected
+          - condition: state
+            entity_id: binary_sensor.jason_phone_connected
+            state: 'on'
+
+          # only run if Jason not at work
+          - condition: template
+            value_template: "{{ not is_state('person.jason', 'Work') }}"
+
+          # only run if time to work sensor value is not unknown (not connected)
+          - condition: template
+            value_template: "{{ not states('sensor.jason_time_to_work') == 'unknown' }}"
+
+          # only run when a work commute sensor is on
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.days_work_commute
+                state: 'on'
+
+              - condition: state
+                entity_id: binary_sensor.afternoons_work_commute
+                state: 'on'
+
+    action:
+      - service: homeassistant.update_entity
+        data:
+          entity_id: sensor.jason_time_to_work
+
+###################################################################################################
+## Traffic - Update Jason Time To Home
+## - limit updates when not needed to avoid API charges
+###################################################################################################
+  - id: traffic_update_jason_time_to_home
+    alias: "[Traffic] Update Jason Time To Home"
+    description: "Increase update interval of sensor during commute times."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/2'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode', 'Vacation') }}"
+
+          # only run if phone connected
+          - condition: state
+            entity_id: binary_sensor.jason_phone_connected
+            state: 'on'
+
+          # only run if Jason not at home
+          - condition: template
+            value_template: "{{ not is_state('binary_sensor.jason_home', 'on') }}"
+
+          # only run if time to home sensor value is not unknown (not connected)
+          - condition: template
+            value_template: "{{ not states('sensor.jason_time_to_home') == 'unknown' }}"
+
+          # only run when a home commute sensor is on
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.days_home_commute
+                state: 'on'
+
+              - condition: state
+                entity_id: binary_sensor.afternoons_home_commute
+                state: 'on'
+
+    action:
+      - service: homeassistant.update_entity
+        data:
+          entity_id: sensor.jason_time_to_home
+
+###################################################################################################
+## Traffic - Update Jason Time To Home Not Home
+## - limit updates when not needed to avoid API charges
+###################################################################################################
+  - id: traffic_update_jason_time_to_home_not_home
+    alias: "[Traffic] Update Jason Time To Home Not Home"
+    description: "Increase update interval of sensor when not home during non commute times."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/5'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode', 'Vacation') }}"
+
+          # only run if phone connected
+          - condition: state
+            entity_id: binary_sensor.jason_phone_connected
+            state: 'on'
+
+          # only run if Jason not at home
+          - condition: template
+            value_template: "{{ not is_state('binary_sensor.jason_home', 'on') }}"
+
+          # only run if Jason not at work
+          - condition: template
+            value_template: "{{ not is_state('person.jason', 'Work') }}"
+
+          # only run if time to home sensor value is not unknown (not connected)
+          - condition: template
+            value_template: "{{ not states('sensor.jason_time_to_home') == 'unknown' }}"
+
+          # only run when home commute sensor is not on
+          - condition: and
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.days_home_commute
+                state: 'off'
+
+              - condition: state
+                entity_id: binary_sensor.afternoons_home_commute
+                state: 'off'
+
+    action:
+      - service: homeassistant.update_entity
+        data:
+          entity_id: sensor.jason_time_to_home
+
+###################################################################################################
+## Traffic - Update Sheri Time To Work
+## - limit updates when not needed to avoid API charges
+###################################################################################################
+  - id: traffic_update_sheri_time_to_work
+    alias: "[Traffic] Update Sheri Time To Work"
+    description: "Increase update interval of sensor during commute times."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/2'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode', 'Vacation') }}"
+
+          # only run if phone connected
+          - condition: state
+            entity_id: binary_sensor.sheri_phone_connected
+            state: 'on'
+
+          # only run if Sheri not at work
+          - condition: template
+            value_template: "{{ not is_state('person.sheri', 'Work') }}"
+
+          # only run if time to work sensor value is not unknown (not connected)
+          - condition: template
+            value_template: "{{ not states('sensor.sheri_time_to_work') == 'unknown' }}"
+
+          # only run when a work commute sensor is on
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.days_work_commute
+                state: 'on'
+
+              - condition: state
+                entity_id: binary_sensor.afternoons_work_commute
+                state: 'on'
+
+    action:
+      - service: homeassistant.update_entity
+        data:
+          entity_id: sensor.sheri_time_to_work
+
+###################################################################################################
+## Traffic - Update Sheri Time To Home
+## - limit updates when not needed to avoid API charges
+###################################################################################################
+  - id: traffic_update_sheri_time_to_home
+    alias: "[Traffic] Update Sheri Time To Home"
+    description: "Increase update interval of sensor during commute times."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/2'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode', 'Vacation') }}"
+
+          # only run if phone connected
+          - condition: state
+            entity_id: binary_sensor.sheri_phone_connected
+            state: 'on'
+
+          # only run if Sheri not at home
+          - condition: template
+            value_template: "{{ not is_state('binary_sensor.sheri_home', 'on') }}"
+
+          # only run if time to home sensor value is not unknown (not connected)
+          - condition: template
+            value_template: "{{ not states('sensor.sheri_time_to_home') == 'unknown' }}"
+
+          # only run when a home commute sensor is on
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.days_home_commute
+                state: 'on'
+
+              - condition: state
+                entity_id: binary_sensor.afternoons_home_commute
+                state: 'on'
+
+    action:
+      - service: homeassistant.update_entity
+        data:
+          entity_id: sensor.sheri_time_to_home
+
+###################################################################################################
+## Traffic - Update Sheri Time To Home Not Home
+## - limit updates when not needed to avoid API charges
+###################################################################################################
+  - id: traffic_update_sheri_time_to_home_not_home
+    alias: "[Traffic] Update Sheri Time To Home Not Home"
+    description: "Increase update interval of sensor when not home during non commute times."
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/5'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if not in vacation mode
+          - condition: template
+            value_template: "{{ not is_state('input_select.occupancy_mode', 'Vacation') }}"
+
+          # only run if phone connected
+          - condition: state
+            entity_id: binary_sensor.sheri_phone_connected
+            state: 'on'
+
+          # only run if Sheri not at home
+          - condition: template
+            value_template: "{{ not is_state('binary_sensor.sheri_home', 'on') }}"
+
+          # only run if Sheri not at work
+          - condition: template
+            value_template: "{{ not is_state('person.sheri', 'Work') }}"
+
+          # only run if time to home sensor value is not unknown (not connected)
+          - condition: template
+            value_template: "{{ not states('sensor.sheri_time_to_home') == 'unknown' }}"
+
+          # only run when home commute sensor is not on
+          - condition: and
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.days_home_commute
+                state: 'off'
+
+              - condition: state
+                entity_id: binary_sensor.afternoons_home_commute
+                state: 'off'
+
+    action:
+      - service: homeassistant.update_entity
+        data:
+          entity_id: sensor.sheri_time_to_home
+
+###################################################################################################
+## Traffic - Jason Work Commute Alert
+###################################################################################################
+  - id: traffic_jason_work_commute_alert
+    alias: "[Traffic] Jason Work Commute Alert"
+    description: "Send notification, play announcement when commute time alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the work commute alert sensor is on
+      - platform: state
+        entity_id: binary_sensor.work_commute_alert_jason
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if jason at home
+          - condition: state
+            entity_id: binary_sensor.jason_home
+            state: 'on'
+
+    action:
+      # play alert
+      - service: script.play_alert
+        data_template:
+          play_message: >-
+              ATTENTION! You should leave early for work! The current commute time to work is
+              {%- if not states('sensor.jason_time_to_work') == 'unknown' -%}
+                {{ ' ' +  states.sensor.jason_time_to_work.attributes.duration_in_traffic }}
+              {%- else %} expected to be longer than usual.
+              {%- endif -%}
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Jason Delayed Work Commute"
+          message: >-
+            The current commute time is
+            {%- if not states('sensor.jason_time_to_work') == 'unknown' -%}{{ ' ' + states.sensor.jason_time_to_work.attributes.duration_in_traffic }}
+            {%- else %} expected to be longer than usual.
+            {%- endif -%}
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'traffic_alert_jason_off'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'traffic_alert_jason'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 7200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: 'https://www.google.ca/maps/@42.2955557,-82.9587724,14.5z/data=!5m1!1e1'
+            icon: !secret TRAFFIC_ICON
+            image: !secret TRAFFIC_IMAGE
+            badge: !secret TRAFFIC_BADGE
+
+###################################################################################################
+## Traffic - Sheri Work Commute Alert
+###################################################################################################
+  - id: traffic_sheri_work_commute_alert
+    alias: "[Traffic] Sheri Work Commute Alert"
+    description: "Send notification when commute time alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the work commute alert sensor is on
+      - platform: state
+        entity_id: binary_sensor.work_commute_alert_sheri
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if sheri at home
+          - condition: state
+            entity_id: binary_sensor.sheri_home
+            state: 'on'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Sheri Delayed Work Commute"
+          message: >-
+            The current commute time is
+            {%- if not states('sensor.sheri_time_to_work') == 'unknown' -%}{{ ' ' + states.sensor.sheri_time_to_work.attributes.duration_in_traffic }}
+            {%- else %} expected to be longer than usual.
+            {%- endif -%}
+          target:
+            - sphone
+          data:
+            actions:
+              - action: 'traffic_alert_sheri_off'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'traffic_alert_sheri'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 7200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: 'https://www.google.ca/maps/@42.2955557,-82.9587724,14.5z/data=!5m1!1e1'
+            icon: !secret TRAFFIC_ICON
+            image: !secret TRAFFIC_IMAGE
+            badge: !secret TRAFFIC_BADGE
+
+###################################################################################################
+## Traffic - Jason Commute Alert Notification Closed
+###################################################################################################
+  - id: traffic_jason_commute_alert_notification_closed
+    alias: "[Traffic] Jason Commute Alert Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'traffic_alert_jason'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'traffic_alert_jason'
+
+###################################################################################################
+## Traffic - Sheri Commute Alert Notification Closed
+###################################################################################################
+  - id: traffic_sheri_commute_alert_notification_closed
+    alias: "[Traffic] Sheri Commute Alert Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'traffic_alert_sheri'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'traffic_alert_sheri'
+
+##################################################################################################
+## Traffic - Jason Commute Alert Cancelled
+##################################################################################################
+  - id: traffic_jason_commute_alert_cancelled
+    alias: "[Traffic] Jason Commute Alert Cancelled"
+    description: "Dismiss notifications when commute time alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run traffic commute alert turns off
+      - entity_id: binary_sensor.work_commute_alert_jason
+        platform: state
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'traffic_alert_jason'
+
+##################################################################################################
+## Traffic - Sheri Commute Alert Cancelled
+##################################################################################################
+  - id: traffic_sheri_commute_alert_cancelled
+    alias: "[Traffic] Sheri Commute Alert Cancelled"
+    description: "Dismiss notifications when commute time alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run traffic commute alert turns off
+      - entity_id: binary_sensor.work_commute_alert_sheri
+        platform: state
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'traffic_alert_sheri'
+
+###################################################################################################
+## Traffic - Jason Commute Alert Off
+###################################################################################################
+  - id: traffic_jason_commute_alert_pause
+    alias: "[Traffic] Jason Commute Alert Off"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'traffic_alert_jason_off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'traffic_alert_jason'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.traffic_jason_work_commute_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.traffic_jason_work_commute_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # do not turn back on silent mode is on
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.traffic_jason_work_commute_alert
+
+###################################################################################################
+## Traffic - Sheri Commute Alert Off
+###################################################################################################
+  - id: traffic_sheri_commute_alert_pause
+    alias: "[Traffic] Sheri Commute Alert Off"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'traffic_alert_sheri_off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'traffic_alert_sheri'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.traffic_sheri_work_commute_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.traffic_sheri_work_commute_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # do not turn back on if in silent mode
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.traffic_sheri_work_commute_alert

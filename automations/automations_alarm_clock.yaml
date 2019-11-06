@@ -1,0 +1,1621 @@
+###################################################################################################
+## Alarm Clock - Hassio Startup
+## - resets timers to original values - best we can do
+###################################################################################################
+  - id: alarm_clock_hassio_startup
+    alias: "[Alarm Clock] Hassio Startup"
+    description: "Restart alarm clock on startup."
+    initial_state: 'on'
+
+    trigger:
+      # run when home assistant started
+      - platform: homeassistant
+        event: start
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if an alarm clock is active
+          - condition: state
+            entity_id: input_boolean.alarm_clock_active
+            state: 'on'
+
+          # can run if nap alarm is turned on (to restart timer)
+          - condition: state
+            entity_id: input_boolean.alarm_clock_nap
+            state: 'on'
+
+    action:
+      # wait for delayed automations to turn on
+      - wait_template: "{{ is_state('group.delayed_automations', 'on') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # restart nap timer if nap alarm on
+      - service_template: >-
+          {% if is_state('input_boolean.alarm_clock_snooze', 'off') %}
+            {% if is_state('input_boolean.alarm_clock_nap', 'on') %} timer.start
+            {% else %} script.null_script
+            {% endif %}
+          {% else %} script.null_script
+          {% endif %}
+        data_template:
+          entity_id: timer.alarm_clock_nap
+          duration: '00:{{ states.input_number.alarm_clock_nap_time.state | int }}'
+
+      # restart snooze timer if snooze is on
+      - service_template: >-
+          {% if is_state('input_boolean.alarm_clock_snooze', 'on') %} timer.start
+          {% else %} script.null_script
+          {% endif %}
+        data_template:
+          entity_id: timer.alarm_clock_snooze
+          duration: '00:{{ states.input_number.alarm_clock_snooze_time.state | int }}'
+
+      # play alarm if alarm clock active is on and snooze is off
+      # first_run = true so volume timers restart
+      - service_template: >-
+          {% if is_state('input_boolean.alarm_clock_active', 'on')
+              and is_state('input_boolean.alarm_clock_snooze', 'off') %}
+            script.alarm_clock_play
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          first_run: 'true'
+          alarm_type: &alarm_type >-
+            {% if is_state('input_boolean.alarm_clock_active_auto','on') %} auto
+            {% elif is_state('input_boolean.alarm_clock_active_manual','on') %} manual
+            {% elif is_state('input_boolean.alarm_clock_active_nap','on') %} nap
+            {% endif %}
+
+##################################################################################################
+## Alarm Clock - Sensors Update
+## - enabled when updating sensors for templates etc.
+##################################################################################################
+  - id: alarm_clock_sensors_update
+    alias: "[Alarm Clock] Sensors Update"
+    description: "Update alarm clock media player sensors."
+    initial_state: 'off'
+
+    trigger:
+      # run every second
+      - platform: time_pattern
+        seconds: '/1'
+
+    action:
+      - service: homeassistant.update_entity
+        entity_id: sensor.alarm_clock_media_player_state
+
+###################################################################################################
+## Alarm Clock - Turn Off Alarm Notification
+###################################################################################################
+  - id: alarm_clock_turn_off_notification
+    alias: "[Alarm Clock] Turn Off Notification"
+    description: "Turn off master active alarm clock boolean when turned off from push notification."
+    initial_state: 'on'
+
+    trigger:
+      # run when turn off button clicked in push notification
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'turn_off_alarm_clock'
+
+    action:
+      # turn off alarm clock
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active
+
+###################################################################################################
+## Alarm Clock - Snooze Alarm Notification
+###################################################################################################
+  - id: alarm_clock_snooze_notification
+    alias: "[Alarm Clock] Snooze Notification"
+    description: "Turn on snooze boolean when snooze turned on from push notification."
+    initial_state: 'on'
+
+    trigger:
+      # run when snooze button clicked in push notification
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'snooze_alarm_clock'
+
+    action:
+      # activate alarm clock snooze
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alarm_clock_snooze
+
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'alarm_clock'
+
+###################################################################################################
+## Alarm Clock - Notification Closed
+###################################################################################################
+  - id: alarm_clock_notification_closed
+    alias: "[Alarm Clock] Notification Closed"
+    description: "Dismiss all notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'alarm_clock'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'alarm_clock'
+
+###################################################################################################
+## Alarm Clock - Activate Alarm Occupancy Check
+## - allow manual/auto alarms to be set but they won't run if not in home/night when triggered
+###################################################################################################
+  - id: alarm_clock_occupancy_check
+    alias: "[Alarm Clock] Occupancy Check"
+    description: "Turn specified alarm booleans back off if in away or vacation mode."
+    initial_state: 'on'
+
+    trigger:
+      # run when an alarm clock active boolean turned on
+      - platform: state
+        entity_id: &occupancy_check_entities
+          - input_boolean.alarm_clock_nap
+          - input_boolean.alarm_clock_active_auto
+          - input_boolean.alarm_clock_active_manual
+          - input_boolean.alarm_clock_active_nap
+        to: 'on'
+
+    condition:
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Away'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Vacation'
+
+    action:
+      # turn automation off so we don't cancel active alarm
+      - service: automation.turn_off
+        entity_id: &occupancy_check_automations
+          - automation.alarm_clock_nap_off
+          - automation.alarm_clock_nap_active_off
+          - automation.alarm_clock_manual_active_off
+          - automation.alarm_clock_auto_active_off
+
+      # turn boolean back off
+      - service: input_boolean.turn_off
+        entity_id: *occupancy_check_entities
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: *occupancy_check_automations
+
+###################################################################################################
+## Alarm Clock - Detect Off
+## - small delay so state changes between snooze/loops don't shut alarm off
+## - turns on in script.alarm_clock_play, off in script.alarm_clock_stop
+###################################################################################################
+  - id: alarm_clock_detect_alarm_off
+    alias: "[Alarm Clock] Detect Alarm Off"
+    description: "Detect alarm media player turned off and turn off active alarm boolean."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock media player turns off
+      - platform: state
+        to: 'off'
+        for: '0:00:02'
+        entity_id: &media_player_entities
+          !include /config/include/alarm_clock_media_players.yaml
+
+      # run when alarm clock media player state is idle
+      # increased delay to allow alarm clock to start after announcement
+      - platform: state
+        entity_id: *media_player_entities
+        to: 'idle'
+        for: '0:00:05'
+
+      # run when alarm clock media player state is unavailable
+      - platform: state
+        entity_id: *media_player_entities
+        to: 'unavailable'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if alarm clock is active
+          - condition: state
+            entity_id: input_boolean.alarm_clock_active
+            state: 'on'
+
+          # only run in an announcement isn't playing
+          - condition: state
+            entity_id: input_boolean.announcement_playing
+            state: 'off'
+
+          # only run if trigger entity is current alarm clock media player
+          - condition: template
+            value_template: "{{ trigger.from_state.attributes.friendly_name == states('input_select.alarm_clock_media_player') }}"
+
+    action:
+      # turn off alarm
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active
+
+###################################################################################################
+## Alarm Clock - Detect Snooze
+## - turns on in script.alarm_clock_play, off in script.alarm_clock_stop
+## - we aren't using sensor.alarm_clock_media_player because it might not updated here.
+###################################################################################################
+  - id: alarm_clock_detect_snooze
+    alias: "[Alarm Clock] Detect Snooze"
+    description: "Detect alarm snooze (media player pause) and turn on snooze boolean."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock media player state is paused
+      - platform: state
+        to: 'paused'
+        entity_id: *media_player_entities
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if alarm clock is active
+          - condition: state
+            entity_id: input_boolean.alarm_clock_active
+            state: 'on'
+
+          # do not run when announcement playing
+          - condition: state
+            entity_id: input_boolean.announcement_playing
+            state: 'off'
+
+          # only run if trigger entity is current alarm clock media player
+          - condition: template
+            value_template: "{{ trigger.from_state.attributes.friendly_name == states('input_select.alarm_clock_media_player') }}"
+
+    action:
+      # turn on alarm snooze
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alarm_clock_snooze
+
+##################################################################################################
+## Alarm Clock - Auto Resume
+## - group.alarm_clock_hassio_changed_automations
+##################################################################################################
+  - id: alarm_clock_auto_resume
+    alias: "[Alarm Clock] Auto Resume"
+    description: "Resume alarm clock play when announcement finished."
+    initial_state: 'off'
+
+    trigger:
+      # run when announcement playing boolean turns off
+      - platform: state
+        entity_id: input_boolean.announcement_playing
+        to: 'off'
+
+    condition:
+      # only run if alarm clock is active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # play alarm clock
+      - service: script.alarm_clock_play
+        data_template:
+          alarm_type: *alarm_type
+          first_run: 'false'
+
+###################################################################################################
+## Alarm Clock - Restart Timer Finished
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_restart_timer_finished
+    alias: "[Alarm Clock] Restart Timer Finished"
+    description: "Restart alarm when restart timer finished (for alarm sounds only, not radio)"
+    initial_state: 'off'
+
+    trigger:
+      # run when restart timer has finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.alarm_clock_restart
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if alarm clock is active
+          - condition: state
+            entity_id: input_boolean.alarm_clock_active
+            state: 'on'
+          # only run if snooze is off
+          - condition: state
+            entity_id: input_boolean.alarm_clock_snooze
+            state: 'off'
+
+    action:
+      # restart alarm, first_run false so no delay in alarm sounding
+      - service: script.alarm_clock_play
+        data_template:
+          first_run: 'false'
+          alarm_type: *alarm_type
+
+###################################################################################################
+## Alarm Clock - Alarm Activate Check
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_alarm_activate_check
+    alias: "[Alarm Clock] Alarm Activate Check"
+    description: "Turn master active alarm boolean back off if no alarm is active."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock active turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active
+        to: 'on'
+
+    condition:
+      # run if no alarms are active
+      - condition: template
+        value_template: >-
+          {% if is_state('input_boolean.alarm_clock_active_auto', 'on' ) %} false
+          {% elif is_state('input_boolean.alarm_clock_active_manual', 'on' ) %} false
+          {% elif is_state('input_boolean.alarm_clock_active_nap', 'on' ) %} false
+          {% else %} true
+          {% endif %}
+
+    action:
+      # turn boolean back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active
+
+###################################################################################################
+## Alarm Clock - Active Off
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_active_off
+    alias: "[Alarm Clock] Active Off"
+    description: "Stop alarm clock when master active alarm boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when master alarm clock active boolean turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active
+        to: 'off'
+
+    action:
+      # turn off alarm clock
+      - service: script.alarm_clock_stop
+
+##################################################################################################
+## Alarm Clock - Nap Alarm On
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_nap_on
+    alias: "[Alarm Clock] Nap On"
+    description: "Start nap timer when nap alarm boolean turned on."
+    initial_state: 'off'
+
+    trigger:
+      # run when nap alarm turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_nap
+        to: 'on'
+
+    condition:
+      # don't run if another alarm clock is already active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'off'
+
+      # only run in home, night, guest, and override modes
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Home'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Guest'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Override'
+
+    action:
+      # start alarm clock nap timer
+      - service: timer.start
+        data_template:
+          entity_id: timer.alarm_clock_nap
+          duration: "00:{{ states.input_number.alarm_clock_nap_time.state | int }}"
+
+###################################################################################################
+## Alarm Clock - Nap Alarm On Check
+## - only for nap alarms because it is active immediately, manual/auto can be turned on
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_nap_on_check
+    alias: "[Alarm Clock] Nap On Check"
+    description: "Turn nap boolean back off if another alarm is active."
+    initial_state: 'off'
+
+    trigger:
+      # run when nap alarm turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_nap
+        to: 'on'
+
+    condition:
+      # run if another alarm clock is already active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # turn automation off so we don't cancel active alarm
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_nap_off
+
+      # turn boolean back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_nap
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_nap_off
+
+###################################################################################################
+## Alarm Clock - Nap Alarm Off
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_nap_off
+    alias: "[Alarm Clock] Nap Off"
+    description: "Cancel nap timer when nap alarm boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when nap alarm turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_nap
+        to: 'off'
+
+    action:
+      # stop alarm
+      - service: script.alarm_clock_stop
+
+###################################################################################################
+## Alarm Clock - Nap Timer Finished
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_nap_timer_finished
+    alias: "[Alarm Clock] Nap Timer Finished"
+    description: "Turn on active nap alarm boolean when nap timer finished."
+    initial_state: 'off'
+
+    trigger:
+      # run when nap timer finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.alarm_clock_nap
+
+    condition:
+      # only run if no other active alarm
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'off'
+
+    action:
+      # turn nap alarm clock active boolean on
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alarm_clock_active_nap
+
+###################################################################################################
+## Alarm Clock - Activate Nap Alarm
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_nap_active_on
+    alias: "[Alarm Clock] Nap Active On"
+    description: "Play alarm clock when active nap alarm boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock active boolean turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_nap
+        to: 'on'
+
+    condition:
+      # only run if no other active alarm
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'off'
+
+      # only run in home, night, guest, and override modes
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Home'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Guest'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Override'
+
+    action:
+      # turn off nap timer (req if active and we manually turned boolean on)
+      - service: timer.cancel
+        entity_id: timer.alarm_clock_nap
+
+      # turn on master alarm clock active boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alarm_clock_active
+
+      # play alarm clock
+      - service: script.alarm_clock_play
+        data_template:
+          alarm_type: 'nap'
+          first_run: 'true'
+
+      # send notiication if alarm didn't play
+      - service: script.alarm_clock_failed_notification
+
+###################################################################################################
+## Alarm Clock - Activate Nap Alarm Check
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_nap_active_on_check
+    alias: "[Alarm Clock] Nap Active On Check"
+    description: "Turn nap active alarm boolean back of if another alarm is active."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock active boolean turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_nap
+        to: 'on'
+
+    condition:
+      # run if another alarm clock is already active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # turn off automation so we don't cancel active alarm
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_nap_active_off
+
+      # turn boolean back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active_nap
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_nap_active_off
+
+###################################################################################################
+## Alarm Clock - Nap Alarm Turned Off
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_nap_active_off
+    alias: "[Alarm Clock] Nap Active Off"
+    description: "Turn off master active alarm clock boolean when nap active alarm boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when nap active boolean turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_nap
+        to: 'off'
+
+    action:
+      # turn off active alarm boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active
+
+###################################################################################################
+## Alarm Clock - Manual Alarm Off
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_manual_off
+    alias: "[Alarm Clock] Manual Off"
+    description: "Turn off alarm clock when manual alarm clock boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when manual alarm turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_manual
+        to: 'off'
+
+    condition:
+      # only run if manual alarm active or we might turn off another alarm
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active_manual
+        state: 'on'
+
+    action:
+      # stop alarm
+      - service: script.alarm_clock_stop
+
+###################################################################################################
+## Alarm Clock - Manual Alarm Triggered
+###################################################################################################
+  - id: alarm_clock_manual_alarm_triggered
+    alias: "[Alarm Clock] Manual Alarm Triggered"
+    description: "Play alarm clock when manual alarm clock set time is current time."
+    initial_state: 'on'
+
+    trigger:
+      # run at set time
+      - platform: template
+        value_template: "{{ states('sensor.time') == states('input_datetime.alarm_clock_manual_time')[0:5] }}"
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if manual alarm enabled
+          - condition: state
+            entity_id: input_boolean.alarm_clock_manual
+            state: 'on'
+          # only run if no other active alarm
+          - condition: state
+            entity_id: input_boolean.alarm_clock_active
+            state: 'off'
+
+    action:
+      # turn on manual alarm clock active boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alarm_clock_active_manual
+
+###################################################################################################
+## Alarm Clock - Manual Active On
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_manual_active_on
+    alias: "[Alarm Clock] Manual Active On"
+    description: "Play alarm clock when manual active boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock active boolean turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_manual
+        to: 'on'
+
+    condition:
+      # only run if no other active alarm
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'off'
+
+      # only run in home, night, guest, and override modes
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Home'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Guest'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Override'
+
+    action:
+      # turn on alarm clock active boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alarm_clock_active
+
+      # play alarm clock
+      - service: script.alarm_clock_play
+        data_template:
+          alarm_type: 'manual'
+          first_run: 'true'
+
+      # send notiication if alarm didn't play
+      - service: script.alarm_clock_failed_notification
+
+###################################################################################################
+## Alarm Clock - Manual Active On Check
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_manual_active_on_check
+    alias: "[Alarm Clock] Manual Active On Check"
+    description: "Turn manual active boolean back off if another alarm is active."
+    initial_state: 'off'
+
+    trigger:
+      # run when manual alarm clock active boolean turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_manual
+        to: 'on'
+
+    condition:
+      # run if another alarm clock is already active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # turn off automation so we don't cancel active alarm
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_manual_active_off
+
+      # turn boolean back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active_manual
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_manual_active_off
+
+###################################################################################################
+## Alarm Clock - Manual Active Off
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_manual_active_off
+    alias: "[Alarm Clock] Manual Active Off"
+    description: "Turn off master active boolean when manual active boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when manual active boolean turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_manual
+        to: 'off'
+
+    action:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active
+
+###################################################################################################
+## Alarm Clock - Auto Off
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_auto_off
+    alias: "[Alarm Clock] Auto Off"
+    description: "Stop alarm clock when auto active boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when auto alarm clock enabled boolean is turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_auto
+        to: 'off'
+
+    condition:
+      # only run if auto alarm active or we might turn off another alarm
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active_auto
+        state: 'on'
+
+    action:
+      # stop alarm
+      - service: script.alarm_clock_stop
+
+###################################################################################################
+## Alarm Clock - Auto Active On
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_auto_active_on
+    alias: "[Alarm Clock] Auto Active On"
+    description: "Play alarm clock when auto active boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock active boolean turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_auto
+        to: 'on'
+
+    condition:
+      # only run if no other active alarm
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'off'
+
+      # only run in home, night, and override modes
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Home'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Override'
+
+    action:
+      # turn on alarm clock active boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alarm_clock_active
+
+      # play alarm clock
+      - service: script.alarm_clock_play
+        data_template:
+          alarm_type: 'auto'
+          first_run: 'true'
+
+      # send notiication if alarm didn't play
+      - service: script.alarm_clock_failed_notification
+
+###################################################################################################
+## Alarm Clock -  Auto Activate On Check
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_auto_active_on_check
+    alias: "[Alarm Clock] Auto Active On Check"
+    description: "Turn off auto active boolean back off if another alarm already active."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock active boolean turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_auto
+        to: 'on'
+
+    condition:
+      # run if another alarm clock is already active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # turn off automation so we don't cancel active alarm
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_auto_active_off
+
+      # turn boolean back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active_auto
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_auto_active_off
+
+###################################################################################################
+## Alarm Clock - Auto Alarm Deactivated
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_auto_active_off
+    alias: "[Alarm Clock] Auto Active Off"
+    description: "Turn off master active boolean when auto active boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when auto active boolean turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_active_auto
+        to: 'off'
+
+    action:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active
+
+###################################################################################################
+## Alarm Clock - Snooze On
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_snooze_on
+    alias: "[Alarm Clock] Snooze On"
+    description: "Pause media player and start snooze timer when snooze turned on."
+    initial_state: 'off'
+
+    trigger:
+      # run when snooze boolean turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_snooze
+        to: 'on'
+
+    condition:
+      # only run when alarm is active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # cancel alarm clock restart timer
+      - service: timer.cancel
+        data:
+          entity_id:
+            - timer.alarm_clock_restart
+            - timer.alarm_clock_volume_steps
+
+      # reset volume steps counter so we dont get huge volume jump next loop
+      - service: counter.reset
+        entity_id: counter.alarm_clock_volume_steps
+
+      # start snooze timer
+      - service: timer.start
+        data_template:
+          entity_id: timer.alarm_clock_snooze
+          duration: '00:{{ states.input_number.alarm_clock_snooze_time.state | int }}'
+
+      # turn off automation to avoid activating snooze when media player paused
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_detect_snooze
+
+      # pause media player, check for playing state first to avoid warning
+      - service_template: >-
+          {% if is_state(states('sensor.alarm_clock_media_player'), 'playing') %} media_player.media_pause
+          {% else %} script.null_script
+          {% endif %}
+        data_template:
+          entity_id: "{{ states('sensor.alarm_clock_media_player') }}"
+
+      # delay to allow entity states to register
+      - delay: '0:00:01'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_detect_snooze
+
+###################################################################################################
+## Alarm Clock - Snooze Check
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_snooze_check
+    alias: "[Alarm Clock] Snooze Check"
+    description: "Turn snooze boolean back off if alarm isn't active."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm snooze is turned on
+      - platform: state
+        entity_id: input_boolean.alarm_clock_snooze
+        to: 'on'
+
+    condition:
+      # only run if alarm clock is active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'off'
+
+    action:
+      # turn off automation to avoid triggering snooze off automation
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_snooze_turned_off
+
+      # turn alarm snooze back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_snooze
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_detect_snooze
+
+###################################################################################################
+## Alarm Clock - Snooze Turned Off
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_snooze_turned_off
+    alias: "[Alarm Clock] Snooze Turned Off"
+    description: "Turn off alarm clock when snooze turned off."
+    initial_state: 'off'
+
+    trigger:
+      # run when snooze boolean turned off
+      - platform: state
+        entity_id: input_boolean.alarm_clock_snooze
+        to: 'off'
+
+      # run when snooze timer cancelled
+      - platform: event
+        event_type: timer.cancelled
+        event_data:
+          entity_id: timer.alarm_clock_snooze
+
+    action:
+      # turn off alarm clock active boolean (stops alarm clock)
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_active
+
+###################################################################################################
+## Alarm Clock - Snooze Timer Finished
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_snooze_timer_finished
+    alias: "[Alarm Clock] Snooze Timer Finished"
+    description: "Turn off snooze and restart alarm when snooze timer finished."
+    initial_state: 'off'
+
+    trigger:
+      # run when snooze timer is done
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.alarm_clock_snooze
+
+    condition:
+      # only run if alarm clock is active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # turn off automation so we don't turn off active alarm
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_snooze_turned_off
+
+      # turn off snooze boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.alarm_clock_snooze
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_snooze_turned_off
+
+      # restart alarm (snooze boolean off turned alarm off)
+      # first run false, no delay/notification
+      - service: script.alarm_clock_play
+        data_template:
+          first_run: 'false'
+          alarm_type: *alarm_type
+
+###################################################################################################
+## Alarm Clock - Volume Change
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_volume_change
+    alias: "[Alarm Clock] Volume Change"
+    description: "Change media player volume when alarm clock volume control changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm clock volume input value changes
+      - platform: state
+        entity_id:
+          - input_number.alarm_clock_volume
+          - input_number.alarm_clock_volume_auto
+          - input_number.alarm_clock_volume_manual
+          - input_number.alarm_clock_volume_nap
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if alarm clock is active
+          - condition: state
+            entity_id: input_boolean.alarm_clock_active
+            state: 'on'
+          - condition: template
+          # only run if volume input is for current alarm
+            value_template: >-
+              {% if trigger.entity_id == 'input_number.alarm_clock_volume' %} true
+              {% elif trigger.entity_id == 'input_number.alarm_clock_volume_auto' and is_state('input_boolean.alarm_clock_active_auto','on') %} true
+              {% elif trigger.entity_id == 'input_number.alarm_clock_volume_manual' and is_state('input_boolean.alarm_clock_active_manual','on') %} true
+              {% elif trigger.entity_id == 'input_number.alarm_clock_volume_nap' and is_state('input_boolean.alarm_clock_active_nap','on') %} true
+              {% else %} false
+              {% endif %}
+
+    action:
+      # turn off volume automations to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: &alarm_clock_volume_automations
+          - automation.alarm_clock_volume_change
+          - automation.alarm_clock_media_player_volume_change
+
+      # set main volume to alarm type volume if alarm type volume changed
+      - service_template: >-
+          {% if not trigger.entity_id == 'input_number.alarm_clock_volume' %} input_number.set_value
+          {% else %} script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_number.alarm_clock_volume
+          value: >-
+            {% if is_state('input_boolean.alarm_clock_active_auto','on') %}{{ states('input_number.alarm_clock_volume_auto') | float }}
+            {% elif is_state('input_boolean.alarm_clock_active_manual','on') %}{{ states('input_number.alarm_clock_volume_manual') | float }}
+            {% elif is_state('input_boolean.alarm_clock_active_nap','on') %}{{ states('input_number.alarm_clock_volume_nap') | float }}
+            {% endif %}
+
+      # set media player volume to input_number value
+      - service: media_player.volume_set
+        data_template:
+          entity_id: "{{ states('sensor.alarm_clock_media_player') }}"
+          volume_level: "{{ states('input_number.alarm_clock_volume') | float / 100 }}"
+
+      # delay to allow volume changes to register
+      - delay: '0:00:01'
+
+      # turn volume automations back on
+      - service: automation.turn_on
+        entity_id: *alarm_clock_volume_automations
+
+###################################################################################################
+## Alarm Clock - Media Player Volume Change
+## - media player is decimal value, input_number is percent
+## - group.alarm_clock_media_player_changed_automations
+###################################################################################################
+  - id: alarm_clock_media_player_volume_change
+    alias: "[Alarm Clock] Media Player Volume Change"
+    description: "Change volume on alarm clock control when volume on media player changed."
+    initial_state: 'off'
+
+    trigger:
+      # activate when media player state changes
+      - platform: state
+        entity_id: *media_player_entities
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if alarm clock is active
+          - condition: state
+            entity_id: input_boolean.alarm_clock_active
+            state: 'on'
+          # only run if trigger entity is current alarm clock media player
+          - condition: template
+            value_template: "{{ trigger.from_state.attributes.friendly_name == states('input_select.alarm_clock_media_player') }}"
+          # only run if the volume has changed on current media player
+          # convert float decimal volume level to int percent (*100) to compare with control value
+          - condition: template
+            value_template: >
+                {% if trigger.entity_id == 'media_player.all_speakers' %}
+                  {{ not (state_attr('media_player.dining_all_speakers_speaker','volume_level') | float * 100) | int == states('input_number.alarm_clock_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.broadcast_speakers' %}
+                  {{ not (state_attr('media_player.dining_braodcast_speakers_speaker','volume_level') | float * 100) | int == states('input_number.alarm_clock_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.dining_room_speaker' %}
+                  {{ not (state_attr('media_player.dining_room_speaker','volume_level') | float * 100) | int == states('input_number.alarm_clock_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.bedroom_speaker' %}
+                  {{ not (state_attr('media_player.bedroom_speaker','volume_level') | float * 100) | int == states('input_number.alarm_clock_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.living_room_tv' %}
+                  {{ not (state_attr('media_player.living_room_tv','volume_level') | float* 100) | int == states('input_number.alarm_clock_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.bedroom_tv' %}
+                  {{ not (state_attr('media_player.bedroom_tv','volume_level') | float * 100) | int == states('input_number.alarm_clock_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.deck_tv' %}
+                  {{ not (state_attr('media_player.deck_tv','volume_level') | float * 100) | int == states('input_number.alarm_clock_volume') | int }}
+                {% endif %}
+
+    action:
+      # turn off automation to avoid recursive volume change triggers
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_volume_change
+
+      # set main volume control to media player volume value
+      # if media player turned off set value back to current input value so volume isn't set to 0
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.alarm_clock_volume
+          value: &media_player_volume >-
+            {% if not is_state(trigger.entity_id,'off') %}
+              {% if trigger.entity_id == 'media_player.all_speakers' %}
+                {{ (state_attr('media_player.all_speakers', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.broadcast_speakers' %}
+                {{ (state_attr('media_player.broadcast_speakers', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.dining_room_speaker' %}
+                {{ (state_attr('media_player.dining_room_speaker', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.bedroom_speaker' %}
+                {{ (state_attr('media_player.bedroom_speaker', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.living_room_tv' %}
+                {{ (state_attr('media_player.living_room_tv', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.bedroom_tv' %}
+                {{ (state_attr('media_player.bedroom_tv', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.deck_tv' %}
+                {{ (state_attr('media_player.deck_tv', 'volume_level') | float * 100) | int }}
+              {% endif %}
+            {% else %}
+              {{ states('input_number.alarm_clock_volume') | int }}
+            {% endif %}
+
+      # delay to allow volume changes to register
+      - delay: '0:00:01'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_volume_change
+
+###################################################################################################
+## Alarm Clock - Volume Timer Finished
+## - group.alarm_clock_hassio_changed_automations
+###################################################################################################
+  - id: alarm_clock_volume_timer_finished
+    alias: "[Alarm Clock] Volume Timer Finished"
+    description: "Turn up alarm clock volume when timer finished."
+    initial_state: 'off'
+
+    trigger:
+      # run when volume step timer finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.alarm_clock_volume_steps
+
+    condition:
+      # only run if alarm clock is active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # increment the volume step counter
+      - service: counter.increment
+        entity_id: counter.alarm_clock_volume_steps
+
+      # turn off media player volume automation, we don't want to store this volume change
+      - service: automation.turn_off
+        entity_id: automation.media_player_volume_change
+
+      # set new volume = current volume + 10%
+      # don't go over 90%
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.alarm_clock_volume
+          value: >-
+            {% set vol =  states('input_number.alarm_clock_volume') | int  + 10  %}
+            {% if vol | float > 90 %} {{ 90 }}
+            {% else %} {{ vol }}
+            {% endif %}
+
+      # restart alarm clock volume timer
+      - service: timer.start
+        entity_id: timer.alarm_clock_volume_steps
+
+      # delay to allow volume changes to register
+      - delay: '0:00:01'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.media_player_volume_change
+
+##################################################################################################
+## Alarm Clock - Sound Changed
+## - group.alarm_clock_hassio_changed_automations
+##################################################################################################
+  - id: alarm_clock_sound_changed
+    alias: "[Alarm Clock] Sound Changed"
+    description: "Restart alarm clock when alarm sound is changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when alarm sound changed
+      - platform: state
+        entity_id: input_select.alarm_clock_sound
+
+    condition:
+      # only run if radio is on
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # wait for running instance of script to finish
+      - wait_template: "{{ is_state('script.alarm_clock_play','off') }}"
+        timeout: '0:00:30'
+        continue_on_timeout: false
+
+      # restart alarm clock with new sound
+      - service: script.alarm_clock_play
+        data_template:
+          alarm_type: *alarm_type
+          first_run: 'false'
+
+##################################################################################################
+## Alarm Clock - Radio Station Changed
+## - group.alarm_clock_hassio_changed_automations
+##################################################################################################
+  - id: alarm_clock_radio_station_changed
+    alias: "[Alarm Clock] Radio Station Changed"
+    description: "Restart alarm clock when radio station is changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio station changed
+      - platform: state
+        entity_id: input_select.alarm_clock_radio_station
+
+    condition:
+      # only run if radio is on
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # wait for running instance of script to finish
+      - wait_template: "{{ is_state('script.alarm_clock_play','off') }}"
+        timeout: '0:00:30'
+        continue_on_timeout: false
+
+      # restart alarm clock with new station
+      - service: script.alarm_clock_play
+        data_template:
+          alarm_type: *alarm_type
+          first_run: 'false'
+
+##################################################################################################
+## Alarm Clock - Media Player Changed
+## - group.alarm_clock_hassio_changed_automations
+##################################################################################################
+  - id: alarm_clock_media_player_changed
+    alias: "[Alarm Clock] Media Player Changed"
+    description: "Restart alarm clock when media player is changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when media player selection changes
+      - platform: state
+        entity_id: input_select.alarm_clock_media_player
+
+    condition:
+      # only run if alarm clock is active
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'on'
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.alarm_clock_media_player
+          - sensor.alarm_clock_media_player_state
+
+      # disable alarm clock detect automations to avoid unwanted auto off triggers when original media player turns off
+      # we can't put media player condition in alarm clock auto off - no trigger id!
+      - service: automation.turn_off
+        entity_id: &alarm_detect_automations
+          - automation.alarm_clock_detect_alarm_off
+          - automation.alarm_clock_detect_snooze
+
+      # turn off current media player so we don't leave it running
+      # trigger.from_state.state will give us previous media player input_select value
+      - service: media_player.turn_off
+        data_template:
+          entity_id: "{{ states('sensor.alarm_clock_media_player') }}"
+
+      # wait for running instance of script to finish
+      - wait_template: "{{ is_state('script.alarm_clock_play','off') }}"
+        timeout: '0:00:30'
+        continue_on_timeout: false
+
+      # restart radio with new media player
+      - service: script.alarm_clock_play
+        data_template:
+          alarm_type: *alarm_type
+          first_run: 'false'
+
+      # turn on alarm clock sensor update automation so wait template updates
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_sensors_update
+
+      # wait until new media player playing
+      - wait_template: "{{ is_state('sensor.alarm_clock_media_player_state','playing') }}"
+        timeout: '00:00:05'
+        continue_on_timeout: true
+
+      # turn off alarm clock sensor automation
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_sensors_update
+
+      # turn automations back on
+      - service: automation.turn_on
+        entity_id: *alarm_detect_automations
+
+##################################################################################################
+## Alarm Clock - Player Offline
+## - don't check browser speakers, they are unavailable if browser not open
+## - group.delayed_automations
+##################################################################################################
+  - id: alarm_clock_player_offline
+    alias: "[Alarm Clock] Player Offline"
+    description: "Send notification when alarm clock media player goes offline."
+    initial_state: 'off'
+
+    trigger:
+      # run when media player is unavailable
+      - platform: state
+        entity_id: &alarm_clock_media_player_entities
+          - media_player.all_speakers
+          - media_player.broadcast_speakers
+          - media_player.music_speakers
+          - media_player.dining_room_speaker
+          - media_player.bedroom_speaker
+          - media_player.living_room_tv
+          - media_player.bedroom_tv
+          - media_player.deck_tv
+          - media_player.jphone_chrome
+          - media_player.jlaptop_chrome
+          - media_player.jwork_chrome
+          - media_player.sphone_chrome
+        to: 'unavailable'
+        for: '00:01:00'
+
+      # run when media player is unknown
+      - platform: state
+        entity_id: *alarm_clock_media_player_entities
+        to: 'unknown'
+        for: '00:01:00'
+
+    condition:
+      - condition: and
+        conditions:
+          # do not run in silent mode
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+          # trigger entity is current alarm clock media player
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.alarm_clock_media_player') }}"
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.alarm_clock_media_player
+          - sensor.alarm_clock_media_player_state
+
+      # delay to stagger notifications if radio, announcements, alarm clock using same media player
+      - delay: '00:00:20'
+
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &alarm_clock_player_title "Alarm Clock Media Player Unavailable"
+          message: &alarm_clock_player_message "The radio media player ({{ state_attr(states('sensor.alarm_clock_media_player'),'friendly_name') }}) is unavailable!"
+          notification_id: 'alarm_clock_player_offline'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *alarm_clock_player_title
+          message: *alarm_clock_player_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'alarm_clock_player_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'alarm_clock_player_offline'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/media'
+            icon: !secret OFFLINE_ICON
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Alarm Clock - Player Offline Notification Closed
+## - do not close persistent notification
+###################################################################################################
+  - id: alarm_clock_player_offline_notification_closed
+    alias: "[Alarm Clock] Player Offline Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'alarm_clock_player_offline'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'alarm_clock_player_offline'
+
+##################################################################################################
+## Alarm Clock - Player Offline Alert Cancelled
+## - don't check browser speakers, they are unavailable if browser not open
+##################################################################################################
+  - id: alarm_clock_player_offline_alert_cancelled
+    alias: "[Alarm Clock] Player Offline Alert Cancelled"
+    description: "Dismiss notifications when media player back online."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm clock media player is no longer unavailable
+      - platform: state
+        entity_id: *alarm_clock_media_player_entities
+        from: 'unavailable'
+
+      # run when alarm clock media player  is no longer unknown
+      - platform: state
+        entity_id: *alarm_clock_media_player_entities
+        from: 'unknown'
+
+    condition:
+      - condition: and
+        conditions:
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.alarm_clock_media_player') }}"
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.alarm_clock_media_player
+          - sensor.alarm_clock_media_player_state
+
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'alarm_clock_player_offline'
+
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'alarm_clock_player_offline'
+
+##################################################################################################
+## Alarm Clock - Player Offline Alert Pause
+## - do not close persistent notification
+##################################################################################################
+  - id: alarm_clock_player_offline_alert_pause
+    alias: "[Alarm Clock] Player Offline Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'alarm_clock_player_alert_pause'
+
+    action:
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'alarm_clock_player_offline'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.alarm_clock_player_offline
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.alarm_clock_player_offline', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.alarm_clock_player_offline

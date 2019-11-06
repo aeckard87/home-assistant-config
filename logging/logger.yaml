@@ -1,0 +1,18 @@
+###############################################################################
+# System Logger
+## https://www.home-assistant.io/components/logger
+## - set log to info level here so boot is always logged
+## - default log will reset to level selected in UI after boot
+###############################################################################
+
+default: info
+logs:
+  #homeassistant.components.automation: info
+  #homeassistant.components.command_line.sensor: warn
+  #homeassistant.components.generic.camera: debug
+  homeassistant.components.proximity: warn
+  homeassistant.components.shell_command: debug
+  #homeassistant.components.websocket_api.http: warn
+  #homeassistant.helpers.script: info
+  googleapiclient.discovery: warn
+  #pyupdate: warn

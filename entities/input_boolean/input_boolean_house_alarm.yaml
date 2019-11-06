@@ -1,0 +1,23 @@
+##################################################################################################
+## House Alarm Automation
+## - used to enable/disable house alarm automations
+##################################################################################################
+  house_alarm_automation:
+    icon: mdi:alarm-light
+    name: Alarm Automations
+    
+##################################################################################################
+## House Alarm Enabled
+## - used to enable/disable house alarm
+##################################################################################################
+  house_alarm_enabled:
+    icon: mdi:alarm-light
+    name: Alarm Enabled
+
+##################################################################################################
+## House Alarm Auto Arming
+## - used to enable/disable house alarm auto arming with occupancy mode
+##################################################################################################
+  house_alarm_auto_arming:
+    name: Auto Arm Alarm
+    icon: mdi:alarm-check

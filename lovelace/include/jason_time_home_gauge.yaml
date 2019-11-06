@@ -1,0 +1,27 @@
+type: gauge
+entity: sensor.jason_time_to_home
+name: Jason To Home
+unit: min
+min: 0
+max: 30
+severity:
+  green: 10
+  yellow: 15
+  red: 20
+tap_action: #ISSUE popup doesn't work here
+  action: call-service
+  service: browser_mod.popup
+  service_data:
+    deviceID: this
+    title: Jason Time To Home
+    card:
+      type: custom:entity-attributes-card
+      filter:
+        include:
+          - sensor.jason_time_to_home.duration
+          - sensor.jason_time_to_home.duration_in_traffic
+          - sensor.jason_time_to_home.mode
+          - sensor.jason_time_to_home.distance
+          - sensor.jason_time_to_home.origin_addresses
+          - sensor.jason_time_to_home.destination_addresses
+#IDEA hold action to update sensor

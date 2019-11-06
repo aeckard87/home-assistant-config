@@ -1,0 +1,88 @@
+###############################################################################
+## Home Assistant Configuration
+## configuration.yaml
+###############################################################################
+homeassistant:
+  customize: !include customize.yaml
+  whitelist_external_dirs:
+    - /config
+
+http:
+  base_url: !secret BASE_URL
+  ssl_certificate: /ssl/fullchain.pem
+  ssl_key: /ssl/privkey.pem
+  ip_ban_enabled: true
+  login_attempts_threshold: 5
+
+frontend:
+  javascript_version: latest
+  themes: !include_dir_merge_named themes
+
+lovelace:
+  mode: yaml
+
+browser_mod: !include resources/browser_mod.yaml
+
+default_config:
+discovery:
+python_script:
+ffmpeg:
+
+updater:
+  include_used_components: true
+
+history: !include logging/history.yaml
+logbook: !include logging/logbook.yaml
+logger: !include logging/logger.yaml
+recorder: !include logging/recorder.yaml
+
+panel_iframe: !include panels/panels.yaml
+panel_custom: !include panels/panel_custom.yaml
+
+automation: !include_dir_merge_list automations
+script: !include_dir_merge_named scripts
+group: !include_dir_merge_named groups
+scene: !include_dir_merge_named scenes
+
+alarm_control_panel: !include /config/resources/bwalarm/bwalarm.yaml
+binary_sensor: !include_dir_merge_list /config/entities/binary_sensor
+camera: !include_dir_merge_list /config/entities/camera
+climate: !include /config/entities/climate.yaml
+counter: !include_dir_merge_named /config/entities/counter
+cover: !include  /config/entities/cover.yaml
+device_tracker: !include  /config/entities/device_tracker.yaml
+fan: !include  /config/entities/fan.yaml
+input_boolean: !include_dir_merge_named /config/entities/input_boolean
+input_datetime: !include_dir_merge_named /config/entities/input_datetime
+input_number: !include_dir_merge_named /config/entities/input_number
+input_select: !include_dir_merge_named /config/entities/input_select
+input_text: !include_dir_merge_named /config/entities/input_text
+light: !include  /config/entities/light.yaml
+media_player: !include /config/entities/media_player.yaml
+notify: !include /config/entities/notify.yaml
+proximity: !include /config/entities/proximity.yaml
+sensor: !include_dir_merge_list /config/entities/sensor
+shell_command: !include /config/shell/shell_commands.yaml
+switch: !include_dir_merge_list /config/entities/switch
+timer: !include_dir_merge_named /config/entities/timer
+tts: !include /config/entities/tts.yaml
+
+## External Components ##
+
+lutron_caseta:
+  host: !secret LUTRON_IP
+  keyfile: /ssl/lutron/caseta.key
+  certfile: /ssl/lutron/caseta.crt
+  ca_certs: /ssl/lutron/caseta-bridge.crt
+
+spotcast:
+  username: !secret SPOTIFY_USERNAME
+  password: !secret SPOTIFY_PASSWORD
+
+google:
+  client_id: !secret GOOGLECAL_CLIENTID
+  client_secret: !secret GOOGLECAL_SECRET
+  track_new_calendar: false
+
+hydrawise:
+  access_token: !secret HYRDRAWISE_API

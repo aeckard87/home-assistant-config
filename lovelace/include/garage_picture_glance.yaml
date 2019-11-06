@@ -1,0 +1,24 @@
+type: picture-glance
+title: Garage
+camera_image: camera.side_door
+entities:
+  - entity: cover.garage_door_opener
+  - entity: binary_sensor.side_entrance_motion
+  - entity: camera.garage_inside
+  - entity: light.living_room_pot_lights
+    name: Garage Interior
+  - entity: input_boolean.garage_heat
+    icon: 'mdi:fire'
+  - entity: input_boolean.garage_freeze_protection
+    icon: 'mdi:snowflake'
+entity: cover.garage_door_opener
+tap_action:
+  action: call-service
+  service: cover.close_cover
+  service_data:
+    entity_id: cover.garage_door_opener
+hold_action:
+  action: call-service
+  service: cover.open_cover
+  service_data:
+    entity_id: cover.garage_door_opener

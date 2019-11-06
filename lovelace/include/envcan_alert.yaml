@@ -1,0 +1,38 @@
+type: conditional
+conditions:
+  - entity: binary_sensor.active_envcan_alert
+    state: 'on'
+  - entity: input_boolean.display_weather_alert
+    state: 'on'
+card:
+  type: markdown
+  title: Envirnonment Canada Weather Alert
+  content: |
+    {% if not states('sensor.warnings') == '' and not states('sensor.warnings') == 'unknown' %}
+    ## {{ states('sensor.warnings') }}
+    {{ state_attr('sensor.warnings', 'alert detail') }}
+
+    **Alert Time:** {{ state_attr('sensor.warnings', 'alert time') }}
+    **Location:** {{ state_attr('sensor.warnings', 'location') }}  **Station:** {{ state_attr('sensor.warnings', 'station') }}
+    {% endif %}
+    {% if not states('sensor.watches') == '' and not states('sensor.warnings') == 'unknown' %}
+    ## {{ states('sensor.watches') }}
+    {{ state_attr('sensor.watches', 'alert detail') }}
+
+    **Alert Time:** {{ state_attr('sensor.watches', 'alert time') }}
+    **Location:** {{ state_attr('sensor.watches', 'location') }}  **Station:** {{ state_attr('sensor.watches', 'station') }}
+    {% endif %}
+    {% if not states('sensor.advisories') == '' and not states('sensor.advisories') == 'unknown' %}
+    ## {{ states('sensor.advisories') }}
+    {{ state_attr('sensor.advisories', 'alert detail') }}
+
+    **Alert Time:** {{ state_attr('sensor.advisories', 'alert time') }}
+    **Location:** {{ state_attr('sensor.advisories', 'location') }}  **Station:** {{ state_attr('sensor.advisories', 'station') }}
+    {% endif %}
+    {% if not states('sensor.statements') == '' and not states('sensor.statements') == 'unknown' %}
+    ## {{ states('sensor.statements') }}
+    {{ state_attr('sensor.statements', 'alert detail') }}
+
+    **Alert Time:** {{ state_attr('sensor.statements', 'alert time') }}
+    **Location:** {{ state_attr('sensor.statements', 'location') }}  **Station:** {{ state_attr('sensor.statements', 'station') }}
+    {% endif %}

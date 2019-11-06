@@ -1,0 +1,25 @@
+type: custom:mini-graph-card
+name: Humidity
+hours_to_show: 72
+font_size: 75
+animate: true
+color_thresholds:
+  - value: 0
+    color: '#cc9900'
+  - value: 20
+    color: '#ffff66'
+  - value: 40
+    color: '#009900'
+  - value: 60
+    color: '#009999'
+  - value: 80
+    color: '#3399ff'
+  - value: 100
+    color: '#0000ff'
+entities:
+  - entity: sensor.upstairs_thermostat_humidity
+    name: Indoor
+    tap_action: !include /config/lovelace/include/popup_thermostat.yaml #ISSUE doesn't work here
+
+  - entity: sensor.dark_sky_humidity
+    name: Outdoor

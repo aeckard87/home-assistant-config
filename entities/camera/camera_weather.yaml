@@ -1,0 +1,30 @@
+###################################################################################################
+## Weather Radar Maps
+###################################################################################################
+  - platform: generic
+    name: Windsor Radar
+    still_image_url: 'https://radar.weather.gov/Conus/Loop/centgrtlakes_loop.gif'
+    content_type: 'image/jpeg'
+
+###################################################################################################
+## Environment Canada Radar Maps
+## https://www.home-assistant.io/integrations/environment_canada
+###################################################################################################
+  - platform: environment_canada
+    name: EnvCan Radar
+    #latitude:
+    #longitude:
+    #station:
+    loop: true
+    #precip_type: RAIN
+
+###################################################################################################
+## NWS Radar Maps
+## https://github.com/MatthewFlamm/nwsradar
+###################################################################################################
+  - platform: nwsradar
+    name: NWS Radar
+    station: DTX
+    type: NCR
+    style: Enhanced
+    frames: 6

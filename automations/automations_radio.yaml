@@ -1,0 +1,1056 @@
+###################################################################################################
+## Radio Hassio Startup
+## - play_radio turns off media player and restarts to reestablish connection with media player
+## - resets timers to original values - best we can do
+###################################################################################################
+  - id: radio_hassio_startup
+    alias: "[Radio] Hassio Startup"
+    description: "Restart radio on startup if turned on."
+    initial_state: 'on'
+
+    trigger:
+      # run when home assistant started
+      - platform: homeassistant
+        event: start
+
+    condition:
+      # run if radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+    action:
+      # wait for delayed automations to turn on
+      - wait_template: "{{ is_state('group.delayed_automations', 'on') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # restart radio
+      - service_template: >-
+          {% if is_state('input_boolean.radio_morning_preset', 'on') %} script.play_radio_morning
+          {% elif is_state('input_boolean.radio_night_preset', 'on') %} script.play_radio_night
+          {% else %} script.play_radio
+          {% endif %}
+
+##################################################################################################
+## Radio Sensors Update
+##################################################################################################
+  - id: radio_sensors_update
+    alias: "[Radio] Sensors Update"
+    description: "Update radio media player sensors."
+    initial_state: 'off'
+
+    trigger:
+      # run every second
+      - platform: time_pattern
+        seconds: '/1'
+
+    action:
+      # update media player sensors
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.radio_media_player
+          - sensor.radio_media_player_state
+
+##################################################################################################
+## Radio Turned On
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_turned_on
+    alias: "[Radio] Turned On"
+    description: "Play radio with current settings when radio on boolean turned on."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio turned on
+      - platform: state
+        entity_id: input_boolean.radio_on
+        to: 'on'
+
+    action:
+      # play streaming radio
+      - service: script.play_radio
+
+      # wait to see if media player begins playing
+      # sensor update is done in play_radio
+      - wait_template: "{{ is_state('sensor.radio_media_player_state','playing') }}"
+        timeout: '0:02:00'
+        continue_on_timeout: true
+
+      # turn radio on boolean off if radio didn't play for some reason (eg stream down)
+      - service_template: >-
+          {% if not is_state('sensor.radio_media_player_state','playing') %} input_boolean.turn_off
+          {% else %} script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_boolean.radio_on
+
+##################################################################################################
+## Auto Radio Off
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_auto_off
+    alias: "[Radio] Auto Off"
+    description: "Automatically turn off radio when conditions are met."
+    initial_state: 'off'
+
+    trigger:
+      # run when silent mode turned on or house alarm goes off
+      - platform: state
+        entity_id:
+          - input_boolean.silent_mode
+          - binary_sensor.house_alarm_active_alert
+        to: 'on'
+
+      # run when radio has been paused for set time
+      - platform: state
+        entity_id: input_boolean.radio_paused
+        to: 'on'
+        for: '00:05:00'
+
+      # run when occupancy mode goes to Away
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Away'
+
+      # run when occupancy mode goes to Vacation
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Vacation'
+
+      - platform: state
+        entity_id: sensor.radio_media_player
+        to: unavailable
+        for: '00:00:05'
+
+      - platform: state
+        entity_id: sensor.radio_media_player
+        to: unknown
+        for: '00:00:05'
+
+    condition:
+      # only run when radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+    action:
+      # turn off radio
+      - service: script.radio_off
+
+##################################################################################################
+## Radio Turned Off Hassio
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_hassio_turned_off
+    alias: "[Radio] Hassio Turned Off"
+    description: "Turn off radio when radio on boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio turned off
+      - platform: state
+        entity_id: input_boolean.radio_on
+        to: 'off'
+
+    action:
+      # turn off radio
+      - service: script.radio_off
+
+##################################################################################################
+## Radio Turned Off Media Player
+## - delay powering off to ignore state switches between radio/announcement
+## - group.radio_media_player_changed_automations
+##################################################################################################
+  - id: radio_media_player_turned_off
+    alias: "[Radio] Media Player Turned Off"
+    description: "Turn radio off when radio media player turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when media player turns off
+      - platform: state
+        to: 'off'
+        entity_id: &radio_media_player_entities
+          - media_player.all_speakers
+          - media_player.broadcast_speakers
+          - media_player.music_speakers
+          - media_player.dining_room_speaker
+          - media_player.bedroom_speaker
+          - media_player.living_room_tv
+          - media_player.bedroom_tv
+          - media_player.deck_tv
+          - media_player.jphone_chrome
+          - media_player.jlaptop_chrome
+          - media_player.jwork_chrome
+          - media_player.sphone_chrome
+
+      # run when media player state is idle
+      # allow long enough delay that radio doesn't turn off after announcement
+      - platform: state
+        to: 'idle'
+        for: '0:01:00'
+        entity_id: *radio_media_player_entities
+
+      # run when media player state is unavailable
+      - platform: state
+        to: 'unavailable'
+        entity_id: *radio_media_player_entities
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if radio on
+          - condition: state
+            entity_id: input_boolean.radio_on
+            state: 'on'
+
+          # do not run if an announcement is playing
+          - condition: state
+            entity_id: input_boolean.announcement_playing
+            state: 'off'
+
+          # only run if trigger entity is current radio player
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.radio_media_player') }}"
+
+    action:
+      # turn off radio
+      - service: script.radio_off
+
+##################################################################################################
+## Radio Paused In Hassio
+## group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_hassio_paused
+    alias: "[Radio] Hassio Paused"
+    description: "Pause radio when radio paused boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio pause boolean turned on
+      - platform: state
+        entity_id: input_boolean.radio_paused
+        to: 'on'
+
+    condition:
+      # only run when radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+    action:
+      # pause radio
+      - service: script.pause_radio
+
+##################################################################################################
+## Radio Paused By Media Player
+## group.radio_media_player_changed_automations
+##################################################################################################
+  - id: radio_media_player_paused
+    alias: "[Radio] Media Player Paused"
+    description: "Turn radio pause boolean on when radio media player is paused."
+    initial_state: 'off'
+
+    trigger:
+      # run when media player has been paused
+      - platform: state
+        entity_id: *radio_media_player_entities
+        to: 'paused'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run when radio is on (user might be pausing spotify, netflix etc. instead)
+          - condition: state
+            entity_id: input_boolean.radio_on
+            state: 'on'
+
+          # only run if an announcement isn't playing
+          - condition: state
+            entity_id: input_boolean.announcement_playing
+            state: 'off'
+
+          # only run if the trigger media player is the current radio media player
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.radio_media_player') }}"
+
+    action:
+      # turn off radio paused automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.radio_hassio_paused
+
+      # turn on radio pause boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.radio_paused
+
+      # wait until state change has registered
+      - wait_template: "{{ is_state('input_boolean.radio_paused', 'on') }}"
+        timeout: '00:00:05'
+        continue_on_timeout: true
+
+      # turn radio paused automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_hassio_paused
+
+##################################################################################################
+## Radio Paused Hassio Radio Off
+##################################################################################################
+  - id: radio_paused_hassio_off
+    alias: "[Radio] Paused Hassio Off"
+    description: "Turn pause boolean back off if radio not on."
+    initial_state: 'on'
+
+    trigger:
+      # run when radio pause turned on
+      - platform: state
+        entity_id: input_boolean.radio_paused
+        to: 'on'
+
+    condition:
+      # only run when radio is off
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'off'
+
+    action:
+      # turn radio pause input off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.radio_paused
+
+##################################################################################################
+## Radio Auto Resume
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_auto_resume
+    alias: "[Radio] Auto Resume"
+    description: "Turn radio back on when announcement done playing."
+    initial_state: 'off'
+
+    trigger:
+      # run when announcement playing boolean turns off
+      - platform: state
+        entity_id: input_boolean.announcement_playing
+        to: 'off'
+
+    condition:
+      # only run when radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+    action:
+      # resume radio
+      - service_template: >-
+          {% if not is_state('script.resume_radio','on') %} script.resume_radio
+          {% else %} script.null_script
+          {% endif %}
+
+##################################################################################################
+## Radio Resumed Media Player
+## - group.radio_media_player_changed_automations
+##################################################################################################
+  - id: radio_media_player_resumed
+    alias: "[Radio] Media Player Resumed"
+    description: "Turn radio pause boolean off when radio media player play resumed."
+    initial_state: 'off'
+
+    trigger:
+      # run when media player has resumed play
+      - platform: state
+        entity_id: *radio_media_player_entities
+        to: 'playing'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run when radio is on
+          - condition: state
+            entity_id: input_boolean.radio_on
+            state: 'on'
+
+          # don't run if there is an annoucment playing
+          - condition: state
+            entity_id: script.play_announcement
+            state: 'off'
+
+          # only run if the trigger media player is the current radio media player
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.radio_media_player') }}"
+
+    action:
+      # turn off radio resumed automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.radio_hassio_resumed
+
+      # turn off radio pause input boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.radio_paused
+
+      # wait until state change has registered
+      - wait_template: "{{ is_state('input_boolean.radio_paused', 'off') }}"
+        timeout: '00:00:05'
+        continue_on_timeout: true
+
+      # turn radio resumed automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_hassio_resumed
+
+##################################################################################################
+## Radio Resumed Hassio
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_hassio_resumed
+    alias: "[Radio] Hassio Resumed"
+    description: "Resume radio when radio pause boolean turned off."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio pause boolean turned off
+      - platform: state
+        entity_id: input_boolean.radio_paused
+        to: 'off'
+
+    action:
+      # resume radio
+      - service: script.resume_radio
+
+##################################################################################################
+## Radio Volume
+## - media player expects decimal float value, input_number is percent (/100)
+## - if night mode then default to night announcement volume, else use set volume
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_hassio_volume_changed
+    alias: "[Radio] Hassio Volume Changed"
+    description: "Change media player volume when radio volume control changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio input_number value changes
+      - platform: state
+        entity_id: input_number.radio_volume
+
+    condition:
+      # only run if radio is on, radio will be playing on trigger.from media player
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+    action:
+      # turn off media player volume automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.radio_media_player_volume_changed
+
+      # update media player sensors
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.radio_media_player
+          - sensor.radio_media_player_state
+
+      # set media player volume to input_number value
+      - service: media_player.volume_set
+        data_template:
+          entity_id: &radio_media_player_select "{{ states('sensor.radio_media_player') }}"
+          volume_level: >
+            {% if is_state('input_select.occupancy_mode', 'Night') %}
+              {% if states('input_number.radio_volume') | int >= states('input_number.night_announcement_volume') | int %}{{ states('input_number.night_announcement_volume') | float / 100 }}
+              {% else %}{{ states('input_number.radio_volume') | float / 100 }}
+              {% endif %}
+            {% else %}{{ states('input_number.radio_volume') | float / 100 }}
+            {% endif %}
+
+      # reset input_number value to match set value (reset when in night mode)
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.radio_volume
+          value: >
+            {% if is_state('input_select.occupancy_mode', 'Night') %}
+              {% if states('input_number.radio_volume') | int >= states('input_number.night_announcement_volume') | int %}{{ states('input_number.night_announcement_volume') }}
+              {% else %}{{ states('input_number.radio_volume')  | int }}
+              {% endif %}
+            {% else %}{{ states('input_number.radio_volume')  | int }}
+            {% endif %}
+
+      # turn media player volume automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_media_player_volume_changed
+
+##################################################################################################
+## Media Player Volume Change
+## - media player is decimal, input_number is percent
+## - group.radio_media_player_changed_automations
+##################################################################################################
+  - id: radio_media_player_volume_changed
+    alias: "[Radio] Media Player Volume Changed"
+    description: "Change radio volume control when radio media player volume changes."
+    initial_state: 'off'
+
+    trigger:
+      # activate when media player state changes
+      - platform: state
+        entity_id: *radio_media_player_entities
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if radio is on
+          - condition: state
+            entity_id: input_boolean.radio_on
+            state: 'on'
+
+          # don't run if an announcement is playing
+          - condition: state
+            entity_id: input_boolean.announcement_playing
+            state: 'off'
+
+          # only run if trigger entity is current radio player
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.radio_media_player') }}"
+
+          # only run if trigger entity is playing
+          - condition: template
+            value_template: "{{ states( trigger.entity_id ) == 'playing' }}"
+
+          # only run if the volume has changed on current media player
+          - condition: template
+            value_template: >
+                {% if trigger.entity_id == 'media_player.all_speakers' %}{{ not (state_attr('media_player.all_speakers','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.broadcast_speakers' %}{{ not (state_attr('media_player.braodcast_speakers','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.music_speakers' %}{{ not (state_attr('media_player.music_speakers','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.dining_room_speaker' %}{{ not (state_attr('media_player.dining_room_speaker','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.bedroom_speaker' %}{{ not (state_attr('media_player.bedroom_speaker','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.living_room_tv' %}{{ not (state_attr('media_player.living_room_tv','volume_level') | float* 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.bedroom_tv' %}{{ not (state_attr('media_player.bedroom_tv','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.deck_tv' %}{{ not (state_attr('media_player.deck_tv','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.jlaptop_chrome' %}{{ not (state_attr('media_player.jlaptop_chrome','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.jwork_chrome' %}{{ not (state_attr('media_player.jwork_chrome','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.jphone_chrome' %}{{ not (state_attr('media_player.jphone_chrome','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% elif trigger.entity_id == 'media_player.sphone_chrome' %}{{ not (state_attr('media_player.sphone_chrome','volume_level') | float * 100) | int == states('input_number.radio_volume') | int }}
+                {% endif %}
+
+    action:
+      # turn off radio volume automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.radio_hassio_volume_changed
+
+      # set input number to media player volume value
+      # if media player off - set value to current input value so we don't turn volume off
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.radio_volume
+          value: >
+            {% if not is_state(trigger.entity_id,'off') %}
+              {% if trigger.entity_id == 'media_player.all_speakers' %}{{ (state_attr('media_player.all_speakers', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.broadcast_speakers' %}{{ (state_attr('media_player.broadcast_speakers', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.music_speakers' %}{{ (state_attr('media_player.music_speakers', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.dining_room_speaker' %}{{ (state_attr('media_player.dining_room_speaker', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.bedroom_speaker' %}{{ (state_attr('media_player.bedroom_speaker', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.living_room_tv' %}{{ (state_attr('media_player.living_room_tv', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.bedroom_tv' %}{{ (state_attr('media_player.bedroom_tv', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.deck_tv' %}{{ (state_attr('media_player.deck_tv', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.jlaptop_chrome' %}{{ (state_attr('media_player.jlaptop_chrome', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.jwork_chrome' %}{{ (state_attr('media_player.jwork_chrome', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.jphone_chrome' %}{{ (state_attr('media_player.jphone_chrome', 'volume_level') | float * 100) | int }}
+              {% elif trigger.entity_id == 'media_player.sphone_chrome' %}{{ (state_attr('media_player.sphone_chrome', 'volume_level') | float * 100) | int }}
+              {% endif %}
+            {% else %}{{ states('input_number.radio_volume') }}
+            {% endif %}
+
+      # turn radio volume automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_hassio_volume_changed
+
+##################################################################################################
+## Radio Station Changed
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_station_changed
+    alias: "[Radio] Station Changed"
+    description: "Restart radio when radio station is changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio station changed
+      - platform: state
+        entity_id: input_select.radio_station
+
+    condition:
+      # only run if radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+    action:
+      # restart radio with new settings
+      - service: script.play_radio
+
+##################################################################################################
+## Radio - Media Player Changed
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_media_player_changed
+    alias: "[Radio] Media Player Changed"
+    description: "Restart radio when radio media player changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when media player selection changes
+      - platform: state
+        entity_id: input_select.media_player_radio
+
+    condition:
+      # only run if radio is on
+      - condition: state
+        entity_id: input_boolean.radio_on
+        state: 'on'
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.radio_media_player
+          - sensor.radio_media_player_state
+
+      # restart radio with new settings
+      - service: script.play_radio
+
+##################################################################################################
+## Radio Morning Turned Off
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_morning_turned_off
+    alias: "[Radio] Morning Turned Off"
+    description: "Turn off radio when morning preset boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio morning preset boolean turned off
+      - platform: state
+        entity_id: input_boolean.radio_morning_preset
+        to: 'off'
+
+    action:
+      # turn radio off
+      - service: script.radio_off
+
+##################################################################################################
+## Radio Night Turned Off
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_night_turned_off
+    alias: "[Radio] Night Turned Off"
+    description: "Turn off radio when night preset boolean turns off."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio night preset boolean turned off
+      - platform: state
+        entity_id: input_boolean.radio_night_preset
+        to: 'off'
+
+    action:
+      # turn radio off
+      - service: script.radio_off
+
+##################################################################################################
+## Radio Morning Timer Finished
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_morning_volume_timer_finished
+    alias: "[Radio] Morning Volume Timer Finished"
+    description: "Adjust radio volume when volume timer finished."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio morning volume timer finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.radio_morning_volume
+
+    action:
+      # wait until announcements done before increasing volume
+      # don't continue on timeout or we'll change volume for announcement
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # set morning radio volume
+      - service: script.adjust_radio_volume
+        data_template:
+          new_volume: "{{ states('input_number.radio_volume_morning') | float }}"
+
+      # turn off preset automation so media player doesn't turn off
+      - service: automation.turn_off
+        entity_id: automation.radio_morning_turned_off
+
+      # turn boolean off to indicate morning volume timer finished
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.radio_morning_preset
+
+      # turn preset automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_morning_turned_off
+
+##################################################################################################
+## Radio Morning Timer Cancelled
+## - turns off boolean but leaves radio playing
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_morning_volume_timer_cancelled
+    alias: "[Radio] Morning Volume Timer Cancelled"
+    description: "Turn off morning radio preset when volume timer cancelled."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio morning volume timer cancelled
+      - platform: event
+        event_type: timer.cancelled
+        event_data:
+          entity_id: timer.radio_morning_volume
+
+    action:
+      # turn off preset automation so media player doesn't turn off
+      - service: automation.turn_off
+        entity_id: automation.radio_morning_turned_off
+
+      # turn boolean off to indicate morning volume timer finished
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.radio_morning_preset
+
+      # turn preset automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_morning_turned_off
+
+##################################################################################################
+## Radio Sleep Timer Finished or Cancelled
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_sleep_timer_finished
+    alias: "[Radio] Sleep Timer Finished"
+    description: "Turn radio off when sleep timer finished or cancelled."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio sleep timer finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.radio_sleep
+
+      # run when radio sleep timer cancelled
+      - platform: event
+        event_type: timer.cancelled
+        event_data:
+          entity_id: timer.radio_sleep
+
+    action:
+      # turn radio off
+      - service: script.radio_off
+
+##################################################################################################
+## Radio Sleep Timer Changed
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_sleep_timer_changed
+    alias: "[Radio] Sleep Timer Changed"
+    description: "Restart sleep timer when sleep time control changed."
+    initial_state: 'off'
+
+    trigger:
+      # run when radio sleep time is changed
+      - platform: state
+        entity_id: input_number.radio_sleep_time
+
+    condition:
+      # only run when night radio is on
+      - condition: state
+        entity_id: input_boolean.radio_night_preset
+        state: 'on'
+
+    action:
+      # restart sleep timer
+      - service: timer.start
+        data_template:
+          entity_id: timer.radio_sleep
+          duration: '00:{{ states.input_number.radio_sleep_time.state | int }}'
+
+##################################################################################################
+## Radio Morning Preset On
+## - do not turn off preset boolean here, turns off when volume timer done
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_morning_preset_on
+    alias: "[Radio] Morning Preset On"
+    description: "Play morning radio preset when morning radio boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when preset is turned on
+      - platform: state
+        entity_id: input_boolean.radio_morning_preset
+        from: 'off'
+        to: 'on'
+
+    action:
+      # play radio preset
+      - service: script.play_radio_morning
+
+##################################################################################################
+## Radio Night Preset On
+## - do not turn off preset boolean here, turns off when sleep timer done
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_night_preset_on
+    alias: "[Radio] Night Preset On"
+    description: "Play night radio preset when night radio boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when preset is turned on
+      - platform: state
+        entity_id: input_boolean.radio_night_preset
+        from: 'off'
+        to: 'on'
+
+    action:
+      # play radio preset
+      - service: script.play_radio_night
+
+##################################################################################################
+## Radio Jason Preset On
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_jason_preset_on
+    alias: "[Radio] Jason Preset On"
+    description: "Play Jason's radio preset when jason radio boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when preset is turned on
+      - platform: state
+        entity_id: input_boolean.radio_jason_preset
+        from: 'off'
+        to: 'on'
+
+    action:
+      # turn preset switch back off (momentary switch)
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.radio_jason_preset
+
+      # play radio preset
+      - service: script.play_radio
+        data:
+          preset: 'Jason'
+
+##################################################################################################
+## Radio Sheri Preset On
+## - group.radio_hassio_changed_automations
+##################################################################################################
+  - id: radio_sheri_preset_on
+    alias: "[Radio] Sheri Preset On"
+    description: "Play Sheri's radio preset when jason radio boolean turns on."
+    initial_state: 'off'
+
+    trigger:
+      # run when preset is turned on
+      - platform: state
+        entity_id: input_boolean.radio_sheri_preset
+        from: 'off'
+        to: 'on'
+
+    action:
+      # turn preset switch back off (momentary switch)
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.radio_sheri_preset
+
+      # play radio preset
+      - service: script.play_radio
+        data:
+          preset: 'Sheri'
+
+##################################################################################################
+## Radio - Player Offline
+## - don't use browser speakers, they are unavailable if browser is closed
+## - group.delayed_automations
+##################################################################################################
+  - id: radio_player_offline
+    alias: "[Radio] Player Offline"
+    initial_state: 'off'
+
+    trigger:
+      # run when media player is unavailable
+      - platform: state
+        entity_id: *radio_media_player_entities
+        to: 'unavailable'
+        for: '00:01:00'
+
+      # run when media player is unavailable
+      - platform: state
+        entity_id: *radio_media_player_entities
+        to: 'unknown'
+        for: '00:01:00'
+
+    condition:
+      - condition: and
+        conditions:
+         # only run if media player automationis enabled
+          - condition: state
+            entity_id: input_boolean.radio_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if trigger entity is current radio media player
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.radio_media_player') }}"
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.radio_media_player
+          - sensor.radio_media_player_state
+
+      # delay to stagger notifications if radio, announcements, alarm clock using same media player
+      - delay: '00:00:10'
+
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &radio_player_title "Radio Media Player Unavailable"
+          message: &radio_player_message "The radio media player ({{ state_attr(states('sensor.radio_media_player'),'friendly_name') }}) is unavailable!"
+          notification_id: 'radio_player_offline'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *radio_player_title
+          message: *radio_player_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'radio_player_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'radio_player_offline'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/media'
+            icon: !secret OFFLINE_ICON
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Radio - Player Offline Notification Closed
+## - do not close persistent notification
+###################################################################################################
+  - id: radio_player_offline_notification_closed
+    alias: "[Radio] Player Offline Notification Closed"
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'radio_player_offline'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'radio_player_offline'
+
+##################################################################################################
+## Radio - Player Offline Alert Cancelled
+## - don't use browser speakers, they are unavailable if browser is closed
+##################################################################################################
+  - id: radio_player_offline_alert_cancelled
+    alias: "[Radio] Player Offline Alert Cancelled"
+    initial_state: 'on'
+
+    trigger:
+      # run when announcement media player is no longer unavailable
+      - platform: state
+        entity_id: *radio_media_player_entities
+        from: 'unavailable'
+
+      # run when announcement media playeris no longer unknown
+      - platform: state
+        entity_id: *radio_media_player_entities
+        from: 'unknown'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if media player automations are enabled
+          - condition: state
+            entity_id: input_boolean.radio_automation
+            state: 'on'
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.radio_media_player') }}"
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.radio_media_player
+          - sensor.radio_media_player_state
+
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: radio_player_offline
+
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'radio_player_offline'
+            
+##################################################################################################
+## Radio - Player Offline Alert Pause
+## - temporarily turn off alert automation to stop notifications, resets after timeout
+## - do not close persistent notification
+##################################################################################################
+  - id: radio_player_offline_alert_pause
+    alias: "[Radio] Player Offline Alert Pause"
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'radio_player_alert_pause'
+
+    action:
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'radio_player_offline'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.radio_player_offline
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.radio_player_offline', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.radio_player_offline

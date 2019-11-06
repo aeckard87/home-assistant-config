@@ -1,0 +1,47 @@
+# wait to see if media player begins playing
+# sensor update is being done in alarm_clock_play
+# delay must be longer than notification delay in alarm_clock_play or alarm shuts off
+
+- wait_template: "{{ is_state('sensor.alarm_clock_media_player_state','playing') }}"
+  timeout: '0:03:00'
+  continue_on_timeout: true
+
+# only continue if alarm clock is not playing
+- condition: template
+  value_template: "{{ not is_state('sensor.alarm_clock_media_player_state','playing') }}"
+
+# turn alarm boolean off if alarm didn't play
+- service_template: >-
+    {% if not is_state('sensor.alarm_clock_media_player_state','playing') %} input_boolean.turn_off
+    {% else %} script.null_script
+    {% endif %}
+  data_template:
+    entity_id: input_boolean.alarm_clock_active
+
+# play announcement
+- service: script.play_announcement
+  data_template:
+    play_message: "Attention! The scheduled alarm clock has failed to play."
+    quiet_play: 'true'
+    volume: 70
+
+# send push notification
+- service: notify.push
+  data_template:
+    title: "Alarm Clock Failed"
+    message: "The alarm clock has failed to play!"
+    target:
+      - jphone
+      - jlaptop
+    data:
+      tag: 'outdoor_high_temp_alert'
+      timestamp: "{{ as_timestamp(now()) }}"
+      renotify: true
+      ttl: 14400
+      priority: high
+      requireInteraction: true
+      silent: false
+      url: '/lovelace/schedule'
+      icon: !secret ALARM_CLOCK_ICON
+      image: !secret ALARM_CLOCK_IMAGE
+      badge: !secret ALARM_CLOCK_BADGE

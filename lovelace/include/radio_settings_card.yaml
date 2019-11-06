@@ -1,0 +1,12 @@
+type: entities
+show_header_toggle: false
+entities:
+  - entity: input_boolean.radio_on
+  - entity: input_select.radio_station
+  - entity: input_select.media_player_radio
+  - entity: input_number.radio_volume
+  - entity: input_boolean.radio_paused
+  - type: call-service
+    name: Play Radio
+    service: script.play_radio
+    action_name: PLAY

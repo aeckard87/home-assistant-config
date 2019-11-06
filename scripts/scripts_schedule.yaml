@@ -1,0 +1,200 @@
+##################################################################################################
+## Wake Up Routine
+##################################################################################################
+  wake_up_routine:
+    sequence:
+      # if auto alarm clock enabled activate alarm
+      - service_template: >
+          {% if is_state('input_boolean.alarm_clock_auto','on') %}
+            {% if is_state('binary_sensor.work_today', 'on') %}
+              input_boolean.turn_on
+            {% else %}
+              {% if is_state('input_boolean.alarm_clock_auto_weekends', 'on') %}
+                input_boolean.turn_on
+              {% else %}
+                script.null_script
+              {% endif %}
+            {% endif %}
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_boolean.alarm_clock_active_auto
+
+      # delay to allow alarm state to register before wait template test
+      - delay: '00:00:02'
+
+      # continue when alarm is turned off or after 30 minutes
+      - wait_template: "{{ is_state('input_boolean.alarm_clock_active', 'off') }}"
+        timeout: '00:30:00'
+        continue_on_timeout: true
+
+      # start morning lighting
+      - service: script.morning_lights
+
+      # put the house into home mode
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Home'
+
+      # disarm the house alarm
+      - service: script.disarm_alarm_auto
+
+      # delay to allow all alarm/occupancy announcements to play before wait template script off test
+      # delay must be long enough to allow second annoucement to start to prevent radio from playing then pausing again
+      # delay must be long enough that if alarm auto off stream/sound doesn't play it doesn't kill morning radio
+      - delay: '00:02:00'
+
+      # wait for any announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # start morning radio (with volume delay)
+      - service: script.play_radio_morning
+
+      # wait until we're up and awake to play weather report
+      - delay: '00:30:00'
+
+      # play weather report
+      - service: script.weather_report
+
+##################################################################################################
+## Bed Time Routine
+##################################################################################################
+  bed_time_routine:
+    sequence:
+      # don't run if already in night mode
+      - condition: template
+        value_template: "{{ not is_state('sensor.occupancy_mode','Night') }}"
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Time to head to bed.  Goodnight!"
+          quiet_play: 'true'
+
+      # change occupancy mode to night
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Night'
+
+      # do not ignore user state in bedrooms so we don't wake anyone up!
+      - service: script.turn_light_on
+        data:
+          light_name: 'bedroom_lights'
+          new_state: 'on'
+          brightness: 15
+          ignore_user_state: 'false'
+
+      # turn on sleep radio
+      - service: script.play_radio_night
+
+##################################################################################################
+## Morning Lights
+## - gradually turn up morning lighting
+##################################################################################################
+  morning_lights:
+    sequence:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.light_automation
+            state: 'on'
+
+      #ISSUE transition doesn't work
+      # turn up the lights gradually
+      - service: script.turn_light_on
+        data:
+          light_name: 'living_room_pot_lights'
+          brightness: 40
+          fade_time: 1800
+
+      #TEMP wait a bit to turn up the lights
+      - delay: '0:15:00'
+
+      - service: script.turn_light_on
+        data:
+          light_name: 'living_room_pot_lights'
+          brightness: 20
+
+       #wait a bit to turn up the lights more
+      - delay: '0:30:00'
+
+      - service: script.turn_light_on
+        data:
+          light_name: 'living_room_pot_lights'
+          brightness: 30
+
+##################################################################################################
+## Shift Override Alert
+##################################################################################################
+  shift_override_alert:
+    sequence:
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &shift_title "Shift Override Active"
+          message: &shift_message "Work shift override set to {{ states('sensor.current_shift') }}."
+          notification_id: 'shift_alert'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *shift_title
+          message: *shift_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            tag: 'shift_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: false
+            ttl: 43200
+            priority: high
+            requireInteraction: false
+            silent: false
+            url: '/lovelace/schedule'
+            icon: !secret WORK_ICON
+            image: !secret WORK_IMAGE
+            badge: !secret WORK_BADGE
+
+##################################################################################################
+## Garbage Day Notification
+## pickup_type:
+## - do not dismiss on all devices when closed - everyone must see it
+##################################################################################################
+  garbage_day_notification:
+    sequence:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "{{ pickup_type }} Day"
+          message: "{{ pickup_type }} Day is tomorrow!."
+          target:
+            - jphone
+            - sphone
+          data:
+            tag: 'garbage_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: false
+            ttl: 43200
+            priority: high
+            requireInteraction: false
+            silent: true
+            url: '/lovelace/system'
+            icon: !secret GARBAGE_ICON_TEMPLATE
+            image: !secret GARBAGE_IMAGE_TEMPLATE
+            badge: !secret GARBAGE_BADGE_TEMPLATE

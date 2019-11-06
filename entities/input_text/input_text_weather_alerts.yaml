@@ -1,0 +1,43 @@
+##################################################################################################
+## Warnings Alert Time
+## - storage for warnings alert time value, used to stop multiple triggers
+## - set initial to none, else value will be unknown
+##################################################################################################
+  warnings_alert_time:
+    name: Warnings Alert Time
+    icon: mdi:alert
+    initial: 'None'
+    max: 500
+
+##################################################################################################
+## Watches Alert Time
+## - storage for watches alert time value, used to stop multiple triggers
+## - set initial to none, else value will be unknown
+##################################################################################################
+  watches_alert_time:
+    name: Watches Alert Time
+    icon: mdi:alert
+    initial: 'None'
+    max: 500
+
+##################################################################################################
+## Advisories Alert Time
+## - storage for advisories alert time value, used to stop multiple triggers
+## - set initial to none, else value will be unknown
+##################################################################################################
+  advisories_alert_time:
+    name: Advisories Alert Time
+    icon: mdi:alert
+    initial: 'None'
+    max: 500
+
+##################################################################################################
+## Statements Alert Time
+## - storage for statements alert time value, used to stop multiple triggers
+## - set initial to none, else value will be unknown
+##################################################################################################
+  statements_alert_time:
+    name: Statements Alert Time
+    icon: mdi:alert
+    initial: 'None'
+    max: 500

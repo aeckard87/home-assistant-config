@@ -1,0 +1,405 @@
+##################################################################################################
+## Notification - Sensors Update
+##################################################################################################
+  - id: notification_sensors_update
+    alias: "[Notification] Sensors Update"
+    description: "Update announcement media player sensors for wait templates etc."
+    initial_state: 'off'
+
+    trigger:
+      # run every second
+      - platform: time_pattern
+        seconds: '/1'
+
+    action:
+      # update media player sensors
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.announcement_media_player
+          - sensor.announcement_media_player_state
+
+##################################################################################################
+## Notification - Announcement Volume Check
+## - ensure night <= quiet <= announcement volume so we don' get unexpected volume jumps
+##################################################################################################
+  - id: notification_announcement_volume_check
+    alias: "[Notification] Announcement Volume Check"
+    description: "Keep announcement volume settings stay in sync."
+    initial_state: 'on'
+
+    trigger:
+      # run when announcement volume is changed
+      - platform: state
+        entity_id: input_number.announcement_volume
+
+    action:
+      # turn off other volume check automations to avoid recursive triggers
+      - service: automation.turn_off
+        entity_id:
+          - automation.notification_night_announcement_volume_check
+          - automation.notification_quiet_hours_volume_check
+
+      # adjust quiet hours volume if required
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.quiet_hours_volume
+          value: >-
+            {% if states('input_number.quiet_hours_volume') | int > states('input_number.announcement_volume') | int %}
+              {{ states('input_number.announcement_volume') | float }}
+            {% else %}
+              {{ states('input_number.quiet_hours_volume') | float }}
+            {% endif %}
+
+      # adjust night hours volume if required
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.night_announcement_volume
+          value: >-
+            {% if states('input_number.night_announcement_volume') | int > states('input_number.announcement_volume') | int %}
+              {{ states('input_number.announcement_volume') | float }}
+            {% else %}
+              {{ states('input_number.night_announcement_volume') | float }}
+            {% endif %}
+
+      # turn other volume checks automations back on
+      - service: automation.turn_on
+        entity_id:
+          - automation.notification_night_announcement_volume_check
+          - automation.notification_quiet_hours_volume_check
+
+##################################################################################################
+## Notification - Quiet Hours Volume Check
+## - ensure night <= quiet <= announcement volume so we don' get unexpected volume jumps
+##################################################################################################
+  - id: notification_quiet_hours_volume_check
+    alias: "[Notification] Quiet Hours Volume Check"
+    description: "Keep quiet hours volume settings stay in sync."
+    initial_state: 'on'
+
+    trigger:
+      # run when quiet hours volume is changed
+      - platform: state
+        entity_id: input_number.quiet_hours_volume
+
+    action:
+      # turn off other volume check automations to avoid recursive triggers
+      - service: automation.turn_off
+        entity_id:
+          - automation.notification_announcement_volume_check
+          - automation.notification_night_announcement_volume_check
+
+      # adjust announcement volume if required
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.announcement_volume
+          value: >-
+            {% if states('input_number.announcement_volume') | int < states('input_number.quiet_hours_volume') | int %}
+              {{ states('input_number.quiet_hours_volume') | float }}
+            {% else %}
+              {{ states('input_number.announcement_volume') | float }}
+            {% endif %}
+
+      # adjust night volume if required
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.night_announcement_volume
+          value: >-
+            {% if states('input_number.night_announcement_volume') | int > states('input_number.quiet_hours_volume') | int %}
+              {{ states('input_number.quiet_hours_volume') | float }}
+            {% else %}
+              {{ states('input_number.night_announcement_volume') | float }}
+            {% endif %}
+
+      # turn other volume checks automations back on
+      - service: automation.turn_on
+        entity_id:
+          - automation.notification_announcement_volume_check
+          - automation.notification_night_announcement_volume_check
+
+##################################################################################################
+## Notification - Night Announcement Volume Check
+## - ensure night <= quiet <= announcement volume so we don' get unexpected volume jumps
+##################################################################################################
+  - id: notification_night_announcement_volume_check
+    alias: "[Notification] Night Announcement Volume Check"
+    description: "Keep night announcement volume settings stay in sync."
+    initial_state: 'on'
+
+    trigger:
+      # run when night volume is changed
+      - platform: state
+        entity_id: input_number.night_announcement_volume
+
+    action:
+      # turn off other volume check automations to avoid recursive triggers
+      - service: automation.turn_off
+        entity_id:
+          - automation.notification_quiet_hours_volume_check
+          - automation.notification_announcement_volume_check
+
+      # adjust announcement volume if required
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.announcement_volume
+          value: >-
+            {% if states('input_number.announcement_volume') | int < states('input_number.night_announcement_volume') | int %}
+              {{ states('input_number.night_announcement_volume') | float }}
+            {% else %}
+              {{ states('input_number.announcement_volume') | float }}
+            {% endif %}
+
+      # adjust quiet hours volume if required
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.quiet_hours_volume
+          value: >-
+            {% if states('input_number.quiet_hours_volume') | int < states('input_number.night_announcement_volume') | int %}
+              {{ states('input_number.night_announcement_volume') | float }}
+            {% else %}
+              {{ states('input_number.quiet_hours_volume') | float }}
+            {% endif %}
+
+      # turn other volume checks automations back on
+      - service: automation.turn_on
+        entity_id:
+          - automation.notification_quiet_hours_volume_check
+          - automation.notification_announcement_volume_check
+
+##################################################################################################
+## Notification - Announcement Playing Boolean Off
+## - req when play_announcement/alert craps out before end of script to turn off update automation
+## - runs when announcement playing boolean manually turned off or at specified trigger time
+##################################################################################################
+  - id: notification_announcement_boolean_off
+    alias: "[Notification] Announcement Boolean Off"
+    description: "Turn off announcement script and sensor update automation if left running."
+    initial_state: 'on'
+
+    trigger:
+      # run when announcement playing boolean has been on for 2 minutes
+      - platform: state
+        entity_id: input_boolean.announcement_playing
+        to: 'on'
+        for:
+          seconds: 90
+
+      # run when announcement boolean turned off in UI
+      - platform: state
+        entity_id: input_boolean.announcement_playing
+        to: 'off'
+
+    action:
+      # turn off sensor update automation
+      - service: automation.turn_off
+        entity_id: automation.notification_sensors_update
+
+      # turn off play announcement script
+      - service: script.turn_off
+        entity_id: script.play_announcement
+
+##################################################################################################
+## Notification - Announcement Media Player Changed
+##################################################################################################
+  - id: notification_announcement_media_player_changed
+    alias: "[Notification] Announcement Media Player Changed"
+    description: "Update media player sensor when media player changed."
+    initial_state: 'on'
+
+    trigger:
+      # run when announcement media player changed
+      - platform: state
+        entity_id: input_select.announcement_media_player
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.announcement_media_player
+          - sensor.announcement_media_player_state
+
+##################################################################################################
+## Notification - Announcement Player Offline
+## - don't use browser speakers, they go unavailable
+## - group.delayed_automations
+##################################################################################################
+  - id: notification_announcement_player_offline
+    alias: "[Notification] Announcement Player Offline"
+    description: "Send notification when announcement media player goes offline."
+    initial_state: 'off'
+
+    trigger:
+      # run when announcement media player is unavailable
+      - platform: state
+        entity_id: &announcement_media_players
+          - media_player.broadcast_speakers
+          - media_player.dining_room_speaker
+          - media_player.bedroom_speaker
+          - media_player.jlaptop_chrome
+        to: 'unavailable'
+        for: '00:01:00'
+
+      # run when announcement media player is unknown
+      - platform: state
+        entity_id: *announcement_media_players
+        to: 'unknown'
+        for: '00:01:00'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if notification automation is enabled
+          - condition: state
+            entity_id: input_boolean.notification_automation
+            state: 'on'
+
+          # only run if trigger entity is current announcement media player
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.announcement_media_player') }}"
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.announcement_media_player
+          - sensor.announcement_media_player_state
+
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &announcement_player_title Announcement Media Player Unavailable
+          message: &announcement_player_message "The announcement media player ({{ state_attr(states('sensor.announcement_media_player'),'friendly_name') }}) is unavailable!.\n{{ now().strftime('%H:%M  %Y-%m-%d') }}"
+          notification_id: announcement_player_offline
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *announcement_player_title
+          message: *announcement_player_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'announcement_player_offline_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'announcement_player_offline'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/media'
+            icon: !secret OFFLINE_ICON
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Notification - Announcement Player Offline Notification Closed
+###################################################################################################
+  - id: notification_announcement_player_offline_notification_closed
+    alias: "[Notification] Announcement Player Offline Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'announcement_player_offline'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'announcement_player_offline'
+
+##################################################################################################
+## Notification - Announcement Player Offline Alert Cancelled
+## - don't use browser speakers, they go unavailable
+##################################################################################################
+  - id: notification_announcement_player_offline_alert_cancelled
+    alias: "[Notification] Announcement Player Offline Alert Cancelled"
+    description: "Dismiss notifications when announcement media player back online."
+    initial_state: 'on'
+
+    trigger:
+      # run when announcement media player is no longer unavailable
+      - platform: state
+        entity_id: *announcement_media_players
+        from: 'unavailable'
+
+      # run when announcement media player is no longer unknown
+      - platform: state
+        entity_id: *announcement_media_players
+        from: 'unknown'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if media player automations are enabled
+          - condition: state
+            entity_id: input_boolean.media_player_automation
+            state: 'on'
+          - condition: template
+            value_template: "{{ trigger.entity_id == states('sensor.announcement_media_player') }}"
+
+    action:
+      # update media player sensors for media player alert
+      - service: homeassistant.update_entity
+        entity_id:
+          - sensor.announcement_media_player
+          - sensor.announcement_media_player_state
+
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'announcement_player_offline'
+
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'announcement_player_offline'
+
+##################################################################################################
+## Notification - Announcement Player Offline Alert Pause
+##################################################################################################
+  - id: notification_announcement_player_offline_alert_pause
+    alias: "[Notification] Announcement Player Offline Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'announcement_player_offline_alert_pause'
+
+    action:
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'announcement_player_offline'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.notification_announcement_player_offline
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.notification_announcement_player_offline', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.notification_announcement_player_offline

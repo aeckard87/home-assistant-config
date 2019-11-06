@@ -1,0 +1,21 @@
+##################################################################################################
+## House Alarm Status
+## - format alarm control panel state for front end display
+##################################################################################################
+  - platform: template
+    sensors:
+      house_alarm_status:
+        friendly_name: House Alarm Status
+        icon_template: mdi:alarm-light
+        value_template: "{{ states('alarm_control_panel.house') | replace('_',' ') | title }}"
+
+##################################################################################################
+## Current House Alarm
+## - used to display contents of current house alarm input_text in frontend
+##################################################################################################
+  - platform: template
+    sensors:
+      current_house_alarm:
+        friendly_name: Current House Alarm
+        icon_template: mdi:home-alert
+        value_template: "{{ states('input_text.current_house_alarm') }}"

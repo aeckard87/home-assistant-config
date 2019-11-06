@@ -1,0 +1,8 @@
+action: call-service
+service: browser_mod.popup
+service_data:
+  deviceID:
+    - this
+  title: Radio Settings
+  large: false
+  card: !include /config/lovelace/include/radio_settings_card.yaml

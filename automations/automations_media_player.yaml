@@ -1,0 +1,58 @@
+##################################################################################################
+## Media Player - Volume Change
+## - group.delayed_automations
+##################################################################################################
+  - id: media_player_volume_change
+    alias: "[Media Player] Volume Change"
+    description: "Store current volume to restore after announcement/alert etc."
+    initial_state: 'off'
+
+    trigger:
+      # run when a media player volume is changed
+      - platform: state
+        entity_id: &all_media_players
+          - media_player.all_speakers
+          - media_player.broadcast_speakers
+          - media_player.music_speakers
+          - media_player.dining_room_speaker
+          - media_player.bedroom_speaker
+          - media_player.living_room_tv
+          - media_player.bedroom_tv
+          - media_player.deck_tv
+          - media_player.jphone_chrome
+          - media_player.jlaptop_chrome
+          - media_player.jwork_chrome
+          - media_player.sphone_chrome
+
+    condition:
+      # only run if not announcement/alert playing, we don't want announcement volume stored
+      - condition: state
+        entity_id: input_boolean.announcement_playing
+        state: 'off'
+
+      # only run if alarm clock is not playing, we don't want alarm clock volume stored
+      - condition: state
+        entity_id: input_boolean.alarm_clock_active
+        state: 'off'
+
+      # don't run if media player off/idle/unavailable, we don't want zero values stored
+      # only run if the trigger entity volume is different than the stored value
+      - condition: template
+        value_template: >-
+          {% set domain,name = trigger.entity_id.split('.') %}
+          {% if not is_state(trigger.entity_id | lower,'off')
+             and not is_state(trigger.entity_id | lower,'unavailable')
+             and not is_state(trigger.entity_id | lower,'idle')
+             and not state_attr(trigger.entity_id,'volume_level') | float | round(2) == states('input_number.' +  name + '_volume') | float | round(2) %}
+            true
+          {% endif %}
+
+    action:
+      # store media player volume to corresponding input_number entity
+      # format to 2 decimal places
+      - service: input_number.set_value
+        data_template:
+          entity_id: >-
+              {% set domain,name = trigger.entity_id.split('.') %}
+              {{ 'input_number.' +  name + '_volume' }}
+          value: "{{ state_attr(trigger.entity_id,'volume_level') | float | round(2) }}"

@@ -1,0 +1,138 @@
+##################################################################################################
+## Turn Light On Light Automation
+## light_id - light name
+## ignore_user_state - true/false (override user state control), default false
+## brightness - light brightness (%) optional, default 100
+## fade_time - transition in seconds optional, default 10
+##################################################################################################
+  turn_light_on:
+    sequence:
+      # only run if light automation is enabled
+      - condition: state
+        entity_id: input_boolean.light_automation
+        state: 'on'
+
+      # don't run if light in use by occupant
+      - condition: template
+        value_template: "{{ ignore_user_state == 'true' or is_state('input_boolean.' + light_name, 'off') }}"
+
+      # only run if auto light switch is on (sun has set)
+      - condition: template
+        value_template: "{{ is_state('binary_sensor.auto_light_on','on') }}"
+
+      # turn off light user state automation
+      - service: automation.turn_off
+        data_template:
+          entity_id: automation.automation_set_device_user_state
+
+      # turn the light on/off
+      - service: light.turn_on
+        data_template:
+          entity_id: "light.{{ light_name }}"
+          brightness_pct: >-
+            {% if not brightness %}100
+            {% else %}{{ brightness }}
+            {% endif %}
+          transition: >-
+            {% if not fade_time %}10
+            {% else %}{{ fade_time }}
+            {% endif %}
+
+      # delay to allow state changes to register
+      - delay: '00:00:01'
+
+      # turn light user state automation back on
+      - service: automation.turn_on
+        data_template:
+          entity_id: automation.automation_set_device_user_state
+
+##################################################################################################
+## Light Automation Off
+## light_name - light entity name
+## ignore_user_state - true/false (override user state control), default false
+## fade_time - transition in seconds optional, default 10 seconds
+##################################################################################################
+  turn_light_off:
+    sequence:
+      # only run if light automation is enabled
+      - condition: state
+        entity_id: input_boolean.light_automation
+        state: 'on'
+
+      # don't run if light in use by occupant
+      - condition: template
+        value_template: "{{ ignore_user_state == 'true' or is_state('input_boolean.' + light_name, 'off') }}"
+
+      # turn off light user state automation
+      - service: automation.turn_off
+        data_template:
+          entity_id: automation.automation_set_device_user_state
+
+      #ISSUE light transition not working on lutron
+      # turn the light on/off
+      - service: light.turn_off
+        data_template:
+          entity_id: "light.{{ light_name }}"
+          transition: >-
+            {% if fade_time == null %}10
+            {% else %}{{ fade_time }}
+            {% endif %}
+
+      # delay to allow state changes to register
+      - delay: '00:00:01'
+
+      # turn light user state automation back on
+      - service: automation.turn_on
+        data_template:
+          entity_id: automation.automation_set_device_user_state
+
+##################################################################################################
+## Save light settings
+## store_name: name to store light settings under
+## entity_ids: entity id list
+##################################################################################################
+  save_lights:
+    sequence:
+      # only run if light automation is enabled
+      - condition: state
+        entity_id: input_boolean.light_automation
+        state: 'on'
+
+      # store current light configuration
+      - service: python_script.light_store
+        data_template:
+          store_name: "{{ store_name }}"
+          entity_id: "{{ entity_ids }}"
+
+##################################################################################################
+## Restore light settings
+## store_name: saved settings store to restore
+##################################################################################################
+  restore_lights:
+    sequence:
+      # only run if light automation is enabled
+      - condition: state
+        entity_id: input_boolean.light_automation
+        state: 'on'
+
+      # only run if automation light switch is on (sun has set)
+      - condition: state
+        entity_id: binary_sensor.auto_light_on
+        state: 'on'
+
+      # turn off user control automations
+      - service: automation.turn_off
+        entity_id: automation.automation_set_device_user_state
+
+      # restore previous light configuration
+      - service: python_script.light_store
+        data_template:
+          store_name: "{{ store_name }}"
+          operation: restore
+
+      # delay to allow state changes to register
+      - delay: '00:00:01'
+
+      # turn user control automations back on
+      - service: automation.turn_on
+        entity_id: automation.automation_set_device_user_state

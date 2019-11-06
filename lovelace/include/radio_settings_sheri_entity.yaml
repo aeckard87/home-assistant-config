@@ -1,0 +1,15 @@
+type: custom:fold-entity-row
+head: input_boolean.radio_enabled_sheri
+entities:
+  - entity: input_select.radio_station_sheri
+    name: Station
+  - entity: input_select.media_player_radio_sheri
+    name: Speaker
+  - entity: input_number.radio_volume_sheri
+    name: Volume
+  - type: call-service
+    name: Play Sheri's Radio
+    service: script.play_radio
+    data:
+      preset: Sheri
+    action_name: PLAY

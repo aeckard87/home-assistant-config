@@ -1,0 +1,508 @@
+title: Weather
+icon: mdi:weather-partly-snowy-rainy
+path: weather
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - card:
+          type: glance
+          columns: 3
+        entities:
+          - entity: binary_sensor.weather_low_temperature_alert
+            icon: 'mdi:snowflake'
+            name: Outdoor Low Temp
+            tap_action:
+              action: navigate
+              navigation_path: >-
+                https://www.windy.com/-Temperature-temp?temp,2019-02-24-18,42.202,-83.064,10,p:off
+
+          - entity: binary_sensor.weather_high_temperature_alert
+            icon: 'mdi:fire'
+            name: Outdoor High Temp
+            tap_action:
+              action: navigate
+              navigation_path: >-
+                https://www.windy.com/-Temperature-temp?temp,2019-02-24-18,42.202,-83.064,10,p:off
+
+          - entity: binary_sensor.alert_uv_index
+            icon: 'mdi:white-balance-sunny'
+            name: UV Index
+            tap_action:
+              action: navigate
+              navigation_path: 'https://maps.darksky.net/@uv_index,42.908,-76.948,5'
+
+          - entity: binary_sensor.air_quality_alert
+            icon: 'mdi:factory'
+            name: Air Quality
+            tap_action:
+              action: navigate
+              navigation_path: 'https://aqicn.org/city/windsor'
+
+          - entity: binary_sensor.weather_allergy_risk_alert
+            icon: 'mdi:flower'
+            name: Allergy
+            tap_action:
+              action: navigate
+              navigation_path: 'https://www.pollen.com/map'
+
+          - entity: binary_sensor.weather_asthma_risk_alert
+            name: Asthma
+
+          - entity: binary_sensor.active_weather_alert
+            name: Alert
+            tap_action:
+              action: call-service
+              service: input_boolean.turn_on
+              service_data:
+                entity_id: input_boolean.display_weather_alert
+            hold_action:
+              action: call-service
+              service: input_boolean.turn_off
+              service_data:
+                entity_id: input_boolean.display_weather_alert
+        state_filter:
+          - 'on'
+        show_empty: false
+        type: entity-filter
+
+      - !include /config/lovelace/include/envcan_alert.yaml
+      - !include /config/lovelace/include/noaa_alert.yaml
+
+      - type: custom:swipe-card
+        init: true
+        initialSlide: 0
+        direction: horizontal
+        speed: 300
+        effect: fade # slide, fade, cube, coverflow, flip
+        cards:
+          - !include /config/lovelace/include/darksky_card.yaml
+          #IDEA - env can weather card w/sensors
+          - !include /config/lovelace/include/darksky_forecast.yaml
+
+      - type: custom:swipe-card
+        init: true
+        initialSlide: 0
+        direction: horizontal
+        speed: 300
+        effect: fade # slide, fade, cube, coverflow, flip
+        cards:
+          - type: entities
+            #title: Current Weather Summary
+            show_header_toggle: false
+            entities:
+              - entity: sensor.dark_sky_minutely_summary
+                name: Current
+              - entity: sensor.dark_sky_hourly_summary
+                name: Next Hour
+              - entity: sensor.dark_sky_summary_0d
+                name: Today
+              - entity: sensor.dark_sky_summary_1d
+                name: Tomorrow
+
+          - type: entities
+            #title: Current Conditions
+            show_header_toggle: false
+            entities:
+              - type: custom:fold-entity-row
+                head:
+                  type: custom:dummy-entity-row
+                  entity: sensor.temperature
+                  icon: mdi:thermometer
+                  name: Environment Canada Current Conditions
+                entities:
+                  - sensor.temperature
+                  #ISSUE - sensor.dewpoint
+                  - sensor.wind_chill
+                  - sensor.humidex
+                  - sensor.pressure
+                  - sensor.tendency
+                  - sensor.humidity
+                  - sensor.visibility
+                  - sensor.condition
+                  - sensor.wind_speed
+                  - sensor.wind_gust
+                  #ISSUE - sensor.wind_dir
+                  - sensor.wind_bearing
+                  #ISSUE - sensor.high_temp
+                  #ISSUE - sensor.low_temp
+                  - sensor.uv_index
+                  #ISSUE - sensor.pop
+                  #ISSUE - sensor.text_summary
+                  #ISSUE - sensor.precip_yesterday
+
+              - type: custom:fold-entity-row
+                head: binary_sensor.alert_uv_index
+                items:
+                  - entity: sensor.current_uv_index
+                    name: Current Index
+                  - entity: sensor.dark_sky_uv_index
+                    name: Current Index (DS)
+                  - entity: sensor.current_uv_level
+                    name: Current Level
+                  - entity: sensor.max_uv_index
+                    name: Today Index
+                  - entity: sensor.dark_sky_uv_index_0d
+                    name: Today Index (DS)
+                  - entity: sensor.uv_max_level
+                    name: Today Level
+                  - entity: binary_sensor.protection_window
+                    name: Protection
+                  - entity: sensor.current_ozone_level
+                    name: Current Ozone
+                  - entity: sensor.dark_sky_ozone
+                    name: Current Ozone (DS)
+                  - entity: sensor.skin_type_1_safe_exposure_time
+                    name: Skin Type 1
+                  - entity: sensor.skin_type_2_safe_exposure_time
+                    name: Skin Type 2
+                  - entity: sensor.skin_type_3_safe_exposure_time
+                    name: Skin Type 3
+                  - entity: sensor.skin_type_4_safe_exposure_time
+                    name: Skin Type 4
+                  - entity: sensor.skin_type_5_safe_exposure_time
+                    name: Skin Type 5
+                  - entity: sensor.skin_type_6_safe_exposure_time
+                    name: Skin Type 6
+
+              - type: custom:fold-entity-row
+                head: sensor.aqi_risk_level
+                items:
+                  - entity: sensor.aqi_risk_level
+                    name: Air Quality Risk Level
+                  - entity: sensor.waqi_windsor
+                    name: East Side
+                  - entity: sensor.waqi_windsor_downtown_ontario_canada
+                    name: Downtown
+                  - entity: sensor.waqi_windsor_west_ontario_canada
+                    name: West Side
+
+              - type: custom:fold-entity-row
+                head: binary_sensor.weather_allergy_risk_alert
+                items:
+                  - entity: sensor.allergy_index_today
+                    name: Index Today
+                  - entity: sensor.allergy_risk_today
+                    name: Risk Today
+                  - entity: sensor.allergy_index_tomorrow
+                    name: Index Tomorrow
+                  - entity: sensor.allergy_risk_tomorrow
+                    name: Risk Tomorrow
+                  - entity: sensor.allergy_index_forecasted_average
+                    name: Forcasted Avg
+
+              - type: custom:fold-entity-row
+                head: binary_sensor.weather_asthma_risk_alert
+                items:
+                  - entity: binary_sensor.weather_asthma_risk_alert
+                    name: Asthma Alert
+                  - entity: sensor.asthma_index_today
+                    name: Index Today
+                  - entity: sensor.asthma_risk_today
+                    name: Risk Today
+                  - entity: sensor.asthma_index_tomorrow
+                    name: Index Tomorrow
+                  - entity: sensor.asthma_risk_tomorrow
+                    name: Risk Tomorrow
+                  - entity: sensor.asthma_index_forecasted_average
+                    name: Forcasted Avg
+
+  - type: vertical-stack
+    cards:
+
+      - type: custom:swipe-card
+        init: true
+        initialSlide: 0
+        direction: horizontal
+        speed: 300
+        effect: cube # slide, fade, cube, coverflow, flip
+        cards:
+          - type: iframe
+            title: Weather Radar
+            aspect_ratio: 100%
+            url: 'https://embed.windy.com/embed2.html?lat=41.788&lon=-83.101&zoom=6&level=surface&overlay=rain&menu=&message=true&marker=&calendar=12&pressure=&type=map&location=coordinates&detail=&detailLat=42.293&detailLon=-83.019&metricWind=km%2Fh&metricTemp=%C2%B0F&radarRange=-1'
+
+          - type: picture-entity
+            name: Windsor Radar
+            entity: camera.envcan_radar
+
+          - type: picture-entity
+            name: NWS Windsor
+            entity: camera.windsor_radar
+
+          - type: picture-entity
+            name: NWS Radar Great Lakes
+            entity: camera.nws_radar
+
+      - type: entities
+        entities:
+        - entity: script.weather_report
+          name: Play Weather Report
+
+        - type: weblink
+          name: Darksky Temp Map
+          icon: mdi:weather-partlycloudy
+          url: 'https://maps.darksky.net/@temperature,43.679,-82.389,6'
+
+        - type: weblink
+          name: Environment Canada
+          icon: mdi:weather-partlycloudy
+          url: https://weather.gc.ca/city/pages/on-94_metric_e.html
+
+        - type: weblink
+          name: National Weather Service
+          icon: mdi:weather-partlycloudy
+          url: https://forecast.weather.gov/MapClick.php?zoneid=MIZ076
+
+  - type: vertical-stack
+    cards:
+
+      - type: horizontal-stack
+
+        cards:
+          - type: custom:mini-graph-card
+            name: Temperature
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            color_thresholds:
+              - value: -20
+                color: '#978FC3'
+              - value: -10
+                color: '#928FBB'
+              - value: 0
+                color: '#97C4D8'
+              - value: 10
+                color: '#8BCDCF'
+              - value: 20
+                color: '#72B9BB'
+              - value: 30
+                color: '#708FA9'
+              - value: 40
+                color: '#4F8B48'
+              - value: 50
+                color: '#7D8F28'
+              - value: 60
+                color: '#B0A20C'
+              - value: 70
+                color: '#D6AC08'
+              - value: 80
+                color: '#EF9407'
+              - value: 85
+                color: '#F76002'
+              - value: 90
+                color: '#CC4A13'
+              - value: 95
+                color: '#C04212'
+              - value: 100
+                color: '#932608'
+              - value: 110
+                color: '#B1432D'
+            entities:
+            - entity: sensor.dark_sky_temperature
+              name: Temperature
+            - entity: sensor.dark_sky_apparent_temperature
+              name: Apparent Temperature
+
+          - type: custom:mini-graph-card
+            name: Humidity
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            color_thresholds:
+              - value: 0
+                color: '#cc9900'
+              - value: 20
+                color: '#ffff66'
+              - value: 40
+                color: '#009900'
+              - value: 60
+                color: '#009999'
+              - value: 80
+                color: '#3399ff'
+              - value: 100
+                color: '#0000ff'
+            entities:
+            - entity: sensor.dark_sky_humidity
+              name: Humidity
+
+      - type: horizontal-stack
+        cards:
+
+          - type: custom:mini-graph-card
+            name: Pressure
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            entities:
+            - entity: sensor.dark_sky_pressure
+
+          - type: custom:mini-graph-card
+            name: Wind Speed
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            entities:
+            - entity: sensor.dark_sky_wind_speed
+
+      - type: horizontal-stack
+        cards:
+
+          - type: custom:mini-graph-card
+            name: Air Quality
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            entities:
+              - entity: sensor.waqi_windsor
+                name: East Side
+              - entity: sensor.waqi_windsor_downtown_ontario_canada
+                name: Downtown
+              - entity: sensor.waqi_windsor_west_ontario_canada
+                name: West Side
+
+          - type: custom:mini-graph-card
+            name: UV Index
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            entities:
+              - entity: sensor.current_uv_index
+              - entity: sensor.dark_sky_uv_index
+
+      - type: horizontal-stack
+        cards:
+
+          - type: custom:mini-graph-card
+            name: Cloud Coverage
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            entities:
+              - entity: sensor.dark_sky_cloud_coverage
+                name: Clouds
+                show_state: true
+
+          - type: custom:mini-graph-card
+            name: Precipitation Intensity
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            lower_bound: 0
+            upper_bound: 0.05
+            color_thresholds:
+              - value: 0
+                color: '#FFFFFF'
+              - value: 0.001
+                color: '#07E9E8'
+              - value: 0.002
+                color: '#00A1F2'
+              - value: 0.003
+                color: '#0005EC'
+              - value: 0.005
+                color: '#0BF704'
+              - value: 0.010
+                color: '#06C206'
+              - value: 0.015
+                color: '#009201'
+              - value: 0.020
+                color: '#F9F506'
+              - value: 0.025
+                color: '#F2B600'
+              - value: 0.020
+                color: '#F99708'
+              - value: 0.025
+                color: '#FB010A'
+              - value: 0.030
+                color: '#D60006'
+              - value: 0.035
+                color: '#B70205'
+              - value: 0.040
+                color: '#F801FF'
+              - value: 0.045
+                color: '#9953C3'
+              - value: 0.05
+                color: '#3C0F66'
+            entities:
+              - entity: sensor.dark_sky_precip_intensity
+                name: Precipitation Intensity
+                show_state: true
+
+      - type: history-graph
+        title: Precipitation History
+        hours_to_show: 72
+        refresh_interval: 0
+        entities:
+          - entity: sensor.dark_sky_precip
+            name: Precipitation
+
+  - type: vertical-stack
+    cards:
+
+      - type: conditional
+        conditions:
+          - entity: input_boolean.advanced_view
+            state: 'on'
+        card:
+          type: entities
+          title: Weather Settings
+          show_header_toggle: false
+          entities:
+            - entity: binary_sensor.dark_sky_connected
+            - entity: binary_sensor.noaa_connected
+            - entity: binary_sensor.envcan_connected
+
+            - type: custom:fold-entity-row
+              head: sensor.climate_thresholds #TEMP
+              entities:
+                - entity: input_number.weather_low_temperature_threshold
+                - entity: input_number.weather_high_temperature_threshold
+
+            - entity: input_boolean.display_weather_alert
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.weather_automation
+              filter:
+                include:
+                  - entity_id: "automation.weather_*"
+
+      - type: history-graph
+        title: Weather Alert History
+        hours_to_show: 72
+        refresh_interval: 0
+        entities:
+          - entity: binary_sensor.active_envcan_alert
+            name: EnvCan
+          - entity: binary_sensor.active_noaa_alert
+            name: NOAA
+          - entity: binary_sensor.weather_high_temperature_alert
+            name: High Temp
+          - entity: binary_sensor.weather_low_temperature_alert
+            name: Low Temp
+          - entity: binary_sensor.weather_allergy_risk_alert
+            name: Allergy
+          - entity: binary_sensor.weather_asthma_risk_alert
+            name: Asthma
+          - entity: binary_sensor.alert_uv_index
+            name: UV Index
+          - entity: binary_sensor.air_quality_alert
+            name: Air Quality

@@ -1,0 +1,163 @@
+title: House Alarm
+icon: mdi:alarm-light
+path: alarm
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.house_alarm_active_alert
+            state: 'on'
+        card:
+          type: entities
+          entities:
+            - entity: binary_sensor.house_alarm_active_alert
+            - entity: sensor.current_house_alarm
+              icon: 'mdi:home-alert'
+              name: Current Alarm
+
+      - type: entity-filter
+        show_empty: false
+        state_filter:
+          - 'on'
+        card:
+          type: glance
+          columns: 4
+        entities:
+          - entity: binary_sensor.house_alarm_disabled
+            name: Alarm Disabled
+            hold_action:
+              action: call-service
+              service: input_boolean.turn_on
+              service_data:
+                entity_id: input_boolean.house_alarm_enabled
+
+          - entity: binary_sensor.house_alarm_auto_arming_disabled
+            name: Alarm Auto Arm
+            hold_action:
+              action: call-service
+              service: input_boolean.turn_on
+              service_data:
+                entity_id: input_boolean.house_alarm_auto_arming
+
+      - type: glance
+        columns: 4
+        entities:
+          - entity: binary_sensor.house_alarm_connected
+            name: Alarm Connected
+
+          - entity: sensor.house_alarm_status
+            name: Alarm Status
+            tap_action:
+              action: call-service
+              service: browser_mod.popup
+              service_data:
+                deviceID: this
+                title: House Alarm Panel
+                card:
+                  !include /config/lovelace/include/alarm_control_panel_full.yaml
+
+          - entity: input_boolean.house_alarm_enabled
+            name: Alarm Enabled
+            hold_action:
+              action: toggle
+          - entity: input_boolean.house_alarm_auto_arming
+            name: Auto Arm
+            hold_action:
+              action: toggle
+        style: |
+          ha-card {
+            font-size: 12px;
+          }
+
+      - !include include/alarm_control_panel_full.yaml
+
+  - !include /config/lovelace/include/security_cameras_glance.yaml
+
+  - type: vertical-stack
+    cards:
+
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.side_entrance_motion
+            state: 'on'
+        card:
+          type: picture-entity
+          name: GARAGE INSIDE
+          camera_image: camera.garage_inside
+          entity: camera.garage_inside
+          show_name: false
+          show_state: false
+          tap_action: dialog
+          hold_action:
+            action: call-service
+            service: cover.close_cover
+            service_data:
+              entity_id: cover.garage_door_opener
+
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.upstairs_bathroom_motion
+            state: 'on'
+        card:
+          type: picture-entity
+          name: SIDE DOOR
+          camera_image: camera.side_door
+          entity: camera.side_door
+          show_name: false
+          show_state: false
+          tap_action: dialog
+          hold_action:
+            action: call-service
+            service: cover.close_cover
+            service_data:
+              entity_id: cover.garage_door_opener
+
+  - type: history-graph
+    title: Alarm History
+    hours_to_show: 72
+    refresh_interval: 0
+    entities:
+      - entity: binary_sensor.house_alarm_active_alert
+        name: Active
+      - entity: alarm_control_panel.house
+        name: Status
+      - entity: input_boolean.house_alarm_enabled
+        name: Enabled
+
+  - type: history-graph
+    title: Motion History
+    hours_to_show: 72
+    refresh_interval: 300
+    entities:
+      - entity: binary_sensor.upstairs_bathroom_motion
+        name: Upstairs Bathroom
+      - entity: binary_sensor.side_entrance_motion
+        name: Side Entrance
+
+  - type: conditional
+    conditions:
+      - entity: input_boolean.advanced_view
+        state: 'on'
+    card:
+      type: entities
+      title: Alarm Settings
+      show_header_toggle: false
+      entities:
+        - entity: binary_sensor.upstairs_bathroom_motion
+        - entity: binary_sensor.side_entrance_motion
+
+        - type: cast #TEST cast
+          view: 0
+          name: Doorbell Cam
+          icon: mdi:camera
+
+        - type: custom:auto-entities
+          card:
+            type: custom:fold-entity-row
+            head: input_boolean.house_alarm_automation
+          filter:
+            include:
+              - entity_id: "automation.house_alarm_*"

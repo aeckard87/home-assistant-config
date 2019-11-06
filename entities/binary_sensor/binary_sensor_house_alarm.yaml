@@ -1,0 +1,59 @@
+##################################################################################################
+## House Alarm Active Alert Sensor
+## - used to display when alarm has been triggered (active alert)
+##################################################################################################
+  - platform: template
+    sensors:
+      house_alarm_active_alert:
+        friendly_name: Active Alarm
+        icon_template: >
+         {% if is_state('binary_sensor.house_alarm_active_alert','on') %} mdi:alarm-light
+         {% else %} mdi:alarm-light-outline
+         {% endif %}
+        device_class: problem
+        value_template: "{{ is_state('automation.house_alarm_active_alert', 'on') or is_state('alarm_control_panel.house', 'triggered') }}"
+
+##################################################################################################
+## House Alarm Disabled Sensor
+## - used to display alert, send notifications when alarm is disabled
+##################################################################################################
+  - platform: template
+    sensors:
+      house_alarm_disabled:
+        friendly_name: House Alarm Disabled
+        icon_template: >
+         {% if is_state('binary_sensor.house_alarm_disabled','on') %} mdi:alert
+         {% else %} mdi:alert-outline
+         {% endif %}
+        device_class: problem
+        value_template: "{{ is_state('input_boolean.house_alarm_enabled', 'off') }}"
+
+##################################################################################################
+## House Alarm Auto Arming Disabled Sensor
+## - used to display lovelace alert and send notifications when alarm is disabled
+##################################################################################################
+  - platform: template
+    sensors:
+      house_alarm_auto_arming_disabled:
+        friendly_name: House Alarm Auto Disarming Disabled
+        icon_template: >
+         {% if is_state('binary_sensor.house_alarm_auto_arming_disabled','on') %} mdi:alert
+         {% else %} mdi:alarm-check
+         {% endif %}
+        device_class: problem
+        value_template: "{{ is_state('input_boolean.house_alarm_auto_arming', 'off') }}"
+
+##################################################################################################
+## House Alarm Connected Sensor
+## - used to display lovelace alert and send notifications when alarm is disconnected
+##################################################################################################
+  - platform: template
+    sensors:
+      house_alarm_connected:
+        friendly_name: House Alarm
+        icon_template: >
+         {% if is_state('binary_sensor.house_alarm_connected','on') %} mdi:server-network
+         {% else %} mdi:server-network-off
+         {% endif %}
+        device_class: connectivity
+        value_template: "{{ not states('alarm_control_panel.house') | lower  == 'unknown' }}"

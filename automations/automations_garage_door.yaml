@@ -1,0 +1,467 @@
+##################################################################################################
+## Garage Door - Lights
+## - lighting will stay on for 15 min or 5 min after garage door closed
+## - group.delayed_automations
+##################################################################################################
+  - id: garage_door_lights
+    alias: "[Garage Door] Lights"
+    description: "Turn on garage lights when door is opened."
+    initial_state: 'off'
+
+    trigger:
+      # run when garage door state chanages
+      - platform: state
+        entity_id: binary_sensor.garage_door_open
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if light automation is enabled
+          - condition: state
+            entity_id: input_boolean.light_automation
+            state: 'on'
+
+          # only run if garage door automation is enabled
+          - condition: state
+            entity_id: input_boolean.garage_door_automation
+            state: 'on'
+
+    action:
+      # save current light settings
+      - service: script.save_lights
+        data:
+          store_name: 'garage_door_store'
+          entity_ids: 'light.garage_lights'
+
+      # turn on the garage lights
+      - service: script.turn_light_on
+        data_template:
+          light_id: 'garage_lights'
+          brightness: 30
+          ignore_user_state: 'true'
+
+      # wait for prior garage motion detector to go off
+      - wait_template: "{{ is_state('sensor.side_entrance_motion','off') }}"
+        timeout: '1:00:00'
+        continue_on_timeout: true
+
+      # wait another 5 minutes
+      - delay: '0:05:00'
+
+      # restore prior light settings
+      - service: script.restore_lights
+        data:
+          store_name: 'garage_door_store'
+
+##################################################################################################
+## Garage Door - Open
+##################################################################################################
+  - id: garage_door_open
+    alias: "[Garage Door] Open"
+    description: "Play announcement when garage door opened."
+    initial_state: 'on'
+
+    trigger:
+      # garage door opened, opening state not triggered
+      - platform: state
+        entity_id: binary_sensor.garage_door_open
+        to: 'on'
+        from: 'off'
+
+    action:
+      # wait for other announcments to finish
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "The garage door has been opened."
+          quiet_play: 'true'
+
+##################################################################################################
+## Garage Door - Closed
+##################################################################################################
+  - id: garage_door_closed
+    alias: "[Garage Door] Closed"
+    description: "Play an announcement when the garage door is closed."
+    initial_state: 'on'
+
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.garage_door_open
+        to: 'off'
+        from: 'on'
+
+    action:
+      # wait for other announcments to finish
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "The garage door is now closed."
+          quiet_play: 'true'
+
+      # dismiss push notifications on all devices (if extended door open alert was sent)
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_door_open'
+
+##################################################################################################
+## Garage Door - Auto Close
+## - opener automatically closes after 10 min
+## - we don't want to override user hold in garage is on so no time based close trigger here
+##################################################################################################
+  - id: garage_door_auto_close
+    alias: "[Garage Door] Auto Close"
+    description: "Automatically close garage door when conditions met."
+    initial_state: 'on'
+
+    trigger:
+      # run when enter night mode
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Night'
+
+      # run when enter away mode
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Away'
+
+      # run when enter vacation mode
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Vacation'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if garage door automation is enabled
+          - condition: state
+            entity_id: input_boolean.garage_door_automation
+            state: 'on'
+
+          # only run if the garage door is open
+          - condition: state
+            entity_id: binary_sensor.garage_door_open
+            state: 'on'
+
+    action:
+      - service: cover.close_cover
+        entity_id: cover.garage_door_opener
+
+##################################################################################################
+## Garage Door - Extended Open Alert
+##################################################################################################
+  - id: garage_door_extended_open_alert
+    alias: "[Garage Door] Extended Open Alert"
+    description: "Send notification when garage door open for extended period."
+    initial_state: 'on'
+
+    trigger:
+      # garage door has been open for 20 min
+      - entity_id: cover.garage_door_opener
+        platform: state
+        to: 'open'
+        for: '0:20:00'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if garage door automation is enabled
+          - condition: state
+            entity_id: input_boolean.garage_door_automation
+            state: 'on'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: Garage Door Open
+          message: "The garage door has been open for a while.\n{{now().strftime('%h:%M %p %Y-%m-%d')}}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'garage_door_close_door'
+                title: "Close Garage Door"
+                icon: !secret GARAGE_CLOSE_BUTTON
+
+              - action: 'garage_open_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'garage_door_open'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/garage'
+            icon: !secret GARAGE_OPEN_ICON
+            image: !secret GARAGE_OPEN_ICON
+            badge: !secret GARAGE_OPEN_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "The garage door has been open for a while."
+          quiet_play: 'true'
+
+##################################################################################################
+## Garage Door - Alert Close Door
+##################################################################################################
+  - id: garage_door_alert_close_door
+    alias: "[Garage Door] Alert Close Door"
+    description: "Close garage door when button clicked in notification."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'garage_door_close_door'
+
+    action:
+      - service: cover.close_cover
+        entity_id: cover.garage_door_opener
+
+###################################################################################################
+## Garage Door - Open Notification Closed
+###################################################################################################
+  - id: garage_door_open_notification_closed
+    alias: "[Garage Door] Open Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'garage_door_open'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_door_open'
+
+###################################################################################################
+## Garage Door - Open Alert Cancelled
+###################################################################################################
+  - id: garage_door_open_alert_cancelled
+    alias: "[Garage Door] Open Alert Cancelled"
+    description: "Dismiss notifications when garage door closes."
+    initial_state: 'on'
+
+    trigger:
+      # run when the garge door closes
+      - platform: state
+        entity_id: binary_sensor.garage_door_open
+        to: 'off'
+
+    action:
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'garage_door_open'
+
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_door_open'
+
+##################################################################################################
+## Garage Door - Open Alert Pause
+##################################################################################################
+  - id: garage_door_open_alert_pause
+    alias: "[Garage Door] Open Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'garage_open_alert_pause'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_door_open'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.garage_door_extended_open_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.garage_door_extended_open_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.garage_door_extended_open_alert
+
+##################################################################################################
+## Garage Door - Offline Alert
+##################################################################################################
+  - id: garage_door_offline_alert
+    alias: "[Garage Door] Offline Alert"
+    description: "Send notification when garage door goes offline."
+    initial_state: 'on'
+
+    trigger:
+      # run when garage door open is offline
+      - entity_id: cover.garage_door_opener
+        platform: state
+        to: 'unknown'
+        for:
+         minutes: 5
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if garage door automation is enabled
+          - condition: state
+            entity_id: input_boolean.garage_door_automation
+            state: 'on'
+
+    action:
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &garage_door_title "Garage Door Offline"
+          message: &garage_door_message "The garage door controller is offline\n{{now().strftime('%H:%M  %Y-%m-%d')}}"
+          notification_id: 'garage_door_offline'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *garage_door_title
+          message: *garage_door_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'garage_offline_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'garage_door_offline'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/garage'
+            icon: !secret OFFLINE_ICON
+            image: !secret OFFLINE_IMAGE
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Garage Door - Offline Notification Closed
+###################################################################################################
+  - id: garage_door_offline_notification_closed
+    alias: "[Garage Door] Offline Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'garage_door_offline'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_door_offline'
+
+##################################################################################################
+## Garage Door - Offline Alert Cancelled
+##################################################################################################
+  - id: garage_door_offline_alert_cancelled
+    alias: "[Garage Door] Offline Alert Cancelled"
+    description: "Dismiss notifications when garage door goes online."
+    initial_state: 'on'
+
+    trigger:
+      # run when downstairs protect connected sensor turns on
+      - entity_id: binary_sensor.garage_door_connected
+        platform: state
+        to: 'on'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_door_offline'
+
+##################################################################################################
+## Garage Door - Offline Alert Pause
+##################################################################################################
+  - id: garage_door_offline_alert_pause
+    alias: "[Garage Door] Offline Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'garage_offline_alert_pause'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garage_door_offline'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.garage_door_offline_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.garage_door_offline_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.garage_door_offline_alert

@@ -1,0 +1,10 @@
+##################################################################################################
+## Radio Sleep Timer
+##################################################################################################
+  radio_sleep:
+    name: Radio Sleep Timer
+    icon: mdi:progress-clock
+
+  radio_morning_volume:
+    name: Morning Radio Volume Timer
+    icon: mdi:progress-clock

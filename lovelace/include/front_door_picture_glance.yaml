@@ -1,0 +1,18 @@
+type: picture-glance
+title: Front Door
+camera_image: camera.front_door
+entities:
+  - entity: camera.front_drive
+  - entity: light.living_room_pot_lights
+    name: Living Room Lights
+entity: light.living_room_pot_lights
+tap_action:
+  action: call-service
+  service: light.turn_on
+  service_data:
+    entity_id: light.living_room_pot_lights
+hold_action:
+  action: call-service
+  service: light.turn_off
+  service_data:
+    entity_id: light.living_room_pot_lights

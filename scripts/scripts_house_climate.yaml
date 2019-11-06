@@ -1,0 +1,142 @@
+##################################################################################################
+## Set Climate Temperature
+##################################################################################################
+  set_climate_temperature:
+    sequence:
+      # turn off climate mode automation to avoid recursive calls when climate mode changed
+      - service: automation.turn_off
+        entity_id: automation.house_climate_mode_changed
+
+      # if climate is turned off set it to auto
+      - service_template: >-
+          {% if is_state('climate.upstairs_thermostat','off') %}
+            climate.set_hvac_mode
+          {% else %}
+            script.null_script
+          {% endif %}
+        data:
+          entity_id: climate.upstairs_thermostat
+          hvac_mode: auto
+
+      # set occupancy mode override to cancel eco mode to preheat/cool house when not at home
+      # set to away (eco) mode if away, use 'Away and Eco' instead of eco
+      - service_template: climate.set_preset_mode
+        data_template:
+          entity_id: climate.upstairs_thermostat
+          preset_mode: >-
+            {% if is_state('input_select.occupancy_mode','Away') or is_state('input_select.occupancy_mode','Vacation') %} Away and Eco
+            {% else %} none
+            {% endif %}
+
+      # delay to allow climate mode changes to register
+      - delay: '0:00:05'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_climate_mode_changed
+
+      # if away/vacation test for eco else test for not eco
+      # wait for eco mode to register in away mode - sometimes delay in Nest response
+      - wait_template: >
+          {% if is_state('sensor.occupancy_mode','Away') or is_state('sensor.occupancy_mode','Vacation') %}
+            {% if is_state_attr('climate.upstairs_thermostat','preset_mode','Away and Eco') %} true
+            {% else %} false
+            {% endif %}
+          {% else %}
+            {% if not is_state_attr('climate.upstairs_thermostat','preset_mode','Away and Eco') %} true
+            {% else %} false
+            {% endif %}
+          {% endif %}
+        timeout: '00:10'
+        continue_on_timeout: true
+
+      # error if temp is set in eco so check and quit if true
+      # don't continue if HVAC mode is eco / off / away
+      - condition: template
+        value_template: >-
+          {% if is_state('climate.upstairs_thermostat','off') %} false
+          {% elif is_state_attr('climate.upstairs_thermostat','preset_mode','eco') %} false
+          {% elif is_state_attr('climate.upstairs_thermostat','preset_mode','away') %} false
+          {% elif is_state_attr('climate.upstairs_thermostat','preset_mode','Away and Eco') %} false
+          {% else %} true
+          {% endif %}
+
+      # delay to allow state changes to register
+      - delay: '0:00:05'
+
+      # set temps based on HVAC mode
+      # Override Occupancy Mode defaults to Home temps
+      - service: climate.set_temperature
+        data_template:
+          entity_id: climate.upstairs_thermostat
+          temperature: >-
+            {% if is_state_attr("climate.upstairs_thermostat","hvac_mode","heat") %}
+              {% if is_state('sensor.occupancy_mode','Home') %}
+                {{ states('input_number.home_heat_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Night') %}
+                {{ states('input_number.night_heat_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Guest') %}
+                {{ states('input_number.guest_heat_temperature') | int }}
+              {% else %}
+                {{ states('input_number.home_heat_temperature') | int }}
+              {% endif %}
+            {% elif is_state_attr("climate.upstairs_thermostat","hvac_mode","cool") %}
+              {% if is_state('sensor.occupancy_mode','Home') %}
+                {{ states('input_number.home_cool_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Night') %}
+                {{ states('input_number.night_cool_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Guest') %}
+                {{ states('input_number.guest_cool_temperature') | int }}
+              {% else %}
+                {{ states('input_number.home_cool_temperature') | int }}
+              {% endif %}
+            {% else %}
+            {{ states('input_number.home_heat_temperature') | int }}
+            {% endif %}
+
+          # set temps for auto mode
+          target_temp_high: >-
+            {% if (states('input_number.home_cool_temperature') | int) > (states('input_number.home_heat_temperature') | int) %}
+              {% if is_state('sensor.occupancy_mode','Home') %}
+                {{ states('input_number.home_cool_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Night') %}
+                {{ states('input_number.night_cool_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Guest') %}
+                {{ states('input_number.guest_cool_temperature') | int }}
+              {% else %}
+                {{ states('input_number.home_cool_temperature') | int }}
+              {% endif %}
+            {% else %}
+              {% if is_state('sensor.occupancy_mode','Home') %}
+                {{ states('input_number.home_heat_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Night') %}
+                {{ states('input_number.night_heat_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Guest') %}
+                {{ states('input_number.guest_heat_temperature') | int }}
+              {% else %}
+                {{ states('input_number.home_heat_temperature') | int }}
+              {% endif %}
+            {% endif %}
+
+          target_temp_low: >-
+            {% if (states('input_number.home_cool_temperature') | int) <= (states('input_number.home_heat_temperature') | int) %}
+              {% if is_state('sensor.occupancy_mode','Home') %}
+                {{ states('input_number.home_cool_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Night') %}
+                {{ states('input_number.night_cool_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Guest') %}
+                {{ states('input_number.guest_cool_temperature') | int }}
+              {% else %}
+                {{ states('input_number.home_cool_temperature') | int }}
+              {% endif %}
+            {% else %}
+              {% if is_state('sensor.occupancy_mode','Home') %}
+                {{ states('input_number.home_heat_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Night') %}
+                {{ states('input_number.night_heat_temperature') | int }}
+              {% elif is_state('sensor.occupancy_mode','Guest') %}
+                {{ states('input_number.guest_heat_temperature') | int }}
+              {% else %}
+                {{ states('input_number.home_heat_temperature') | int }}
+              {% endif %}
+            {% endif %}

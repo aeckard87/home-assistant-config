@@ -1,0 +1,10 @@
+##################################################################################################
+## Current House Alarm Text
+## - storage for current alarm text for alert, notifications
+## - set initial to none, else value will be unknown
+##################################################################################################
+  current_house_alarm:
+    name: Current House Alarm
+    icon: mdi:alert
+    initial: 'None'
+    max: 500

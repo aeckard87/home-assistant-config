@@ -1,0 +1,201 @@
+###################################################################################################
+## Climate Fan Schedule - Hassio Startup
+###################################################################################################
+  - id: climate_fan_schedule_hassio_startup
+    alias: "[Climate Fan Schedule] Hassio Startup"
+    description: "Restart climate fan schedule on restart if enabled."
+    initial_state: 'on'
+
+    trigger:
+      # run when home assistant started
+      - platform: homeassistant
+        event: start
+
+    action:
+      # wait for delayed automations to turn on
+      - wait_template: "{{ is_state('group.delayed_automations', 'on') }}"
+        timeout: '00:05:00'
+        continue_on_timeout: true
+
+      # restart fan scheule if it is on
+      - service: script.restart_climate_fan_schedule
+
+##################################################################################################
+## Climate Fan Schedule - Mode Check
+## - must be turned back on manually in UI
+##################################################################################################
+  - id: climate_fan_schedule_mode_check
+    alias: "[Climate Fan Schedule] Mode Check"
+    description: "Turn climate fan schedule boolean off if climate automation disabled."
+    initial_state: 'on'
+
+    trigger:
+      # run when fan schedule is turned on
+      - platform: state
+        entity_id: input_boolean.climate_fan_schedule
+        to: 'on'
+
+      # run when climate automation is disabled
+      - platform: state
+        entity_id: input_boolean.house_climate_automation
+        to: 'off'
+
+    condition:
+      # run if climate automation is disabled
+      - condition: state
+        entity_id: input_boolean.house_climate_automation
+        state: 'off'
+
+    action:
+      # turn fan schedule boolean back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.climate_fan_schedule
+
+
+##################################################################################################
+## Climate Fan Schedule - On
+##################################################################################################
+  - id: climate_fan_schedule_on
+    alias: "[Climate Fan Schedule] On"
+    description: "Start climate fan schedule when turned on."
+    initial_state: 'on'
+
+    trigger:
+      # run when fan schedule is turned on
+      - platform: state
+        entity_id: input_boolean.climate_fan_schedule
+        to: 'on'
+
+    condition:
+      # only run when climate automation is enabled
+      - condition: state
+        entity_id: input_boolean.house_climate_automation
+        state: 'on'
+
+    action:
+      # start climate fan schedule
+      - service: script.climate_fan_schedule
+
+##################################################################################################
+## Climate Fan Schedule - Off
+##################################################################################################
+  - id: climate_fan_schedule_off
+    alias: "[Climate Fan Schedule] Off"
+    description: "Stop climate fan schedule when turned off."
+    initial_state: 'on'
+
+    trigger:
+      # run when fan schedule is turned off
+      - platform: state
+        entity_id: input_boolean.climate_fan_schedule
+        to: 'off'
+
+    action:
+      # put thermostat fan into auto mode (turn off)
+      - service: climate.set_fan_mode
+        data:
+          entity_id: climate.upstairs_thermostat
+          fan_mode: 'auto'
+
+      # turn off fan schedule
+      - service: script.turn_off
+        data:
+          entity_id: script.climate_fan_schedule
+
+      # cancel climate fan timer
+      - service: timer.cancel
+        entity_id: timer.climate_fan
+
+##################################################################################################
+## Climate Fan Schedule - Timer Complete
+##################################################################################################
+  - id: climate_fan_schedule_timer_complete
+    alias: "[Climate Fan Schedule] Timer Complete"
+    description: "Restart climate fan schedule when timer finished."
+    initial_state: 'on'
+
+    trigger:
+      # run when climate fan timer has finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.climate_fan
+
+    action:
+      # allow climate_fan_schedule to finish before restarting
+      - wait_template: "{{ is_state('script.climate_fan_schedule','off') }}"
+        timeout: '0:01:00'
+        continue_on_timeout: false
+
+      # turn climate fan schedule back on
+      - service: script.climate_fan_schedule
+
+##################################################################################################
+## Climate Fan Schedule - Interval Change
+##################################################################################################
+  - id: climate_fan_schedule_interval_change
+    alias: "[Climate Fan Schedule] Interval Change"
+    description: "Update fan schedule when interval changed."
+    initial_state: 'on'
+
+    trigger:
+      # run when climate fan schedule interval setting is chantged
+      - platform: state
+        entity_id: input_number.climate_fan_schedule_interval
+
+    action:
+      # only run if duration > interval
+      - condition: template
+        value_template: "{{ states('input_number.climate_fan_schedule_duration') | int > states('input_number.climate_fan_schedule_interval') | int }}"
+
+      # turn off fan schedule change automation
+      - service: automation.turn_off
+        entity_id: automation.climate_fan_schedule_duration_change
+
+      # adjust the duration value to match the interval value
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.climate_fan_schedule_duration
+          value: "{{ states('input_number.climate_fan_schedule_interval') | int }}"
+
+      # turn fan schedule change automation back on
+      - service: automation.turn_on
+        entity_id: automation.climate_fan_schedule_duration_change
+
+      # restart climate fan schedule with new values
+      - service: script.restart_climate_fan_schedule
+
+##################################################################################################
+## Climate Fan Schedule - Duration Change
+##################################################################################################
+  - id: climate_fan_schedule_duration_change
+    alias: "[Climate Fan Schedule] Duration Change"
+    description: "Update fan schedule when duration changed."
+    initial_state: 'on'
+
+    trigger:
+      # run when climate fan schedule duration setting is changed
+      - platform: state
+        entity_id: input_number.climate_fan_schedule_duration
+
+    action:
+      # only run if fan schedule duration is less than fan schedule interval
+      - condition: template
+        value_template: "{{ states('input_number.climate_fan_schedule_duration') | int > states('input_number.climate_fan_schedule_interval') | int }}"
+
+      # turn off fan schedule change automation
+      - service: automation.turn_off
+        entity_id: automation.climate_fan_schedule_interval_change
+
+      # set interval value to duration value
+      - service: input_number.set_value
+        data_template:
+          entity_id: input_number.climate_fan_schedule_interval
+          value: "{{ states('input_number.climate_fan_schedule_duration') | int }}"
+
+      # turn fan schedule change automation back on
+      - service: automation.turn_on
+        entity_id: automation.climate_fan_schedule_interval_change
+
+      # restart climate fan schedule with new values
+      - service: script.restart_climate_fan_schedule

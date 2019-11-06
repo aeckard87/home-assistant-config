@@ -1,0 +1,36 @@
+###################################################################################################
+## Template Sensors
+###################################################################################################
+  - platform: template
+    sensors:
+###################################################################################################
+## Manual Mode Activated
+###################################################################################################
+      manual_mode:
+        value_template: "{{ is_state('input_boolean.manual_mode', 'on') }}"
+
+###################################################################################################
+## Automation Disabled
+## - used in lovelace for home page conditional card
+###################################################################################################
+      automation_disabled:
+        value_template: >-
+          {% if states('input_boolean.ceiling_fan_automation') == 'off' %} true
+          {% elif states('input_boolean.house_alarm_enabled') == 'off' %} true
+          {% elif states('input_boolean.house_climate_automation') == 'off' %} true
+          {% elif states('input_boolean.garage_climate_automation') == 'off' %} true
+          {% elif states('input_boolean.garage_door_automation') == 'off' %} true
+          {% elif states('input_boolean.light_automation') == 'off' %} true
+          {% elif states('input_boolean.media_player_automation') == 'off' %} true
+          {% elif states('input_boolean.notification_automation') == 'off' %} true
+          {% elif states('input_boolean.presence_automation') == 'off' %} true
+          {% elif states('input_boolean.schedule_automation') == 'off' %} true
+          {% elif states('input_boolean.sensor_automation') == 'off' %} true
+          {% elif states('input_boolean.radio_automation') == 'off' %} true
+          {% elif states('input_boolean.system_automation') == 'off' %} true
+          {% elif states('input_boolean.weather_automation') == 'off' %} true
+          {% elif states('input_boolean.vent_fan_automation') == 'off' %} true
+          {% else %} false
+          {% endif %}
+
+

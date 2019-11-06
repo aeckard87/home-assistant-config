@@ -1,0 +1,45 @@
+##################################################################################################
+## Garage Climate Low Temp Alert
+## - sensor always on when heat first turned on (if outside temp < set temp)
+## - set alert to longer to allow garage to warm up
+## - + 5 buffer to reduce false alerts
+## - freeze protection on and less than freeze temp
+## - heat on and less than set temp
+##################################################################################################
+  - platform: template
+    sensors:
+      garage_low_temperature:
+        friendly_name: Garage Low Temp
+        icon_template: mdi:snowflake
+        device_class: cold
+        value_template: >
+          {% if states('input_boolean.garage_freeze_protection') == 'on' and states('sensor.garage_thermostat_temperature') | int < (states('input_number.garage_freeze_temperature') | int - 5) %}
+            true
+          {% elif states('input_boolean.garage_heat') == 'on' and states('sensor.garage_thermostat_temperature') | int < (states('input_number.garage_heat_temperature') | int - 5) %}
+            true
+          {% else %}
+            false
+          {% endif %}
+
+##################################################################################################
+## Garage Climate High Temp Alert
+## - + 5 buffer to reduce false alerts
+## - heat on, furnace on, current temp > thermostat max_temp (+5)
+## - heat off, freeze protection on, furnace on, current temp >  freeze temp (+ 5) and furnace is running
+##################################################################################################
+  - platform: template
+    sensors:
+      garage_high_temperature:
+        friendly_name: Garage High Temp
+        icon_template: mdi:fire
+        device_class: heat
+        value_template: >
+          {% if is_state('sensor.garage_furnace','Heating') and is_state('input_boolean.garage_heat','on')
+             and states('sensor.garage_thermostat_temperature') | int > (state_attr('climate.garage_thermostat', 'max_temp') | int + 5) %}
+            true
+          {% elif is_state('sensor.garage_furnace','Heating') and is_state('input_boolean.garage_heat','on') and is_state('input_boolean.garage_freeze_protection','on')
+             and states('sensor.garage_thermostat_temperature') | int > (states('input_number.garage_freeze_temperature') | int + 5) %}
+            true
+          {% else %}
+            false
+          {% endif %}

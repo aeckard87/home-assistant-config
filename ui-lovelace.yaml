@@ -1,0 +1,46 @@
+title: Home Assistant
+resources: !include /config/lovelace/lovelace_resources.yaml
+
+cch: # https://maykar.github.io/compact-custom-header/Main-Config-Options/
+  disable: false   # Disable Compact Custom Header. Useful to use default header on a certain user agent.
+  compact_header: true  # Toggle the compacting header.
+  header: true  # Display or hide the header.
+  default_tab: 0  # Tab number, view's title:, or view's path: to start on when navigating to /lovelace/ for the first time.
+  kiosk_mode: false  # Hides the header and turns on disable_sidebar
+  disable_sidebar: false  # Disable sidebar and menu button completely
+#  hide_tabs: '7,8'  # Comma-seperated list of tab numbers, view's title:, or view's path: to hide. Do not use with show_tabs.
+#  show_tabs: '1,2'  # Comma-seperated list of tab numbers, view's title:, or view's path: to show, all others hidden. Do not use with hide_tabs.
+  redirect: true  # Toggles auto redirecting from a hidden tab to a visible tab.
+  chevrons: true  # Hide or show the tab's navigation chevrons.
+  hide_help: false  # Removes "Help" item from options menu.
+  hide_config: false  # Removes "Configure UI" item from options menu.
+  hide_unused: false  # Removes "Unused Entities" item from options menu.
+  menu: show  # Can be "show", "hide", "clock", or "overflow".
+  voice: hide  # Can be "show", "hide", "clock", or "overflow".
+  options: clock  # Can be "show", "hide", "clock", or "overflow".
+  clock_format: 12  # 12 or 24 hour clock format
+  clock_am_pm: true  # Display or hide the AM/PM indicator on 12 hour clock.
+  clock_date: true  # Adds a date below the clock.
+  date_locale: 'en-CA'  # By default the date format/language is set to your HA preference, this option allows you to override that with locale codes
+  swipe: true  # Toggle swiping on or off.
+  swipe_amount: 15  # Percent of the screen required for a swipe
+  swipe_animate: flip  # Animation to use between swipes. Can be none, swipe, fade, or flip
+  swipe_skip: 2,5  # Comma seperated list of tabs to skip.  Tabs hidden with hide_tabs or show_tabs are automatically skipped.
+  swipe_wrap: true  # Toggle wrapping from first view to last and vice versa
+  swipe_prevent_default: false  # Toggle the prevention of the browsers default horizontal swipe actions
+
+views:
+  - !include lovelace/lovelace_home.yaml
+  - !include lovelace/lovelace_alarm.yaml
+  - !include lovelace/lovelace_presence.yaml
+  - !include lovelace/lovelace_schedule.yaml
+  - !include lovelace/lovelace_climate.yaml
+  - !include lovelace/lovelace_lights.yaml
+  - !include lovelace/lovelace_garage.yaml
+  - !include lovelace/lovelace_sensors.yaml
+  - !include lovelace/lovelace_media.yaml
+  - !include lovelace/lovelace_cameras.yaml
+  - !include lovelace/lovelace_sprinklers.yaml
+  - !include lovelace/lovelace_weather.yaml
+  - !include lovelace/lovelace_system.yaml
+  - !include lovelace/lovelace_debugging.yaml

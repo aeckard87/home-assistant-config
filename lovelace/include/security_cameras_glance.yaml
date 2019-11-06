@@ -1,0 +1,18 @@
+type: glance
+title: Security Cameras
+columns: 4
+show_state: false
+entities:
+  - camera.side_drive
+  - camera.side_door
+  - camera.front_drive
+  - camera.front_door
+#DISABLED  - camera.front_yard
+#  - camera.side_gate_front
+#  - camera.side_gate_back
+#  - camera.back_yard
+  - camera.back_door
+  - camera.patio_door
+  - camera.back_house
+  - camera.garage_inside
+  - camera.my_cameras

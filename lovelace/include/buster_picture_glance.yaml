@@ -1,0 +1,35 @@
+type: picture-glance
+title: Buster Medication
+entity: input_boolean.buster_medication_active
+image: /local/images/buster.jpg
+tap_action:
+  action: call-service
+  service: input_boolean.toggle
+  service_data:
+    entity_id: input_boolean.buster_medication_active
+hold_action:
+  action: call-service
+  service: input_boolean.toggle
+  service_data:
+    entity_id: input_boolean.buster_medication_enabled
+entities:
+  - entity: sensor.buster_medication_settings
+    tap_action:
+      action: call-service
+      service: browser_mod.popup
+      service_data:
+        deviceID: this
+        title: Buster Medication Reminder
+        card:
+          type: entities
+          show_header_toggle: false
+          entities:
+            - entity: input_boolean.buster_medication_enabled
+            - entity: input_boolean.buster_medication_active
+            - entity: input_datetime.buster_medication_days_pill_1
+            - entity: input_datetime.buster_medication_days_pill_2
+            - entity: input_datetime.buster_medication_afternoons_pill_1
+            - entity: input_datetime.buster_medication_afternoons_pill_2
+          
+  - entity: input_boolean.buster_medication_active
+  - entity: input_boolean.buster_medication_enabled

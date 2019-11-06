@@ -1,0 +1,29 @@
+##################################################################################################
+## Template Sensors
+##################################################################################################
+  - platform: template
+    sensors:
+
+##################################################################################################
+## Announcement Media Player
+## - sensor returns empty value if selected media player unavailable
+##################################################################################################
+      announcement_media_player:
+        friendly_name: Announcement Media Player
+        icon_template: mdi:animation-play
+        entity_id: input_select.announcement_media_player
+        value_template:  >-
+            {% set entities = state_attr('group.all_media_players', 'entity_id') %}
+            {% set mplayer =  states.media_player | selectattr('entity_id', 'in', entities)
+                                  | selectattr( 'name','eq',states('input_select.announcement_media_player'))
+                                  | map(attribute='entity_id')
+                                  | join(',') %}
+            {{ mplayer }}
+
+##################################################################################################
+## Announcement Media Player State
+##################################################################################################
+      announcement_media_player_state:
+        friendly_name: Announcement Media Player State
+        icon_template: mdi:animation-play
+        value_template: "{{ states(states('sensor.announcement_media_player')) }}"

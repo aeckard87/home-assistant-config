@@ -1,0 +1,383 @@
+##################################################################################################
+## Sensor - Smoke Detected
+## - not disabled in silent mode
+#IDEA if alarm and nobody home send additional alerts, sms to neighbours, family
+#IDEA extended alert - phone dialer to call phones or 911?
+##################################################################################################
+  - id: sensor_smoke_detected
+    alias: "[Sensor] Smoke Detected"
+    description: "Turn on all lights, pause media players, send notification when smoke alarm turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when smoke alarm sensor is activated
+      - platform: state
+        entity_id: binary_sensor.smoke_alarm
+        to: 'on'
+
+    action:
+      # save current light settings
+      - service: script.save_lights
+        data:
+          store_name: 'smoke_alarm_store'
+          entity_ids: 'light.living_room_pot_lights'
+
+      # turn off user control automations
+      - service: automation.turn_off
+        entity_id: automation.automation_set_device_user_state
+
+      # turn on all the lights
+      - service: light.turn_on
+        data:
+          entity_id: group.all_lights
+          brightness_pct: 100
+
+      # delay to allow state changes to register
+      - delay: '00:00:01'
+
+      # turn user control automations back on
+      - service: automation.turn_on
+        entity_id: automation.automation_set_device_user_state
+
+      # pause all media players
+      - service: script.pause_media_players
+
+      # no need to play alert here - nest protects will be sounding
+
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: "Smoke Alert!"
+          message: "There was an active smoke alert at {{ now().strftime('%H:%M  %Y-%m-%d') }}."
+          notification_id: 'smoke_alert'
+
+      # send immediate push notification
+      - !include /config/include/smoke_alert_notification.yaml
+
+      # turn recurring smoke alert notification automation on
+      - service: automation.turn_on
+        entity_id: automation.sensor_active_smoke_alert
+
+      # wait 15 min for smoke sensor to turn off, do not continue on timeout
+      - wait_template: "{{ is_state('binary_sensor.smoke_alarm','off') }}"
+        timeout: '0:15:00'
+        continue_on_timeout: true
+
+      # turn smoke alert notification automation off
+      - service: automation.turn_off
+        entity_id: automation.sensor_active_smoke_alert
+
+      # keep lights on for another 5 minutes
+      - delay: '0:05:00'
+
+      # restore previous light settings
+      - service: script.restore_lights
+        data:
+          store_name: 'smoke_alarm_store'
+
+##################################################################################################
+## Sensor - Active Smoke Alert
+## - this runs every minute after first notification
+## - initial state set to off, turned on/off by smoke detected automation
+##################################################################################################
+  - id: sensor_active_smoke_alert
+    alias: "[Sensor] Active Smoke Alert"
+    description: "Send a push notification every minute while a smoke alert is active."
+    initial_state: 'off'
+
+    trigger:
+      # run every 60 seconds
+      - platform: time_pattern
+        seconds: /60
+
+    condition:
+      # only run when smoke alarm sensor is activated
+      - condition: state
+        entity_id: binary_sensor.smoke_alarm
+        state: 'on'
+
+    action:
+      # send push notification
+      - !include /config/include/smoke_alert_notification.yaml
+
+##################################################################################################
+## Sensor - Upstairs Protect Offline Alert
+## - stagger for time with other nest products so push notifications don't exceed allowed messages
+## - group.sensor_alert_automations
+##################################################################################################
+  - id: sensor_upstairs_protect_offline_alert
+    alias: "[Sensor] Upstairs Protect Offline Alert"
+    description: "Send notification when device goes offline."
+    initial_state: 'on'
+
+    trigger:
+      # run when upstairs protect connected sensor turns off
+      - entity_id: binary_sensor.upstairs_protect_connected
+        platform: state
+        to: 'off'
+        for: '0:01:00'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if sensor automations are enabled
+          - condition: state
+            entity_id: input_boolean.sensor_automation
+            state: 'on'
+
+          # do not run in silent mode
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &us_offline_title "Upstairs Nest Protect Offline"
+          message: &us_offline_message "Upstairs Protect offline.\n{{now().strftime('%H:%M  %Y-%m-%d')}}"
+          notification_id: 'upstairs_protect_offline'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *us_offline_title
+          message: *us_offline_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'us_protect_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'upstairs_protect_offline'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: false
+            silent: false
+            url: '/lovelace/sensors'
+            icon: !secret OFFLINE_ICON
+            image: !secret OFFLINE_IMAGE
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Sensor - Upstairs Protect Notification Closed
+###################################################################################################
+  - id: sensor_upstairs_protect_notification_closed
+    alias: "[Sensor] Upstairs Protect Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'upstairs_protect_offline'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'upstairs_protect_offline'
+
+##################################################################################################
+## Sensor - Upstairs Protect Offline Alert Cancelled
+##################################################################################################
+  - id: sensor_upstairs_protect_offline_alert_cancelled
+    alias: "[Sensor] Upstairs Protect Offline Alert Cancelled"
+    description: "Dismiss notifications when device is back online."
+    initial_state: 'on'
+
+    trigger:
+      # run when upstairs protect connected sensor turns on
+      - entity_id: binary_sensor.upstairs_protect_connected
+        platform: state
+        to: 'on'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'upstairs_protect_offline'
+
+##################################################################################################
+## Sensor - Upstairs Protect Alert Pause
+##################################################################################################
+  - id: sensor_upstairs_protect_alert_pause
+    alias: "[Sensor] Upstairs Protect Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'us_protect_alert_pause'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'upstairs_protect_offline'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.sensor_upstairs_protect_offline_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.sensor_upstairs_protect_offline_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.sensor_upstairs_protect_offline_alert
+
+##################################################################################################
+## Sensor - Downstairs Protect Offline Alert
+## - stagger for time with other nest products so push notifications don't exceed allowed messages
+## - group.sensor_alert_automations
+##################################################################################################
+  - id: sensor_downstairs_protect_offline_alert
+    alias: "[Sensor] Downstairs Protect Offline Alert"
+    description: "Send notification when device goes offline."
+    initial_state: 'on'
+
+    trigger:
+      # run when downstairs protect connected sensor turns off
+      - entity_id: binary_sensor.downstairs_protect_connected
+        platform: state
+        to: 'off'
+        for: '0:01:30'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if sensor automations are enabled
+          - condition: state
+            entity_id: input_boolean.sensor_automation
+            state: 'on'
+
+          # do not run in silent mode
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &ds_offline_title "Downstairs Nest Protect Offline"
+          message: &ds_offline_message "Downstairs Protect offline.\n{{now().strftime('%H:%M  %Y-%m-%d')}}"
+          notification_id: 'downstairs_protect_offline'
+
+      # send push notification
+      - service: 'notify.push'
+        data_template:
+          title: *ds_offline_title
+          message: *ds_offline_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'ds_protect_alert_pause'
+                title: Pause Alerts
+                icon: !secret PAUSE_BUTTON
+            tag: 'downstairs_protect_offline'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: false
+            silent: false
+            url: '/lovelace/sensors'
+            icon: !secret OFFLINE_ICON
+            image: !secret OFFLINE_IMAGE
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Sensor - Downstairs Protect Notification Closed
+###################################################################################################
+  - id: sensor_downstairs_protect_notification_closed
+    alias: "[Sensor] Downstairs Protect Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'downstairs_protect_offline'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'downstairs_protect_offline'
+
+##################################################################################################
+## Sensor - Downstairs Protect Offline Alert Cancelled
+##################################################################################################
+  - id: sensor_downstairs_protect_offline_alert_cancelled
+    alias: "[Sensor] Downstairs Protect Offline Alert Cancelled"
+    description: "Dismiss notifications when device is back online."
+    initial_state: 'on'
+
+    trigger:
+      # run when downstairs protect connected sensor turns on
+      - entity_id: binary_sensor.downstairs_protect_connected
+        platform: state
+        to: 'on'
+
+    action:
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'downstairs_protect_offline'
+
+##################################################################################################
+## Sensor - Downstairs Protect Alert Pause
+##################################################################################################
+  - id: sensor_downstairs_protect_alert_pause
+    alias: "[Sensor] Downstairs Protect Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'ds_protect_alert_pause'
+
+    action:
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'downstairs_protect_offline'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.sensor_downstairs_protect_offline_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.sensor_downstairs_protect_offline_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.sensor_downstairs_protect_offline_alert

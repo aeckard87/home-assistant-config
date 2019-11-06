@@ -1,0 +1,37 @@
+type: custom:mini-graph-card
+name: Mold Risk
+hours_to_show: 72
+font_size: 75
+animate: true
+color_thresholds:
+  - value: 0
+    color: '#97C4D8'
+  - value: 10
+    color: '#8BCDCF'
+  - value: 20
+    color: '#72B9BB'
+  - value: 30
+    color: '#708FA9'
+  - value: 40
+    color: '#4F8B48'
+  - value: 50
+    color: '#7D8F28'
+  - value: 60
+    color: '#B0A20C'
+  - value: 70
+    color: '#D6AC08'
+  - value: 80
+    color: '#EF9407'
+  - value: 85
+    color: '#F76002'
+  - value: 90
+    color: '#CC4A13'
+  - value: 95
+    color: '#C04212'
+  - value: 100
+    color: '#932608'
+  - value: 110
+    color: '#B1432D'
+entities:
+  - entity: sensor.upstairs_bathroom_mold_indicator
+    name: Upstairs Bathroom

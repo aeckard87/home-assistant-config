@@ -1,0 +1,19 @@
+##################################################################################################
+## Radio Paused
+##################################################################################################
+  - platform: template
+    sensors:
+      radio_paused:
+        friendly_name: Radio Paused
+        icon_template: mdi:pause-circle
+        value_template: "{{ is_state('input_boolean.radio_paused', 'on') }}"
+
+##################################################################################################
+## Radio On
+##################################################################################################
+  - platform: template
+    sensors:
+      radio_on:
+        friendly_name: Radio On
+        icon_template: mdi:radio
+        value_template: "{{ is_state('input_boolean.radio_on', 'on') }}"

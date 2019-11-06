@@ -1,0 +1,93 @@
+##################################################################################################
+## Radio - Automations
+## - media player volume included so we don't set volume to 0 when media player turns off
+##################################################################################################
+  radio_automations:
+    icon: mdi:alarm-multiple
+    control: hidden
+    all: true
+    entities:
+      - automation.media_player_volume_change
+      - group.radio_media_player_changed_automations
+      - group.radio_hassio_changed_automations
+
+##################################################################################################
+## Radio - Media Player Changed Automations
+## - automations disabled for radio media player changes
+##################################################################################################
+  radio_media_player_changed_automations:
+    icon: mdi:radio
+    control: hidden
+    all: true
+    entities:
+      - automation.radio_media_player_turned_off
+      - automation.radio_media_player_paused
+      - automation.radio_media_player_resumed
+      - automation.radio_media_player_volume_changed
+
+##################################################################################################
+## Radio - Hassio Changed Automations
+## - automations disabled for radio setting changes
+##################################################################################################
+  radio_hassio_changed_automations:
+    icon: mdi:radio
+    control: hidden
+    all: true
+    entities:
+      - automation.radio_turned_on
+      - automation.radio_auto_off
+      - automation.radio_auto_resume
+      - automation.radio_hassio_turned_off
+      - automation.radio_hassio_paused
+      - automation.radio_hassio_resumed
+      - automation.radio_hassio_volume_changed
+      - automation.radio_station_changed
+      - automation.radio_media_player_turned_off
+      - automation.radio_media_player_changed
+      - automation.radio_media_player_paused
+      - automation.radio_media_player_resumed
+      - automation.radio_media_player_volume_changed
+      - automation.radio_morning_turned_off
+      - automation.radio_night_turned_off
+      - automation.radio_morning_volume_timer_finished
+      - automation.radio_morning_volume_timer_cancelled
+      - automation.radio_sleep_timer_finished
+      - automation.radio_sleep_timer_changed
+      - automation.radio_morning_preset_on
+      - automation.radio_night_preset_on
+      - automation.radio_jason_preset_on
+      - automation.radio_sheri_preset_on
+
+##################################################################################################
+## Radio - Hassio Changed Automations
+## - automations delayed at startup
+## - group.delayed_automations
+##################################################################################################
+  radio_delayed_automations:
+    icon: mdi:radio
+    control: hidden
+    all: true
+    entities:
+      - automation.radio_turned_on
+      - automation.radio_auto_off
+      - automation.radio_auto_resume
+      - automation.radio_hassio_turned_off
+      - automation.radio_hassio_paused
+      - automation.radio_hassio_resumed
+      - automation.radio_hassio_volume_changed
+      - automation.radio_station_changed
+      - automation.radio_media_player_turned_off
+      - automation.radio_media_player_changed
+      - automation.radio_media_player_paused
+      - automation.radio_media_player_resumed
+      - automation.radio_media_player_volume_changed
+      - automation.radio_morning_turned_off
+      - automation.radio_night_turned_off
+      - automation.radio_morning_volume_timer_finished
+      - automation.radio_morning_volume_timer_cancelled
+      - automation.radio_sleep_timer_finished
+      - automation.radio_sleep_timer_changed
+      - automation.radio_morning_preset_on
+      - automation.radio_night_preset_on
+      - automation.radio_jason_preset_on
+      - automation.radio_sheri_preset_on

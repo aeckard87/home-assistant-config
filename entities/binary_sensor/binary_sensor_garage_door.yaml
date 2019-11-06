@@ -1,0 +1,40 @@
+##################################################################################################
+## Template Binary Sensors
+##################################################################################################
+  - platform: template
+    sensors:
+
+##################################################################################################
+## Garage Door Connected
+##################################################################################################
+      garage_door_connected:
+        friendly_name: Garage Door
+        icon_template: >
+         {% if is_state('binary_sensor.house_alarm_connected','on') %} mdi:server-network
+         {% else %} mdi:server-network-off
+         {% endif %}
+        device_class: connectivity
+        value_template: >
+          {% if states('cover.garage_door_opener') | lower == 'unknown' %}
+            false
+          {% else %}
+            true
+          {% endif %}
+
+##################################################################################################
+## Garage Door Open
+## - if disconnected unknown state will default to closed
+##################################################################################################
+      garage_door_open:
+        friendly_name: Garage Door Open
+        icon_template: >
+         {% if is_state('binary_sensor.garage_door_open','on') %} mdi:garage-open
+         {% else %} mdi:garage
+         {% endif %}
+        device_class: garage_door
+        value_template: >
+          {% if is_state('cover.garage_door_opener', 'opening') %} true
+          {% elif is_state('cover.garage_door_opener', 'open') %} true
+          {% elif is_state('cover.garage_door_opener', 'closing') %} true
+          {% else %} false
+          {% endif %}

@@ -1,0 +1,15 @@
+type: custom:fold-entity-row
+head: input_boolean.radio_enabled_jason
+entities:
+  - entity: input_select.radio_station_jason
+    name: Station
+  - entity: input_select.media_player_radio_jason
+    name: Speaker
+  - entity: input_number.radio_volume_jason
+    name: Volume
+  - type: call-service
+    name: Play Jason's Radio
+    service: script.play_radio
+    data:
+      preset: Jason
+    action_name: PLAY

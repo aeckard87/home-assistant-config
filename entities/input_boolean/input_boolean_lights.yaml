@@ -1,0 +1,15 @@
+##################################################################################################
+## Light Automation
+##################################################################################################
+  light_automation:
+    name: Light Automation
+    icon: mdi:lightbulb-on-outline
+
+##################################################################################################
+## Living Room Pot Lights In Use
+## - initial off reset timer of on restart
+##################################################################################################
+  living_room_pot_lights:
+    name: Living Room Pot Lights
+    icon: mdi:light-switch
+    initial: 'off'

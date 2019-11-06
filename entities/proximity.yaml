@@ -1,0 +1,14 @@
+##################################################################################################
+## Home Proximity Sensors
+##################################################################################################
+  jhome:
+    zone: home
+    devices: device_tracker.jason_tracker
+    tolerance: 500 #meters
+    unit_of_measurement: km
+
+  shome:
+    zone: home
+    devices: device_tracker.sheri_tracker
+    tolerance: 500 #meters
+    unit_of_measurement: km

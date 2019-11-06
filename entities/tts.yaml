@@ -1,0 +1,32 @@
+  - platform: amazon_polly
+    #base_url: !secret BASE_URL_TTS #TEST
+    cache: true
+    cache_dir: tts
+    aws_access_key_id: !secret AWS_ACCESS_KEY_ID
+    aws_secret_access_key: !secret AWS_POLLY_ACCESS_KEY
+    region_name: us-east-1
+    #region_name: eu-west-2 #TEST
+    text_type: ssml
+    voice: Matthew
+    #voice: Amy #TEST
+    output_format: mp3
+    sample_rate: 22050
+    time_memory: 300
+
+  - platform: google_translate
+    cache: true
+    cache_dir: tts
+    time_memory: 3000
+    base_url: !secret BASE_URL_TTS
+    service_name: google_say
+
+#DISABLED - crashes home assistant!
+#   - platform: microsoft
+#     api_key: !secret MSTTS_API
+#     language: en-gb
+#     gender: Male
+#     type: George, Apollo
+#     rate: 20
+#     volume: -50
+#     pitch: high
+#     contour: (0, 0) (100, 100)

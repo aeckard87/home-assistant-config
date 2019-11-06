@@ -1,0 +1,1114 @@
+##################################################################################################
+## House Alarm - Automation On Check
+## - slows down user disabling alarm if alarm is not disarmed
+##################################################################################################
+  - id: house_alarm_automation_on_check
+    alias: "[House Alarm] Automation On Check"
+    description: "Turn entity back off if alarm not disarmed."
+    initial_state: 'on'
+
+    trigger:
+      # run when automation boolean turned on
+      - platform: state
+        entity_id: &house_alarm_disabled_automations
+          - automation.house_alarm_alert_check
+          - automation.house_alarm_armed_away_mode
+          - automation.house_alarm_armed_home_mode
+          - automation.house_alarm_armed_night_mode
+          - automation.house_alarm_automation_off_check
+          - automation.house_alarm_automation_on_check
+          - automation.house_alarm_disabled
+          - automation.house_alarm_disarmed
+          - automation.house_alarm_disarmed_alert_cancelled
+          - automation.house_alarm_disarmed_alert_closed
+          - automation.house_alarm_disarmed_alert_off
+          - automation.house_alarm_disarmed_arm_away
+          - automation.house_alarm_disarmed_nobody_home_alert
+          - automation.house_alarm_enabled
+          - automation.house_alarm_garage_motion
+          - automation.house_alarm_occupancy_mode_control
+          - automation.house_alarm_offline_alert
+          - automation.house_alarm_offline_alert_cancelled
+          - automation.house_alarm_offline_alert_closed
+          - automation.house_alarm_offline_alert_pause
+          - automation.house_alarm_panic_mode
+          - automation.house_alarm_pending
+          - automation.house_alarm_triggered
+          - automation.house_alarm_warning
+        to: 'on'
+
+      # run when house alarm control turned on
+      - platform: state
+        entity_id: &house_alarm_controls
+          - input_boolean.house_alarm_auto_arming
+          - input_boolean.house_alarm_enabled
+        to: 'on'
+
+    condition:
+      # only run alarm is not disarmed
+      - condition: template
+        value_template: "{{ not is_state('alarm_control_panel.house','disarmed') }}"
+
+    action:
+      # turn check autotmation off to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_automation_off_check
+
+      # turn entity back off
+      - service: homeassistant.turn_off
+        data_template:
+          entity_id: "{{ trigger.entity_id }}"
+
+      # turn check autotmation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_automation_off_check
+
+##################################################################################################
+## House Alarm - Automation Off Check
+##################################################################################################
+  - id: house_alarm_automation_off_check
+    alias: "[House Alarm] Automation Off Check"
+    description: "Turn entity back on if alarm not alarm not disarmed."
+    initial_state: 'on'
+
+    trigger:
+      # run when automation boolean turned off
+      - platform: state
+        entity_id: *house_alarm_disabled_automations
+        to: 'off'
+
+      # run when house alarm control turned off
+      - platform: state
+        entity_id: *house_alarm_controls
+        to: 'off'
+
+    condition:
+      # only run if alarm is not disarmed
+      - condition: template
+        value_template: "{{ not is_state('alarm_control_panel.house','disarmed') }}"
+
+    action:
+      # turn check autotmation off to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_automation_on_check
+
+      # turn entity back on
+      - service: homeassistant.turn_on
+        data_template:
+          entity_id: "{{ trigger.entity_id }}"
+
+      # turn check autotmation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_automation_on_check
+
+##################################################################################################
+## House Alarm - Active Alert
+## - this runs every minute after first notification
+## - initial state set to off or alarm sounds!
+##################################################################################################
+  - id: house_alarm_active_alert
+    alias: "[House Alarm] Active Alert"
+    description: "Sound alarm and send repeating notifications when alarm is triggered."
+    initial_state: 'off'
+
+    trigger:
+      # run every 60 seconds
+      - platform: time_pattern
+        seconds: /60
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      # only run if alarm is triggered
+      - condition: template
+        value_template: "{{ is_state('alarm_control_panel.house','triggered') }}"
+
+    action:
+      # play the alert, text is formated when stored in input_text
+      - service: script.play_alert
+        data_template:
+          play_message: "Alert! {{ states('input_text.current_house_alarm') }}"
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: House Alarm Triggered
+          message: "{{ play_message | striptags | title | replace('_',' ') }}"
+          target:
+            - jphone
+            - sphone
+            - jlaptop
+          data:
+            tag: alarm_triggered_alert
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: /lovelace/alarm
+            icon: !secret ALARM_ICON
+            badge: !secret ALARM_BADGE
+
+##################################################################################################
+## House Alarm - Alert Check
+##################################################################################################
+  - id: house_alarm_alert_check
+    alias: "[House Alarm] Alert Check"
+    description: "Check state of alarm and adjust alert automation state accordingly."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has an active alert
+      - platform: state
+        entity_id: automation.house_alarm_active_alert
+
+    condition:
+      # only run when alert automation turns on and alarm is not triggered
+      - condition: template
+        value_template: >-
+          {{ ( trigger.to_state.state == 'on' and not is_state('alarm_control_panel.house','triggered') )
+            or ( trigger.to_state.state == 'off' and not is_state('alarm_control_panel.house','disarmed') ) }}
+
+    action:
+      # turn check automation off to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_alert_check
+
+      # if alert is turned on and alarm was not triggered turn it off
+      # if alert is turned off and alarm is not disarmed turn it back on
+      # prevents someone from simply turning off automation to silence alarm
+      - service: homeassistant.toggle
+        entity_id: automation.house_alarm_active_alert
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_alert_check
+
+##################################################################################################
+## House Alarm - Disabled Alert
+## - turn off all alarm automations, control booleans
+##################################################################################################
+  - id: house_alarm_disabled_alert
+    alias: "[House Alarm] Disabled Alert"
+    description: "Send notification when house alarm is disabled."
+    initial_state: 'on'
+
+    trigger:
+    # run when alarm is disabled
+      - platform: state
+        entity_id: input_boolean.house_alarm_enabled
+        to: 'off'
+
+    condition:
+      # do not run in silent mode
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+    action:
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &alarm_disabled_title House Alarm Disabled
+          message: &alarm_disabled_message "Alarm offline at {{now().strftime('%H:%M  %Y-%m-%d')}}"
+          notification_id: house_alarm_disabled
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *alarm_disabled_title
+          message: *alarm_disabled_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: enable_house_alarm
+                title: Enable Alarm
+                icon: !secret ALARM_ICON
+            tag: house_alarm_disabled
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: /lovelace/alarm
+            icon: !secret ALARM_ICON
+            image: !secret ALARM_IMAGE
+            badge: !secret ALARM_BADGE
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! The house alarm has been disabled."
+          quiet_play: 'true'
+          override_away: 'true'
+
+##################################################################################################
+## House Alarm - Re-enable Alarm
+##################################################################################################
+  - id: house_alarm_reenable_alarm
+    alias: "[House Alarm] Reenable Alarm"
+    description: "Reenable alarm from push notification."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: enable_house_alarm
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: house_alarm_disabled
+
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.house_alarm_enabled
+
+##################################################################################################
+## House Alarm Occupancy Mode Control
+## armed_night, auto disarming disabled
+## - group.delayed_automations
+##################################################################################################
+  - id: house_alarm_occupancy_mode_control
+    alias: "[House Alarm] Occupancy Mode Control"
+    description: "Arm house alarm when occupancy mode changes."
+    initial_state: 'off'
+
+    trigger:
+      # run when occupancy mode changes
+      - platform: state
+        entity_id: input_select.occupancy_mode
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if alarm is enabled
+          - condition: state
+            entity_id: input_boolean.house_alarm_enabled
+            state: 'on'
+
+          # only run if automatic arming is enabled
+          - condition: state
+            entity_id: input_boolean.house_alarm_auto_arming
+            state: 'on'
+
+          # only run if not in manual mode
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+    action:
+      # set alarm according to occupancy mode
+      #DISABLED {% if is_state('input_select.occupancy_mode', 'Home') %} script.arm_alarm_home
+      # disabled because android alarm app only compatible with armed_home, armed_away and home mode alarm not required
+      - service_template: >-
+          {% if is_state('input_select.occupancy_mode', 'Night') %} script.arm_alarm_home
+          {% elif is_state('input_select.occupancy_mode', 'Away') or is_state('input_select.occupancy_mode', 'Vacation') %} script.arm_alarm_away
+          {% else %} script.null_script
+          {% endif %}
+
+##################################################################################################
+## House Alarm - Away Mode
+## - group.house_alarm_delayed_automations
+##################################################################################################
+  - id: house_alarm_armed_away_mode
+    alias: "[House Alarm] Armed Away Mode"
+    description: "Activate away occupancy mode and play announcement when alarm armed in armed_away."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has been armed in away mode
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: armed_away
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # dismiss push notifications for alarm disarmed for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: alarm_disarmed
+
+      # turn off occupancy mode alarm control automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_occupancy_mode_control
+
+      # put the house into away mode mode if not set (or already in vacation mode)
+      - service_template: >-
+          {% if ( not is_state('input_select.occupancy_mode','Away') or not is_state('input_select.occupancy_mode','Vacation') ) and is_state('input_boolean.house_alarm_auto_arming','on') %}
+            input_select.select_option
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_select.occupancy_mode
+          option: Away
+
+      # turn occupancy mode alarm control automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_occupancy_mode_control
+
+      # wait for any other announcments to finish, avoid skipping play if script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }} }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement - only plays if someone home!
+      - service: script.play_announcement
+        data_template:
+          play_message: "The alarm is now armed in Away Mode."
+          override_away: 'true'
+          quiet_play: 'true'
+
+##################################################################################################
+## House Alarm - Night Mode
+## this should never fire, armed_night disabled
+##################################################################################################
+  - id: house_alarm_armed_night_mode
+    alias: "[House Alarm] Armed Night Mode"
+    description: "Activate night occupancy mode and play announcement when alarm armed in armed_home."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has been armed in night mode
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: armed_night
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # turn off occupancy mode alarm control automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_occupancy_mode_control
+
+      # put the house into night mode if not already there
+      - service_template: >-
+          {% if not is_state('input_select.occupancy_mode','Night') and is_state('input_boolean.house_alarm_auto_arming','on') %}
+            input_select.select_option
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_select.occupancy_mode
+          option: Night
+
+    # turn occupancy mode alarm control automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_occupancy_mode_control
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:00:30'
+        continue_on_timeout: true
+
+      # play announcement except during quiet hours
+      - service: script.play_announcement
+        data_template:
+          play_message: "The alarm is now armed in Night Mode."
+          override_away: 'true'
+          quiet_play: 'true'
+
+##################################################################################################
+## House Alarm - Home Mode
+## - using alarm armed_home for night time due to android app incompatibility
+##################################################################################################
+  - id: house_alarm_armed_home_mode
+    alias: "[House Alarm] Armed Home Mode"
+    description: "Activate home occupancy mode and play announcement when alarm armed in armed_home."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has been armed in home (night) mode
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: armed_home
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # turn off occupancy mode alarm control automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_occupancy_mode_control
+
+      # put the house into night mode if not already there
+      # use night mode instead of home mode due to android app incompatibity
+      - service_template: >-
+          {% if not is_state('input_select.occupancy_mode','Night') and is_state('input_boolean.house_alarm_auto_arming','on') %}
+            input_select.select_option
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          entity_id: input_select.occupancy_mode
+          option: Night
+
+      # turn occupancy mode alarm control automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_occupancy_mode_control
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement except during quiet hours
+      - service: script.play_announcement
+        data_template:
+          play_message: "The alarm is now armed in Home Mode."
+          override_away: 'true'
+          quiet_play: 'true'
+
+##################################################################################################
+## House Alarm - Pending
+##################################################################################################
+  - id: house_alarm_pending
+    alias: "[House Alarm] Pending"
+    description: "Turn on entrance lights and play announcement when alarm is pending."
+    initial_state: 'on'
+
+    trigger:
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: pending
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # save current light settings
+      - service: script.save_lights
+        data:
+          store_name: 'alarm_pending_store'
+          entity_ids: 'light.leave_home_lights'
+
+      #ISSUE if alarm is directly armed in away mode instead of by occupancy mode it will not switch to Away until AFTER alarm is armed
+
+      # turn on entrance lights in Away/Vacation mode.
+      - service_template: >
+          {% if is_state('input_select.occupancy_mode','Away') or is_state('input_select.occupancy_mode','Vacation') %}
+            script.turn_light_on
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          light_name: leave_home_lights
+          brightness: 35
+          ignore_user_state: 'true'
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:00:30'
+        continue_on_timeout: true
+
+      # play announcement except during quiet hours
+      - service: script.play_announcement
+        data_template:
+          play_message: "The alarm is now being armed."
+          override_away: 'true'
+          quiet_play: 'false'
+
+      - wait_template: "{{ not is_state('alarm_control_panel.house','pending') }}"
+        timeout: '0:02:00'
+        continue_on_timeout: true
+
+      # restore light settings
+      - service: script.restore_lights
+        data:
+          store_name: 'alarm_pending_store'
+
+##################################################################################################
+## House Alarm - Disarmed
+##################################################################################################
+  - id: house_alarm_disarmed
+    alias: "[House Alarm] Disarmed"
+    description: "Play announcement and activate home mode when alarm disarmed."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has been disarmed
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: disarmed
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # turn off active house alert automation
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_active_alert
+
+      # delay to avoid conflict with someone home announcement
+      - delay: '00:00:05'
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # play announcement except during quiet hours
+      - service: script.play_announcement
+        data_template:
+          play_message: "The house alarm is now disarmed."
+          override_away: 'true'
+          quiet_play: 'false'
+
+      # only continue if alarm auto arming is enabled
+      # occupancy mode will stay in away if a guest (nobody home) disarms alarm and auto arming is off
+      - condition: state
+        entity_id: input_boolean.house_alarm_auto_arming
+        state: 'on'
+
+      # occupancy mode home if someone home, else guest mode
+      # if occupancy mode is already home via presence automation nothing happens
+      #IDEA - set occupancy mode by alarm PIN
+
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.occupancy_mode
+          option: >-
+            {% if is_state('binary_sensor.someone_home','on') %} Home
+            {% else %} Guest
+            {% endif %}
+
+##################################################################################################
+## House Alarm - Triggered
+##################################################################################################
+  - id: house_alarm_triggered
+    alias: "[House Alarm] Triggered"
+    description: "Sound alarm and send notifications when alarm is triggered"
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has been triggered
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: triggered
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # activate house alert
+      - service: script.house_alarm_triggered
+        data_template:
+          play_message: "{{ states[states.alarm_control_panel.house.attributes.changed_by.split('.')[0]][ states.alarm_control_panel.house.attributes.changed_by.split('.')[1]].name }} at {{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}."
+
+##################################################################################################
+## House Alarm - Warning Mode
+##################################################################################################
+  - id: house_alarm_warning
+    alias: "[House Alarm] Warning"
+    description: "Turn on lights and play announcement if alarm warning state is triggered."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has triggered a warning
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: warning
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # save current light settings
+      - service: script.save_lights
+        data:
+          store_name: 'alarm_warning_store'
+          entity_ids: 'light.leave_home_lights'
+
+      # turn on entrance lights, except in night mode
+      - service_template: >
+          {% if not is_state('input_select.occupancy_mode','Night') %}
+            script.turn_light_on
+          {% else %}
+            script.null_script
+          {% endif %}
+        data_template:
+          light_name: leave_home_lights
+          brightness: 35
+          ignore_user_state: 'true'
+
+      # just play alert - not a house alert yet!
+      - service: script.play_announcement
+        data_template:
+          play_message: "Warning! The house alarm has been triggered by the {{ states[states.alarm_control_panel.house.attributes.changed_by.split('.')[0]][ states.alarm_control_panel.house.attributes.changed_by.split('.')[1]].name }}.  Disarm the system or the alarm will sound."
+          override_away: 'true'
+          quiet_play: 'true'
+
+      - wait_template: "{{ not is_state('alarm_control_panel.house','warning') }}"
+        timeout: '0:02:00'
+        continue_on_timeout: false
+
+      # restore light settings
+      - service: script.restore_lights
+        data:
+          store_name: 'alarm_warning_store'
+
+##################################################################################################
+## House Alarm - Panic Mode
+#ISSUE alarm app doesn's support panic mode!
+##################################################################################################
+  - id: house_alarm_panic_mode
+    alias: "[House Alarm] Panic Mode"
+    description: "Activate panic mode when panic code entered into alarm keypad."
+    initial_state: 'on'
+
+    trigger:
+      - platform: template
+        value_template: "{{ states.alarm_control_panel.house.attributes.panic_mode | lower == 'active' }}"
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      - service: light.turn_on
+        entity_id: all
+
+##################################################################################################
+## House Alarm - Garage Motion
+## - this fires even if garage motion didn't trigger the active alarm!
+##################################################################################################
+  - id: house_alarm_garage_motion
+    alias: "[House Alarm] Garage Motion"
+    description: "Send notifications w/snapshots when garage motion dectected and alarm triggered."
+    initial_state: 'on'
+
+    trigger:
+      # run anytime the alarm is triggered and there is motion in the garage
+      - platform: template
+        value_template: >-
+          {% if is_state('alarm_control_panel.house','triggered')
+          and (is_state('binary_sensor.side_entrance_motion','on') or is_state('binary_sensor.garage_door_open','on')) %}
+            true
+          {% else %}
+            false
+          {% endif %}
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      # create security camera snapshots
+      - service: camera.snapshot
+        data_template:
+          entity_id: camera.side_drive
+          filename: "/config/www/capture/side_drive_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+
+      - service: camera.snapshot
+        data_template:
+          entity_id: camera.side_door
+          filename: "/config/www/capture/side_door_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+
+      - service: camera.snapshot
+        data_template:
+          entity_id: camera.back_house
+          filename: "/config/www/capture/back_house_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+
+      - service: camera.snapshot
+        data_template:
+          entity_id: camera.garage_inside
+          filename: "/config/www/capture/garage_inside_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+
+      # allow snapshots to be created
+      - delay: '0:00:10'
+
+      # send email notification
+      - service: notify.jason_email
+        data_template:
+          title: "Side Door - Motion Detected"
+          message: "Motion was detected at the side door at {{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}!"
+          data:
+              images:
+                - "/config/www/capture/side_drive_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+                - "/config/www/capture/side_door_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+                - "/config/www/capture/back_house_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+                - "/config/www/capture/garage_inside_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg"
+
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: Garage Motion Alert
+          notification_id: garage_motion_alert
+          message: |
+            ![image](/local/capture/side_drive_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg)
+            ![image](/local/capture/side_door_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg)
+            ![image](/local/capture/back_house_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg)
+            ![image](/local/capture/garage_inside_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg)
+
+##################################################################################################
+## House Alarm - Offline Alert
+##################################################################################################
+  - id: house_alarm_offline_alert
+    alias: "[House Alarm] Offline Alert"
+    description: "Send notification when house alarm goes offline."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm sensor disconnected
+      - platform: state
+        entity_id: binary_sensor.house_alarm_connected
+        to: 'off'
+
+    condition:
+      # do not run in silent mode
+      - condition: state
+        entity_id: input_boolean.silent_mode
+        state: 'off'
+
+    action:
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &alarm_offline_title House Alarm Offline
+          message: &alarm_offline_message "Alarm offline at {{now().strftime('%H:%M  %Y-%m-%d')}}"
+          notification_id: house_alarm_offline
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *alarm_offline_title
+          message: *alarm_offline_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: house_alarm_offline_alert_pause
+                title: Pause Alerts
+                icon: !secret PAUSE_BUTTON
+            tag: house_alarm_offline
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: /lovelace/alarm
+            icon: !secret ALARM_ICON
+            image: !secret ALARM_IMAGE
+            badge: !secret ALARM_BADGE
+
+##################################################################################################
+## House Alarm - Offline Alert Cancelled
+##################################################################################################
+  - id: house_alarm_offline_alert_cancelled
+    alias: "[House Alarm] Offline Alert Cancelled"
+    description: "Dismiss notifications when house alarm is back online."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm is connected
+      - entity_id: binary_sensor.house_alarm_connected
+        platform: state
+        to: 'on'
+
+    action:
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: house_alarm_offline
+
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: house_alarm_offline
+
+###################################################################################################
+## House Alarm - Offline Alert Closed
+###################################################################################################
+  - id: house_alarm_offline_alert_closed
+    alias: "[House Alarm] Offline Alert Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: house_alarm_offline
+
+    action:
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: house_alarm_offline
+
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: house_alarm_offline
+
+##################################################################################################
+## House Alarm - Offline Alert Pause
+##################################################################################################
+  - id: house_alarm_offline_alert_pause
+    alias: "[House Alarm] Offline Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: house_alarm_offline_alert_pause
+
+    action:
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: house_alarm_offline
+
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: house_alarm_offline
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_offline_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.house_alarm_offline_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_offline_alert
+
+##################################################################################################
+## House Alarm - Disarmed Nobody Home
+##################################################################################################
+  - id: house_alarm_disarmed_nobody_home_alert
+    alias: "[House Alarm] Disarmed Nobody Home Alert"
+    description: "Send notification if no one is home and the alarm isn't armed"
+    initial_state: 'on'
+
+    trigger:
+      - platform: time_pattern
+        minutes: '/15'
+
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: disarmed
+        for:
+          minutes: 5
+
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Away'
+        for:
+          minutes: 5
+
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Vacation'
+        for:
+          minutes: 5
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if alarm is enabled
+          - condition: state
+            entity_id: input_boolean.house_alarm_enabled
+            state: 'on'
+
+          # do not run in silent mode
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if alarm is disarmed
+          - condition: state
+            entity_id: alarm_control_panel.house
+            state: 'disarmed'
+
+          # only run if nobody is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: Alarm Not Armed
+          message: "No one is home and alarm is disarmed.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: arm_house_alarm
+                title: Arm Alarm
+                icon: !secret ALARM_ICON
+              - action: alarm_disarmed_alert_pause
+                title: Pause Alerts
+                icon: !secret PAUSE_BUTTON
+            tag: alarm_disarmed
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: /lovelace/system
+            icon: !secret ALARM_ICON
+            image: !secret ALARM_IMAGE
+            badge: !secret ALARM_BADGE
+
+###################################################################################################
+## House Alarm - Disarmed Alert Closed
+###################################################################################################
+  - id: house_alarm_disarmed_alert_closed
+    alias: "[House Alarm] Disarmed Alert Closed"
+    initial_state: 'on'
+    description: "Dismiss notifications on all devices when closed on one."
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: alarm_disarmed
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: alarm_disarmed
+
+##################################################################################################
+## House Alarm - Disarmed Alert Cancelled
+##################################################################################################
+  - id: house_alarm_disarmed_alert_cancelled
+    alias: "[House Alarm] Disarmed Alert Cancelled"
+    description: "Dismiss notifications when alarm is armed or someone comes home."
+    initial_state: 'on'
+
+    trigger:
+      # run when alarm has been armed
+      - platform: state
+        entity_id: alarm_control_panel.house
+        to: armed_away
+
+      # run if somebody comes home
+      - platform: state
+        entity_id: binary_sensor.someone_home
+        to: 'on'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: alarm_disarmed
+
+##################################################################################################
+## House Alarm - Disarmed Alarm Away
+##################################################################################################
+  - id: house_alarm_disarmed_arm_away
+    alias: "[House Alarm] Disarmed Arm Away"
+    description: "Arm alarm in away mode when notification button clicked."
+    initial_state: 'on'
+
+    trigger:
+      # run when arm alarm notification buton clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: arm_house_alarm
+
+    condition:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+    action:
+      - service: script.arm_alarm_away
+
+##################################################################################################
+## House Alarm - Disarmed Alert Off
+##################################################################################################
+  - id: house_alarm_disarmed_alert_pause
+    alias: "[House Alarm] Disarmed Alert Off"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: alarm_disarmed_alert_pause
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: alarm_disarmed
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_disarmed_nobody_home_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.house_alarm_disarmed_nobody_home_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_disarmed_nobody_home_alert

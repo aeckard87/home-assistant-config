@@ -1,0 +1,152 @@
+title: Garage
+icon: mdi:garage
+path: garage
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - type: entity-filter
+        show_empty: false
+        state_filter:
+          - 'on'
+        card:
+          columns: 3
+          title: Garage Alerts
+          type: glance
+        entities:
+          - entity: binary_sensor.garage_high_temperature
+          - entity: binary_sensor.garage_low_temperature
+          - entity: binary_sensor.garage_door_open
+          - entity: binary_sensor.side_entrance_motion
+          - entity: light.living_room_pot_lights
+            name: Garage
+
+      - type: picture-glance
+        title: Garage
+        camera_image: camera.side_door
+        entities:
+          - entity: cover.garage_door_opener
+          - entity: binary_sensor.side_entrance_motion
+          - entity: camera.garage_inside
+          - entity: light.living_room_pot_lights
+            name: Garage Interior
+          - entity: input_boolean.garage_heat
+            icon: 'mdi:fire'
+          - entity: input_boolean.garage_freeze_protection
+            icon: 'mdi:snowflake'
+        entity: cover.garage_door_opener
+        tap_action:
+          action: call-service
+          service: cover.close_cover
+          service_data:
+            entity_id: cover.garage_door_opener
+        hold_action:
+          action: call-service
+          service: cover.open_cover
+          service_data:
+            entity_id: cover.garage_door_opener
+
+      - type: picture-entity
+        entity: camera.garage_inside
+        aspect_ratio: 16x9
+        show_name: true
+        show_state: false
+        tap_action:
+          action: more-info
+
+      - type: picture-entity
+        entity: camera.back_house
+        aspect_ratio: 16x9
+        show_name: true
+        show_state: false
+        tap_action:
+          action: more-info
+
+  - type: vertical-stack
+    cards:
+
+      - type: entities
+        title: Garage
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.garage_door_connected
+          - entity: cover.garage_door_opener
+          - entity: light.garage_lights
+          - entity: camera.side_door
+            name: Garage Door View
+          - entity: camera.garage_inside
+            name: Garage Inside View
+          - entity: camera.back_house
+            name: Back Door View
+          - entity: binary_sensor.side_entrance_motion
+            name: Garage Motion
+
+          - type: custom:fold-entity-row
+            head: sensor.side_entrance_temperature
+            name: Garage Climate #ISSUE doesn't work!
+            entities:
+              - entity: zwave.garage_thermostat
+              - entity: climate.garage_thermostat
+              - entity: input_boolean.garage_freeze_protection
+              - entity: input_boolean.garage_heat
+              - entity: sensor.garage_thermostat_temperature
+              - entity: sensor.side_entrance_temperature
+                name: Garage Temperature
+              - entity: sensor.garage_thermostat_humidity
+              - entity: sensor.garage_thermostat_indicator
+              - entity: sensor.garage_furnace
+              - entity: sensor.garage_furnace_fan
+              - entity: input_number.garage_freeze_temperature
+              - entity: input_number.garage_heat_temperature
+
+  - type: vertical-stack
+    cards:
+
+      - type: conditional
+        conditions:
+          - entity: input_boolean.advanced_view
+            state: 'on'
+        card:
+          type: entities
+          title: Garage Settings
+          show_header_toggle: false
+          entities:
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.garage_door_automation
+              filter:
+                include:
+                  - entity_id: "automation.garage_*"
+                exclude:
+                  - entity_id: "automation.garage_climate*"
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.garage_climate_automation
+              filter:
+                include:
+                  - entity_id: "automation.garage_climate_*"
+
+      - type: history-graph
+        title: Garage Door History
+        hours_to_show: 72
+        refresh_interval: 300
+        entities:
+          - entity: binary_sensor.garage_door_connected
+            name: Connected
+          - entity: cover.garage_door_opener
+            name: Garage Door
+          - entity: input_boolean.garage_freeze_protection
+            name: Freeze On
+          - entity: input_boolean.garage_heat
+            name: Heat On
+          - entity: sensor.side_entrance_temperature
+            name: Garage Temperature
+          - entity: light.garage_lights
+            name: Lights On
+          - entity: binary_sensor.side_entrance_motion
+            name: Motion

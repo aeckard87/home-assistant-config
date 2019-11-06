@@ -1,0 +1,10 @@
+###################################################################################################
+## Shell Commands
+## https://www.home-assistant.io/components/shell_command/
+###################################################################################################
+
+# https://github.com/thomasloven/homeassistant-lovelace-gen
+lovelace_gen: 'python lovelace-gen.py > lovelace-gen.log'
+haclean_capture: 'sh shell/haclean_capture.sh'
+haclean_tts: 'sh shell/haclean_tts.sh'
+git_update: 'sh shell/gitupdate.sh'

@@ -1,0 +1,102 @@
+##################################################################################################
+## Time_Date Sensor
+##################################################################################################
+  - platform: time_date
+    display_options:
+      - time
+      - date
+      - date_time
+
+##################################################################################################
+## Current Shift
+## - if both days and afternoons = off, no shift scheduled = None
+## - if calendar not connected, shift = unknown -> default to days
+##################################################################################################
+  - platform: template
+    sensors:
+      current_shift:
+        friendly_name: Current Shift
+        icon_template: >-
+          {% if is_state('input_boolean.shift_override', 'on') %} mdi:calendar-alert
+          {% else %}
+            {% if is_state('sensor.current_shift', 'Days') %} mdi:alpha-d-circle
+            {% elif is_state('sensor.current_shift', 'Afternoons') %} mdi:alpha-a-circle
+            {% else %} mdi:calendar-alert
+            {% endif %}
+          {% endif %}
+        value_template: "{{ states('input_select.shift_selection') }}"
+
+##################################################################################################
+## Work Holiday
+##################################################################################################
+      work_holiday:
+        friendly_name: Work Holiday
+        icon_template: mdi:calendar-heart
+        value_template: >-
+          {% if is_state('calendar.work_holiday', 'on') %} Today
+          {% elif not is_state('calendar.work_holiday', 'unknown') %} {{ as_timestamp(state_attr('calendar.work_holiday','start_time')) | timestamp_custom('%a, %b %d', true) }}
+          {% else %} Unknown
+          {% endif %}
+
+##################################################################################################
+## Garbage Day
+##################################################################################################
+      garbage_day:
+        friendly_name: Garbage Day
+        icon_template: mdi:trash-can
+        value_template: >-
+          {% if is_state('calendar.garbage', 'on') %} Today
+          {% elif not is_state('calendar.garbage', 'unknown') %} {{ as_timestamp(state_attr('calendar.garbage','start_time')) | timestamp_custom('%a, %b %d', true) }}
+          {% else %} Unknown
+          {% endif %}
+
+##################################################################################################
+## Recycle Day
+##################################################################################################
+      recycle_day:
+        friendly_name: Recycle Day
+        icon_template: mdi:recycle
+        value_template: >-
+          {% if is_state('calendar.recycle', 'on') %} Today
+          {% elif not is_state('calendar.recycle', 'unknown') %} {{ as_timestamp(state_attr('calendar.recycle','start_time')) | timestamp_custom('%a, %b %d', true) }}
+          {% else %} Unknown
+          {% endif %}
+
+##################################################################################################
+## Yard Waste Day
+##################################################################################################
+      yardwaste_day:
+        friendly_name: Yardwaste Day
+        icon_template: mdi:pine-tree
+        value_template: >-
+          {% if is_state('calendar.yardwaste', 'on') %} Today
+          {% elif not is_state('calendar.yardwaste', 'unknown') %} {{ as_timestamp(state_attr('calendar.yardwaste','start_time')) | timestamp_custom('%a, %b %d', true) }}
+          {% else %} Unknown
+          {% endif %}
+
+##################################################################################################
+## Wake Times
+## - 'fake' sensor used for wake times fold entity header
+##################################################################################################
+      wake_times:
+        friendly_name: Wake Times
+        icon_template: mdi:clock
+        value_template: ''
+
+##################################################################################################
+## Bed Times
+## - 'fake' sensor used for bed times fold entity header
+##################################################################################################
+      bed_times:
+        friendly_name: Bed Times
+        icon_template: mdi:clock
+        value_template: ''
+
+##################################################################################################
+## Morning Radio Settings
+## - 'fake' sensor used to show morning radio settings popup from alarm clock card
+##################################################################################################
+      morning_radio_settings:
+        friendly_name: Morning Radio Settings
+        icon_template: mdi:settings
+        value_template: ''

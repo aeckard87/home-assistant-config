@@ -1,0 +1,86 @@
+type: vertical-stack
+cards:
+  - type: picture-glance
+    title: Alarm Clock
+    entity: input_boolean.alarm_clock_active
+    image: /local/images/clock.jpg
+    tap_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.alarm_clock_snooze
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.alarm_clock_active
+    entities:
+      - entity: sensor.alarm_clock_status_auto
+        name: Auto Alarm
+        tap_action: !include /config/lovelace/include/popup_auto_alarm.yaml
+      - entity: sensor.alarm_clock_status_manual
+        name: Manual Alarm
+        tap_action: !include /config/lovelace/include/popup_manual_alarm.yaml
+      - entity: sensor.alarm_clock_status_nap
+        name: Nap Alarm
+        tap_action: !include /config/lovelace/include/popup_nap_alarm.yaml
+      - entity: input_boolean.alarm_clock_snooze
+      - entity: input_boolean.alarm_clock_active
+
+  # only show alarm settings when active
+  - type: conditional
+    conditions:
+      - entity: input_boolean.alarm_clock_active
+        state: 'on'
+    card:
+      type: entities
+      entities:
+        - entity: input_select.alarm_clock_media_player
+        - entity: input_select.alarm_clock_sound
+        - entity: input_select.alarm_clock_radio_station
+        - entity: input_number.alarm_clock_volume
+        - type: custom:fold-entity-row
+          head: input_boolean.alarm_clock_snooze
+          entities:
+            - entity: input_number.alarm_clock_snooze_time
+                    
+  # only show snooze when snooze active
+  - type: conditional
+    conditions:
+      - entity: input_boolean.alarm_clock_snooze
+        state: 'on'
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_snooze
+
+  # only show alarm restart timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.alarm_clock_nap
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_nap
+
+  # only show alarm restart timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.alarm_clock_restart
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_restart
+
+  # only show alarm restart timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.alarm_clock_volume_steps
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_volume_steps
+        - entity: counter.alarm_clock_volume_steps

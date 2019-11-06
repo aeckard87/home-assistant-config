@@ -1,0 +1,21 @@
+###################################################################################################
+## Template Sensors
+###################################################################################################
+  - platform: template
+    sensors:
+
+##################################################################################################
+## Garage Climate Furnace
+##################################################################################################
+      garage_furnace:
+        friendly_name: Garage Furnace
+        icon_template: mdi:fire
+        value_template: "{{ state_attr('climate.garage_thermostat', 'operating_state') }}"
+
+##################################################################################################
+## Garage Climate Furnace Fan
+##################################################################################################
+      garage_furnace_fan:
+        friendly_name: Garage Furnace Fan
+        icon_template: mdi:fan
+        value_template: "{{ state_attr('climate.garage_thermostat', 'fan_state') }}"

@@ -1,0 +1,10 @@
+##################################################################################################
+## Vent Fan Threshold Settings
+## 'fake' sensor used for fold entity head
+##################################################################################################
+  - platform: template
+    sensors:
+      vent_fan_thresholds:
+        friendly_name: Vent Fan Thresholds
+        icon_template: mdi:thermometer
+        value_template: ''

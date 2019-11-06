@@ -1,0 +1,315 @@
+title: House Climate
+icon: mdi:thermometer
+path: climate
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - type: entity-filter
+        state_filter:
+          - 'on'
+          - heat
+          - cool
+        show_empty: false
+        card:
+          title: Climate Alerts
+          type: glance
+          style: |
+            ha-card {
+              font-size: 12px;
+            }
+        entities:
+          - entity: binary_sensor.upstairs_thermostat_offline
+            name: Thermostat Offline
+
+          - entity: binary_sensor.mold_risk_alert
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace/climate
+
+          - entity: input_boolean.climate_fan_schedule
+            name: Fan Schedule
+            tap_action:
+              action: call-service
+              service: browser_mod.popup
+              service_data:
+                deviceID: this
+                title: Climate Fan Schedule
+                card:
+                  type: entities
+                  show_header_toggle: false
+                  entities:
+                    - entity: input_boolean.climate_fan_schedule
+                    - entity: input_number.climate_fan_schedule_interval
+                    - entity: input_number.climate_fan_schedule_duration
+                    - entity: timer.climate_fan
+                      name: Interval Timer
+            hold_action:
+              action: toggle
+
+          - entity: binary_sensor.low_temperature_alert
+          - entity: binary_sensor.high_temperature_alert
+          - entity: binary_sensor.high_humidity_alert
+          - entity: sensor.upstairs_thermostat_hvac_state
+          - entity: binary_sensor.upstairs_thermostat_fan
+          - entity: binary_sensor.upstairs_thermostat_leaf
+          - entity: binary_sensor.home_away
+          - entity: binary_sensor.upstairs_thermostat_emergency_heat
+          - entity: binary_sensor.upstairs_thermostat_locked
+
+      - type: thermostat
+        entity: climate.upstairs_thermostat
+
+      - type: entities
+        title: Fan Controls
+        show_header_toggle: false
+        entities:
+          - entity: input_boolean.hvac_fan_control
+            name: HVAC Fan (Manual)
+
+          - type: custom:fold-entity-row
+            head: input_boolean.climate_fan_schedule
+            entities:
+              - entity: input_number.climate_fan_schedule_interval
+              - entity: input_number.climate_fan_schedule_duration
+              - entity: timer.climate_fan
+                name: Interval Timer
+
+          - type: custom:fan-control-entity-row
+            entity: fan.upstairs_bedroom_fan
+            name: Upstairs Bedroom
+            customTheme: false
+
+          - type: custom:fan-control-entity-row
+            entity: fan.office_fan
+            name: Office
+            customTheme: false
+
+          - type: custom:fan-control-entity-row
+            entity: fan.upstairs_bathroom_fan
+            name: Upstairs Bathroom
+            customTheme: false
+
+          - type: custom:fan-control-entity-row
+            entity: fan.upstairs_bathroom_fan #TEMP
+            name: Downstairs Bathroom
+            customTheme: false
+
+  - type: vertical-stack
+    cards:
+
+      - !include /config/lovelace/include/inside_temperature_graph.yaml
+      - !include /config/lovelace/include/inside_humidity_graph.yaml
+      - !include /config/lovelace/include/mold_risk_graph.yaml
+
+  - type: history-graph
+    title: Upstairs Climate History
+    hours_to_show: 72
+    refresh_interval: 300
+    entities:
+      - entity: climate.upstairs_thermostat
+        name: Thermostat
+      - entity: binary_sensor.upstairs_thermostat_connected
+        name: Connected
+      - entity: binary_sensor.upstairs_thermostat_online
+        name: Nest Online
+      - entity: binary_sensor.upstairs_thermostat_leaf
+        name: Nest Leaf
+      - entity: binary_sensor.home_away
+        name: Away Mode
+      - entity: sensor.upstairs_thermostat_hvac_state
+        name: HVAC State
+      - entity: sensor.upstairs_thermostat_operation_mode
+        name: Mode
+      - entity: binary_sensor.upstairs_thermostat_fan
+        name: Fan
+
+      - entity: sensor.upstairs_thermostat_target
+        name: Target
+        tap_action: !include /config/lovelace/include/popup_thermostat.yaml
+
+      - entity: sensor.upstairs_thermostat_temperature
+        name: Temperature
+        tap_action: !include /config/lovelace/include/popup_thermostat.yaml
+
+      - entity: binary_sensor.low_temperature_alert
+        name: Low Temp
+      - entity: binary_sensor.high_temperature_alert
+        name: High Temp
+      - entity: binary_sensor.high_humidity_alert
+        name: Humidity
+      - entity: binary_sensor.upstairs_thermostat_emergency_heat
+        name: Emerg Heat
+
+  - type: history-graph
+    title: Vent Fan History
+    hours_to_show: 72
+    refresh_interval: 300
+    entities:
+      - entity: fan.upstairs_bathroom_fan
+        name: Fan
+      - entity: input_boolean.upstairs_bathroom_fan
+        name: User
+      - entity: binary_sensor.upstairs_bathroom_humidity_alert
+        name: Humidity
+      - entity: binary_sensor.upstairs_bathroom_mold_alert
+        name: Mold
+      - entity: binary_sensor.upstairs_bathroom_temperature_alert
+        name: Temperature
+
+  - type: conditional
+    conditions:
+      - entity: input_boolean.advanced_view
+        state: 'on'
+    card:
+      type: custom:state-switch #TEST user state switch test
+      entity: user
+      default: default
+      states:
+
+        default:
+          type: entities
+          title: Climate Settings
+          show_header_toggle: false
+          entities:
+            - type: section
+              label: HVAC
+            - entity: binary_sensor.upstairs_thermostat_connected
+              name: Thermostat Connected
+            - entity: binary_sensor.upstairs_thermostat_online
+              name: Nest Online
+            - entity: binary_sensor.upstairs_thermostat_leaf
+              name: Nest Leaf
+            - entity: binary_sensor.home_away
+              name: Away Mode
+            - entity: sensor.upstairs_thermostat_hvac_state
+              name: HVAC State
+            - entity: sensor.upstairs_thermostat_operation_mode
+              name: Mode
+            - entity: binary_sensor.upstairs_thermostat_fan
+              name: Fan
+
+            - type: section
+              label: Ceiling Fans
+
+            - entity: zwave.upstairs_bedroom_fan
+              name: Upstairs Bedroom Fan
+            - entity: zwave.office_fan
+              name: Office Fan
+
+            - type: section
+              label: Vent Fans
+
+            - entity: sensor.upstairs_bathroom_humidity
+            - entity: binary_sensor.upstairs_bathroom_humidity_alert
+            - entity: sensor.upstairs_bathroom_mold_indicator
+            - entity: binary_sensor.upstairs_bathroom_mold_alert
+            - entity: sensor.upstairs_bathroom_temperature
+            - entity: binary_sensor.upstairs_bathroom_temperature_alert
+
+        Jason:
+          type: entities
+          title: Climate Settings
+          show_header_toggle: false
+          entities:
+            - type: section
+              label: HVAC
+            - entity: binary_sensor.upstairs_thermostat_connected
+              name: Thermostat Connected
+            - entity: binary_sensor.upstairs_thermostat_online
+              name: Nest Online
+            - entity: binary_sensor.upstairs_thermostat_leaf
+              name: Nest Leaf
+            - entity: binary_sensor.home_away
+              name: Away Mode
+            - entity: sensor.upstairs_thermostat_hvac_state
+              name: HVAC State
+            - entity: sensor.upstairs_thermostat_operation_mode
+              name: Mode
+            - entity: binary_sensor.upstairs_thermostat_fan
+              name: Fan
+
+            - type: custom:fold-entity-row
+              head: sensor.thermostat_temps
+              entities:
+                - entity: input_number.home_heat_temperature
+                - entity: input_number.home_cool_temperature
+                - entity: input_number.night_heat_temperature
+                - entity: input_number.night_cool_temperature
+                - entity: input_number.guest_heat_temperature
+                - entity: input_number.guest_cool_temperature
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.house_climate_automation
+              filter:
+                include:
+                  - entity_id: "automation.climate_*"
+
+            - type: custom:fold-entity-row
+              head: sensor.climate_thresholds
+              entities:
+                - entity: input_number.low_temperature_threshold
+                - entity: input_number.high_temperature_threshold
+                - entity: input_number.high_humidity_threshold
+
+            - type: section
+              label: Ceiling Fans
+
+            - entity: zwave.upstairs_bedroom_fan
+              name: Upstairs Bedroom Fan
+            - entity: zwave.office_fan
+              name: Office Fan
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.ceiling_fan_automation
+              filter:
+                include:
+                  - entity_id: "automation.ceiling_fan_*"
+
+            - type: custom:fold-entity-row
+              head: binary_sensor.ceiling_fan_in_use
+              group_config:
+                secondary_info: last-changed
+              items:
+                - entity: input_boolean.upstairs_bedroom_fan
+                - entity: input_boolean.office_fan
+
+            - type: section
+              label: Vent Fans
+
+            - entity: sensor.upstairs_bathroom_humidity
+            - entity: binary_sensor.upstairs_bathroom_humidity_alert
+            - entity: sensor.upstairs_bathroom_mold_indicator
+            - entity: binary_sensor.upstairs_bathroom_mold_alert
+            - entity: sensor.upstairs_bathroom_temperature
+            - entity: binary_sensor.upstairs_bathroom_temperature_alert
+
+            - type: custom:fold-entity-row
+              head: sensor.climate_thresholds #TEMP
+              entities:
+                - entity: input_number.bathroom_humidity_fan_threshold
+                  name: Humidity
+                - entity: input_number.mold_risk_threshold
+                  name: Mold Level
+                - entity: input_number.bathroom_temperature_differential
+                  name: Temp Diff
+
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.vent_fan_automation
+              filter:
+                include:
+                  - entity_id: "automation.vent_fan_*"
+
+            - type: custom:fold-entity-row
+              head: binary_sensor.vent_fan_in_use
+              group_config:
+                secondary_info: last-changed
+              items:
+                - entity: input_boolean.upstairs_bathroom_fan

@@ -1,0 +1,214 @@
+##################################################################################################
+## Buster Medication - Disabled
+##################################################################################################
+  - id: buster_medication_disabled
+    alias: "[Buster Medication] Disabled"
+    description: "Turn off buster automations and booleans when disabled."
+    initial_state: 'on'
+
+    trigger:
+      # run when buster medication disabled
+      - platform: state
+        entity_id: input_boolean.buster_medication_enabled
+        to: 'off'
+
+    action:
+      # turn off buster medication active boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.buster_medication_active
+
+##################################################################################################
+## Buster Medication - Active On Disabled
+##################################################################################################
+  - id: buster_medication_active_on_disabled
+    alias: "[Buster Medication] Active On Disabled"
+    description: "Turn active boolean back off if disabled."
+    initial_state: 'on'
+
+    trigger:
+      - platform: state
+        entity_id: input_boolean.buster_medication_active
+        to: 'on'
+
+    condition:
+      - condition: state
+        entity_id: input_boolean.buster_medication_enabled
+        state: 'off'
+
+    action:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.buster_medication_active
+
+##################################################################################################
+## Buster Medication - Reminder
+## - alert 2x per day shift dependent times
+##################################################################################################
+  - id: buster_medication_reminder
+    alias: "[Buster Medication] Reminder"
+    description: "Turn on buster medication active boolean with shift dependent time trigger."
+    initial_state: 'on'
+
+    trigger:
+      - platform: template
+        value_template: >
+          {% if is_state('sensor.current_shift', 'Days')
+             and is_state('binary_sensor.work_today','on')
+             and states('sensor.time') == states('input_datetime.buster_medication_days_pill_1')[0:5] %} true
+          {% elif is_state('sensor.current_shift', 'Days')
+             and is_state('binary_sensor.work_today','on')
+             and states('sensor.time') == states('input_datetime.buster_medication_days_pill_2')[0:5] %} true
+          {% elif is_state('sensor.current_shift', 'Afternoons')
+             and is_state('binary_sensor.work_today','on')
+             and states('sensor.time') == states('input_datetime.buster_medication_afternoons_pill_1')[0:5] %} true
+          {% elif is_state('sensor.current_shift', 'Afternoons')
+             and is_state('binary_sensor.work_today','on')
+             and states('sensor.time') == states('input_datetime.buster_medication_afternoons_pill_2')[0:5] %} true
+          {% elif ( is_state('sensor.current_shift', 'None')
+               or states('sensor.current_shift') | lower == 'unknown'
+               or is_state('binary_sensor.work_today','off') )
+               and states('sensor.time') == states('input_datetime.buster_medication_weekends_pill_1')[0:5] %} true
+          {% elif ( is_state('sensor.current_shift', 'None')
+               or states('sensor.current_shift') | lower == 'unknown'
+               or is_state('binary_sensor.work_today','off') )
+               and states('sensor.time') == states('input_datetime.buster_medication_weekends_pill_2')[0:5] %} true
+          {% else %} false
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if buster medication is enabled
+          - condition: state
+            entity_id: input_boolean.buster_medication_enabled
+            state: 'on'
+
+    action:
+      # turn on boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.buster_medication_active
+
+##################################################################################################
+## Buster Medication - Alert
+##################################################################################################
+  - id: buster_medication_alert
+    alias: "[Buster Medication] Alert"
+    description: "Sent alert every 15 minutes until buster active turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run every 15 minutes
+      - platform: time_pattern
+        minutes: '/15'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run when silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if buster medication is enabled
+          - condition: state
+            entity_id: input_boolean.buster_medication_enabled
+            state: 'on'
+
+          # only run if buster medication is active
+          - condition: state
+            entity_id: input_boolean.buster_medication_active
+            state: 'on'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Buster Medication"
+          message: "Give Buster his pill!\n {{ now().strftime('%H:%M  %Y-%m-%d') }}."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'buster_medication_done'
+                title: "Medication Done"
+                icon: !secret CHECK_BUTTON
+            tag: buster_medication
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: /lovelace/schedule
+            icon: !secret BUSTER_ICON
+            image: !secret BUSTER_IMAGE
+            badge: !secret BUSTER_BADGE
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "It's time for Buster's medication."
+          quiet_play: 'true'
+
+##################################################################################################
+## Buster Medication - Done
+##################################################################################################
+  - id: buster_medication_done
+    alias: "[Buster Medication] Done"
+    description: "Turn active boolean off and dismiss notifcations."
+    initial_state: 'on'
+
+    trigger:
+      # run when buster medication active boolean turned off
+      - platform: state
+        entity_id: input_boolean.buster_medication_active
+        to: 'off'
+
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'buster_medication_done'
+
+    action:
+      # turn off boolean if not already off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.buster_medication_active
+
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'buster_medication'
+
+###################################################################################################
+## Buster Medication - Notification Closed
+###################################################################################################
+  - id: buster_medication_notification_closed
+    alias: "[Buster Medication] Notification Closed"
+    description: "Dismiss notifcation on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when push notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'buster_medication'
+
+    action:
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'buster_medication'

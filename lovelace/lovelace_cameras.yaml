@@ -1,0 +1,99 @@
+title: Security Cameras
+icon: mdi:cctv
+path: cameras
+cards:
+  - type: picture-entity
+    entity: camera.side_drive
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: picture-entity
+    entity: camera.side_door
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: picture-entity
+    entity: camera.front_drive
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: picture-entity
+    entity: camera.front_door
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: picture-entity
+    entity: camera.front_yard
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  #DISABLED - type: picture-entity
+  #   entity: camera.side_gate_front
+  #   aspect_ratio: 16x9
+  #   show_name: true
+  #   show_state: false
+  #   tap_action:
+  #     action: more-info
+
+  #DISABLED - type: picture-entity
+  #   entity: camera.side_gate_back
+  #   aspect_ratio: 16x9
+  #   show_name: true
+  #   show_state: false
+  #   tap_action:
+  #     action: more-info
+
+  #DISABLED - type: picture-entity
+  #   entity: camera.back_yard
+  #   aspect_ratio: 16x9
+  #   show_name: true
+  #   show_state: false
+  #   tap_action:
+  #     action: more-info
+
+  - type: picture-entity
+    entity: camera.back_door
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: picture-entity
+    entity: camera.patio_door
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: picture-entity
+    entity: camera.back_house
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: picture-entity
+    entity: camera.garage_inside
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info

@@ -1,0 +1,295 @@
+##################################################################################################
+## Someone arrives home
+## person: name of person who arrived
+##################################################################################################
+  someone_arrives_home:
+    sequence:
+      # set occpancy mode to home if not a guest arriving
+      # guest mode was already set by disarming alarm, or manually set on UI
+      - service_template: >-
+          {% if not person == 'Guest' and not is_state('sensor.occupancy_mode', 'Home') and not is_state('sensor.occupancy_mode', 'Night') %}
+            input_select.select_option
+          {% else %}
+            script.null_script
+          {% endif %}
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Home'
+
+      # turn on arrive home lighting
+      - service: script.turn_light_on
+        data:
+          light_name: 'arrive_home_lights'
+          new_state: 'on'
+          brightness: 15
+          ignore_user_state: 'false'
+
+      # don't continue if house is in night mode
+      - condition: template
+        value_template: "{{ not is_state('sensor.occupancy_mode', 'Night') }}"
+
+      # wait for any other announcments to finish to avoid skipping play because script running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: false
+
+      # play arrival announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: >
+            {% if not person == 'Guest' %}
+              {{ person }} is home.
+            {% else %}
+              Someone has arrived.
+            {% endif %}
+          quiet_play: 'true'
+
+      # only continue if the radio is off, if person is Jason/Sheri, and no one else is home (or they came home in the last 5 minutes)
+      # accounts for more than one person arriving at same time or radio won't play because both home sensors are on.
+      - condition: and
+        conditions:
+          - condition: state
+            entity_id: input_boolean.radio_on
+            state: 'off'
+
+          - condition: template
+            value_template: >-
+              {% if person == 'Jason' %}
+                {{ is_state('binary_sensor.sheri_home','off')  or ( ( as_timestamp( now() ) - as_timestamp( states.binary_sensor.sheri_home.last_changed ) ) < 600 ) }}
+              {% elif person == 'Sheri' %}
+                {{ is_state('binary_sensor.jason_home','off')  or ( ( as_timestamp( now() ) - as_timestamp( states.binary_sensor.jason_home.last_changed ) ) < 600 ) }}
+              {% endif %}
+
+      #IDEA change this delay to wait template for door open/ motion sensor, back ,side, and front doors
+
+      # wait until person is inside house, then welcome them home
+      - delay: '0:01:00'
+
+      # wait for any other announcments to finish to avoid skipping play
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # No one else home so play welcome announcement.
+      - service: script.play_announcement
+        data_template:
+          play_message: >-
+              {% if not person == 'Guest' %} Welcome home {{ person }}
+              {% else %} Welcome to our home.
+              {% endif %}
+          quiet_play: 'true'
+
+      # wait for occupancy mode announcement to finish playing so we don't cut it off
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # turn radio on with person's preset settings
+      - service: script.play_radio
+        data_template:
+          preset: "{{ person }}"
+
+##################################################################################################
+## Someone Leaves Home
+## person: name of person who left
+##################################################################################################
+  someone_leaves_home:
+    sequence:
+      # only continue if no one is left at home
+      # if guests still in house, activate guest mode before leaving
+      - condition: state
+        entity_id: binary_sensor.someone_home
+        state: 'off'
+
+      # set last person text to name
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.last_person_to_leave
+          value: "{{ person }}"
+
+      # set time person left to current time/date
+      - service: input_datetime.set_datetime
+        data_template:
+          entity_id: input_datetime.time_last_person_left
+          time: "{{ (as_timestamp(now()) | timestamp_custom('%H:%M:%S', true)) }}"
+          date: "{{ (as_timestamp(now()) | timestamp_custom('%Y-%m-%d', true)) }}"
+
+      # do not continue if in vacation mode
+      - condition: template
+        value_template: "{{ not is_state('input_select.occupancy_mode', 'Vacation') }}"
+
+      # set occupancy mode to Away
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Away'
+
+##################################################################################################
+## Night State
+## - lights, media players will turn off when goodnight timer is finished
+#IDEA lock doors, check if windows closed
+##################################################################################################
+  night_state:
+    sequence:
+      # alarm automatically armed by occupancy mode if enabled
+      # delay to allow alarm to enter pending state before wait template
+      - delay: '0:00:15'
+
+      # wait for alarm to finish arming
+      - wait_template: "{{ not is_state('alarm_control_panel.house', 'pending') }}"
+        timeout: '0:02:00'
+        continue_on_timeout: false
+
+      # turn volume down on all media players
+      - service_template: script.media_players_night_volume
+
+      # turn bedtime lights on
+      - service: script.turn_light_on
+        data:
+          light_name: 'bedtime_lights'
+          new_state: 'on'
+          brightness: 15
+          ignore_user_state: 'true'
+
+      # start goodnight timer (turns lights off when finished)
+      - service: timer.start
+        entity_id: timer.goodnight
+
+      # turn office ceiling fan off if not in use
+      - service: script.ceiling_fan_off
+        data:
+          fan_name: 'office_fan'
+          ignore_user_state: 'false'
+
+      # wait for first instance of script to stop
+      - wait_template: "{{ is_state('script.ceiling_fan_off','off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # turn bedroom ceiling fan off if not in use
+      - service: script.ceiling_fan_off
+        data:
+          fan_name: 'upstairs_bedroom_fan'
+          ignore_user_state: 'false'
+
+##################################################################################################
+## Away State
+## - turn off lights, fans, media players
+#IDEA lock doors, check if windows closed
+##################################################################################################
+  away_state:
+    sequence:
+      # delay to allow alarm to enter pending state before wait template
+      - delay: '0:00:15'
+
+      # wait for alarm pending to finish
+      - wait_template: "{{ not is_state('alarm_control_panel.house', 'pending') }}"
+        timeout: '0:02:00'
+        continue_on_timeout: false
+
+      # wait for any announcments playing to finish here before killing media players
+      - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      #BUGFIX pause all media players if media player automation enabled
+      # because browser players don't turn off
+      #ISSUE chromcast does not turn off
+      - service_template: >-
+          {% if is_state('input_boolean.media_player_automation','on') %} script.pause_media_players
+          {% else %} script.null_script
+          {% endif %}
+
+      # turn off all media players if media player automation enabled
+      - service_template: >-
+          {% if is_state('input_boolean.media_player_automation','on') %} media_player.turn_off
+          {% else %} script.null_script
+          {% endif %}
+        data:
+          entity_id: group.all_media_players
+
+      # turn all lights off if lighting automation enabled
+      # away lights will turn back on when necessary
+      - service_template: >-
+          {% if is_state('input_boolean.light_automation','on') %} light.turn_off
+          {% else %} script.null_script
+          {% endif %}
+        entity_id: group.all_lights
+
+      # turn all ceiling fans off if ceiling fan automation enabled
+      - service_template: >-
+          {% if is_state('input_boolean.ceiling_fan_automation','on') %} fan.turn_off
+          {% else %} script.null_script
+          {% endif %}
+        entity_id: group.ceiling_fans
+
+      # delay to allow state changes to register (fans take a couple seconds)
+      - delay: '00:00:05'
+
+      # reset all device user state booleans because nobody is home
+      - service: input_boolean.turn_off
+        entity_id: group.user_state_controls
+
+##################################################################################################
+## Occupancy Mode Activation Scripts
+## - used by occupancy mode buttons, Google Assistant
+##################################################################################################
+  home_mode:
+    sequence:
+      # only run if presence automation is enabled
+      - condition: state
+        entity_id: input_boolean.presence_automation
+        state: 'on'
+
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Home'
+
+  night_mode:
+    sequence:
+      # only run if presence automation is enabled
+      - condition: state
+        entity_id: input_boolean.presence_automation
+        state: 'on'
+
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Night'
+
+  guest_mode:
+    sequence:
+      # only run if presence automation is enabled
+      - condition: state
+        entity_id: input_boolean.presence_automation
+        state: 'on'
+
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Guest'
+
+  away_mode:
+    sequence:
+      # only run if presence automation is enabled
+      - condition: state
+        entity_id: input_boolean.presence_automation
+        state: 'on'
+
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Away'
+
+  vacation_mode:
+    sequence:
+      # only run if presence automation is enabled
+      - condition: state
+        entity_id: input_boolean.presence_automation
+        state: 'on'
+
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Vacation'

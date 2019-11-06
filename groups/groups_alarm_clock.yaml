@@ -1,0 +1,93 @@
+##################################################################################################
+## Alarm Clock -  Automations
+## - media player volume included so we don't set volume to 0 when media player turns off
+##################################################################################################
+  alarm_clock_automations:
+    icon: mdi:alarm-multiple
+    control: hidden
+    all: true
+    entities:
+      - automation.media_player_volume_change
+      - group.alarm_clock_media_player_changed_automations
+      - group.alarm_clock_hassio_changed_automations
+
+##################################################################################################
+## Alarm Clock - Media Player Changed Automations
+## - automations disabled for alarm clock media player changes
+##################################################################################################
+  alarm_clock_media_player_changed_automations:
+    icon: mdi:alarm-multiple
+    control: hidden
+    all: true
+    entities:
+      - automation.alarm_clock_media_player_volume_change
+
+##################################################################################################
+## Alarm Clock - Hassio Changed Automations
+## - automations disabled for alarm clock setting changes
+##################################################################################################
+  alarm_clock_hassio_changed_automations:
+    icon: mdi:alarm-multiple
+    control: hidden
+    all: true
+    entities:
+      - automation.alarm_clock_auto_resume
+      - automation.alarm_clock_volume_change
+      - automation.alarm_clock_sound_changed
+      - automation.alarm_clock_radio_station_changed
+      - automation.alarm_clock_media_player_changed
+
+##################################################################################################
+## Alarm Clock - Hassio Changed Automations
+## - automations delayed at startup
+## - group.delayed_automations
+##################################################################################################
+  alarm_clock_delayed_automations:
+    icon: mdi:alarm-multiple
+    control: hidden
+    all: true
+    entities:
+      - automation.alarm_clock_auto_resume
+      - automation.alarm_clock_restart_timer_finished
+      - automation.alarm_clock_alarm_activate_check
+      - automation.alarm_clock_active_off
+      - automation.alarm_clock_nap_on
+      - automation.alarm_clock_nap_on_check
+      - automation.alarm_clock_nap_off
+      - automation.alarm_clock_nap_timer_finished
+      - automation.alarm_clock_nap_active_on
+      - automation.alarm_clock_nap_active_on_check
+      - automation.alarm_clock_nap_active_off
+      - automation.alarm_clock_manual_off
+      - automation.alarm_clock_manual_active_on
+      - automation.alarm_clock_manual_active_on_check
+      - automation.alarm_clock_manual_active_off
+      - automation.alarm_clock_auto_off
+      - automation.alarm_clock_auto_active_on
+      - automation.alarm_clock_auto_active_on_check
+      - automation.alarm_clock_auto_active_off
+      - automation.alarm_clock_snooze_on
+      - automation.alarm_clock_snooze_check
+      - automation.alarm_clock_snooze_turned_off
+      - automation.alarm_clock_snooze_timer_finished
+      - automation.alarm_clock_volume_change
+      - automation.alarm_clock_volume_timer_finished
+      - automation.alarm_clock_sound_changed
+      - automation.alarm_clock_radio_station_changed
+      - automation.alarm_clock_media_player_changed
+      - automation.alarm_clock_media_player_volume_change
+      
+##################################################################################################
+## Alarm Clock - Detect Automations
+## - automations disabled for alarm clock media player changes
+##################################################################################################
+  alarm_clock_detect_automations:
+    icon: mdi:alarm-multiple
+    control: hidden
+    all: true
+    entities:
+      - automation.alarm_clock_detect_alarm_off
+      - automation.alarm_clock_detect_snooze
+
+
+

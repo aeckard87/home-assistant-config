@@ -1,0 +1,387 @@
+type: entity-filter
+state_filter:
+  - 'on'
+  - Set
+  - Active
+  - Snooze
+  - Days
+  - Afternoons
+  - Armed Home
+  - Armed Away
+  - Pending
+  - Warning
+  - Disarmed
+card:
+  type: glance
+  columns: 4
+  style: |
+    ha-card {
+      font-size: 12px;
+    }
+
+entities:
+
+  # alarm alerts
+  - entity: sensor.house_alarm_status
+    name: Alarm Status
+    tap_action:
+      action: call-service
+      service: browser_mod.popup
+      service_data:
+        deviceID: this
+        title: House Alarm Panel
+        card:
+          !include /config/lovelace/include/alarm_control_panel_full.yaml
+
+  - entity: binary_sensor.house_alarm_disabled
+    name: Alarm Disabled
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/alarm
+    hold_action:
+      action: call-service
+      service: input_boolean.turn_on
+      service_data:
+        entity_id: input_boolean.house_alarm_enabled
+
+  - entity: binary_sensor.house_alarm_auto_arming_disabled
+    name: Alarm Auto Arm
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/alarm
+    hold_action:
+      action: call-service
+      service: input_boolean.turn_on
+      service_data:
+        entity_id: input_boolean.house_alarm_auto_arming
+
+  # presence alerts
+  - entity: binary_sensor.someone_home
+    name: Home
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/presence
+
+  # schedule alerts
+  - entity: binary_sensor.work_schedule_disabled
+    name: Work Vacation
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/schedule
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.work_schedule
+
+  - entity: sensor.alarm_clock_status_auto
+    name: Auto Alarm
+    tap_action: !include /config/lovelace/include/popup_auto_alarm.yaml
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.alarm_clock_active
+
+  - entity: sensor.alarm_clock_status_manual
+    name: Manual Alarm
+    tap_action: !include /config/lovelace/include/popup_manual_alarm.yaml
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.alarm_clock_active
+
+  - entity: sensor.alarm_clock_status_nap
+    name: Nap Alarm
+    tap_action: !include /config/lovelace/include/popup_nap_alarm.yaml
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.alarm_clock_active
+
+  - entity: binary_sensor.garbage_tomorrow
+    name: Tomorrow
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/schedule
+
+  - entity: binary_sensor.recycle_tomorrow
+    name: Tomorrow
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/schedule
+
+  - entity: binary_sensor.yardwaste_tomorrow
+    name: Tomorrow
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/schedule
+
+  - entity: binary_sensor.work_today
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/schedule
+
+  - entity: binary_sensor.work_commute_alert_jason
+    name: Jason Commute
+    tap_action:
+      action: call-service
+      service: browser_mod.popup
+      service_data:
+        deviceID: this
+        title: Jason Time To Home
+        card:
+          type: custom:entity-attributes-card
+          filter:
+            include:
+              - sensor.jason_time_to_home.duration
+              - sensor.jason_time_to_home.duration_in_traffic
+              - sensor.jason_time_to_home.mode
+              - sensor.jason_time_to_home.distance
+              - sensor.jason_time_to_home.origin_addresses
+              - sensor.jason_time_to_home.destination_addresses
+    hold_action:
+      action: navigate
+      navigation_path: /lovelace/schedule
+
+  - entity: binary_sensor.work_commute_alert_sheri
+    name: Sheri Commute
+    tap_action:
+      action: call-service
+      service: browser_mod.popup
+      service_data:
+        deviceID: this
+        title: Sheri Time To Home
+        card:
+          type: custom:entity-attributes-card
+          filter:
+            include:
+              - sensor.sheri_time_to_home.duration
+              - sensor.sheri_time_to_home.duration_in_traffic
+              - sensor.sheri_time_to_home.mode
+              - sensor.sheri_time_to_home.distance
+              - sensor.sheri_time_to_home.origin_addresses
+              - sensor.sheri_time_to_home.destination_addresses
+    hold_action:
+      action: navigate
+      navigation_path: /lovelace/schedule
+
+  # radio alerts
+  - entity: binary_sensor.radio_on
+    name: Radio
+    tap_action: !include /config/lovelace/include/popup_radio_settings.yaml
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.radio_on
+
+  # sensor alerts
+  - entity: binary_sensor.smoke_alarm
+    name: Smoke Alarm
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/sensors
+
+  - entity: binary_sensor.co_alarm
+    name: CO Alarm
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/sensors
+
+  - entity: binary_sensor.water_leak_alert
+    name: Water Leak
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/sensors
+
+  - entity: binary_sensor.mold_risk_alert
+    name: Mold Risk
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/sensors
+
+  # climate alerts
+
+  - entity: binary_sensor.low_temperature_alert
+    name: Indoor Temp
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/climate
+
+  - entity: binary_sensor.high_temperature_alert
+    name: Indoor High Temp
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/climate
+
+  - entity: binary_sensor.high_humidity_alert
+    name: Indoor Humidity
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/climate
+
+  - entity: binary_sensor.upstairs_thermostat_emergency_heat
+    name: Emergency Heat
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/climate
+
+  # weather alerts
+
+  - entity: binary_sensor.active_weather_alert
+    name: Weather Alert
+    tap_action:
+      action: call-service
+      service: input_boolean.turn_on
+      service_data:
+        entity_id: input_boolean.display_weather_alert
+    hold_action:
+      action: call-service
+      service: input_boolean.turn_off
+      service_data:
+        entity_id: input_boolean.display_weather_alert
+
+  - entity: binary_sensor.weather_low_temperature_alert
+    name: Outdoor Low Temp
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/weather
+
+  - entity: binary_sensor.weather_high_temperature_alert
+    name: Outdoor High Temp
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/weather
+
+  - entity: binary_sensor.alert_uv_index
+    name: UV Index
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/weather
+
+  - entity: binary_sensor.air_quality_alert
+    name: Air Quality
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/weather
+
+  - entity: binary_sensor.weather_allergy_risk_alert
+    name: Allergy
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/weather
+
+  - entity: binary_sensor.weather_asthma_risk_alert
+    name: Asthma
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/weather
+
+  # system alerts
+
+  - entity: binary_sensor.device_connection_alert
+    name: Connection Alert
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/system
+
+  - entity: binary_sensor.memory_use_alert
+    name: Memory Use
+
+  - entity: binary_sensor.processor_use_alert
+    name: Processor Use
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/system
+
+  - entity: binary_sensor.rpi_power_alert
+    name: RPi Power
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/system
+
+  - entity: binary_sensor.cpu_temperature_alert
+    name: RPi CPU Temp
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/system
+
+  - entity: binary_sensor.battery_status_alert
+    name: Battery
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/system
+
+  - entity: binary_sensor.disk_usage_alert
+    name: Disk Usage
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/system
+
+  # garage alerts
+
+  - entity: binary_sensor.garage_door_open
+    name: Garage Open
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/garage
+    hold_action:
+      action: call-service
+      service: cover.close_cover
+      service_data:
+        entity_id: cover.garage_door_opener
+
+  # settings alerts
+
+  - entity: binary_sensor.media_player_alert
+    name: Media Player
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/media
+
+  - entity: binary_sensor.announcement_playing
+    name: Announcement
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/settings
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.announcement_playing
+
+  - entity: binary_sensor.silent_mode
+    name: Silent Mode
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/settings
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.silent_mode
+
+  - entity: binary_sensor.quiet_hours_active
+    name: Quiet Hours
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/settings
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.enable_quiet_hours
+
+  - entity: binary_sensor.manual_mode
+    name: Manual Mode
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/settings
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.manual_mode

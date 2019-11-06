@@ -1,0 +1,1369 @@
+###################################################################################################
+## Update OpenUV Data
+## - limit updates when not needed to avoid API charges
+###################################################################################################
+  - id: weather_update_openuv
+    alias: "[Weather] Update OpenUV"
+    description: "Update OpenUV sensors every hour during sunlight hours."
+    initial_state: 'on'
+
+    trigger:
+      platform: time_pattern
+      minutes: '/60'
+
+    condition:
+      condition: and
+      conditions:
+        - condition: sun
+          after: sunrise
+        - condition: sun
+          before: sunset
+
+    action:
+      service: openuv.update_data
+
+###################################################################################################
+## Weather - Local Storm Warning Alert
+###################################################################################################
+  - id: weather_local_storm_warning_alert
+    alias: "[Weather] Local Storm Warning Alert"
+    description: "Notification when storm approaching alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the nearest storm is less than 2 miles away
+      - platform: state
+        entity_id: binary_sensor.local_storm_warning
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if weather automation is enabled
+          - condition: state
+            entity_id: input_boolean.weather_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # trigger alert off automation to pause alert after fired
+      # (triggers too often with scattered showers)
+      - service: script.turn_off_storm_alerts
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Local Storm Warning"
+          message: >-
+            {% if not states('sensor.dark_sky_nearest_storm_distance') | int == 0 %}
+              There is a {% if not states('sensor.dark_sky_precip') | lower == 'unknown' %}{{ states('sensor.dark_sky_precip') }}{% endif %} storm {{ states('sensor.dark_sky_nearest_storm_distance') }}
+              {% if states('sensor.dark_sky_nearest_storm_distance') | int == 1 %} mile{% else %} miles{% endif %}  away,
+              {% if not states('sensor.storm_full_cardinal_direction') | lower == 'unknown' %} approaching from the {{ states('sensor.storm_full_cardinal_direction') }}{% endif %}
+            {% else %}There is a{% if not states('sensor.dark_sky_precip') | lower == 'unknown' %}
+              {{ states('sensor.dark_sky_precip') }}{% endif %} storm in the immediate vicinity
+            {% endif %}
+            .  The current forecast is {{ states('sensor.dark_sky_minutely_summary') | replace('<',' less than ') | replace('>','greater than') }}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            tag: 'storm_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 14400
+            priority: normal
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/weather'
+            icon: !secret STORM_ICON
+            image: !secret STORM_IMAGE
+            badge: !secret STORM_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: true
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: >-
+            Weather Alert!
+            {% if states('sensor.dark_sky_nearest_storm_distance') | lower == 'unknown' %}
+              There is no storm detected in the immediate area.
+            {% elif not states('sensor.dark_sky_nearest_storm_distance') | int < 1 %}
+              There is a {% if not states('sensor.dark_sky_precip') | lower == 'unknown' %}{{ states('sensor.dark_sky_precip') }}{% endif %} storm {{ states('sensor.dark_sky_nearest_storm_distance') }}
+              {% if states('sensor.dark_sky_nearest_storm_distance') | int == 1 %} mile
+              {% else %} miles away.
+              {% endif %}
+              {% if not states('sensor.storm_full_cardinal_direction') | lower == 'unknown' %} approaching from the {{ states('sensor.storm_full_cardinal_direction') }}{% endif %}.
+            {% else %}
+              There is a {% if not states('sensor.dark_sky_precip') | lower == 'unknown' %}{{ states('sensor.dark_sky_precip') }}{% endif %} storm in the immediate vicinity.
+            {% endif %}
+            The current forcast is {{ states('sensor.dark_sky_minutely_summary') | replace('<',' less than ') | replace('>','greater than') }}
+          quiet_play: 'false'
+
+###################################################################################################
+## Weather - Storm Alert Notification Closed
+###################################################################################################
+  - id: weather_storm_notification_closed
+    alias: "[Weather] Storm Alert Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'storm_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'storm_alert'
+
+      # turn off storm alerts so it doesn't fire again for a bit
+      - service: script.turn_off_storm_alerts
+
+###################################################################################################
+## Weather - Storm Alert Cancelled
+###################################################################################################
+  - id: weather_storm_alert_cancelled
+    alias: "[Weather] Storm Alert Cancelled"
+    description: "Dismiss notifications when local storm alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the nearest storm is less than 2 miles away
+      - platform: state
+        entity_id: binary_sensor.local_storm_warning
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'storm_alert'
+
+      # turn off storm alerts so it doesn't fire again for a bit
+      - service: script.turn_off_storm_alerts
+
+###################################################################################################
+## Weather - High Temperature Alert
+###################################################################################################
+  - id: weather_high_temperature_alert
+    alias: "[Weather] High Temperature Alert"
+    description: "Send notification when outdoor high temperature alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the weather high temperature alert is on
+      - platform: state
+        entity_id: binary_sensor.weather_high_temperature_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if weather automation is enabled
+          - condition: state
+            entity_id: input_boolean.weather_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "High Outdoor Temperature Alert"
+          message: "The humidex is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'outdoor_high_temp_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'outdoor_high_temp_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 14400
+            priority: normal
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/weather'
+            icon: !secret HIGH_TEMP_ICON
+            image: !secret HIGH_TEMP_IMAGE
+            badge: !secret HIGH_TEMP_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! It is hot as balls out there today folks. The current outdoor humidex is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
+          quiet_play: 'false'
+
+###################################################################################################
+## Weather - High Temperature Notification Closed
+###################################################################################################
+  - id: weather_high_temperature_notification_closed
+    alias: "[Weather] High Temperature Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'outdoor_high_temp_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'outdoor_high_temp_alert'
+
+###################################################################################################
+## Weather - High Temperature Alert Cancelled
+###################################################################################################
+  - id: weather_high_temperature_alert_cancelled
+    alias: "[Weather] High Temperature Alert Cancelled"
+    description: "Dismiss notifications when outdoor high temperature alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the high temp alert turns off
+      - platform: state
+        entity_id: binary_sensor.weather_high_temperature_alert
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'outdoor_high_temp_alert'
+
+###################################################################################################
+## Weather - High Temperature Alert Pause
+###################################################################################################
+  - id: weather_high_temperature_alert_pause
+    alias: "[Weather] High Temperature Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'outdoor_high_temp_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'outdoor_high_temp_alert'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.weather_high_temperature_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.weather_high_temperature_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.weather_high_temperature_alert
+
+###################################################################################################
+## Low Temperature Alert
+###################################################################################################
+  - id: weather_low_temperature_alert
+    alias: "[Weather] Low Temperature Alert"
+    description: "Send notification when low outdoor temperature alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the weather low temperature alert is on
+      - platform: state
+        entity_id: binary_sensor.weather_low_temperature_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if weather automation is enabled
+          - condition: state
+            entity_id: input_boolean.weather_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Low Outdoor Temperature Alert"
+          message: "The apparent temperature is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'outdoor_low_temp_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'outdoor_low_temp_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 14400
+            priority: normal
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/weather'
+            icon: !secret LOW_TEMP_ICON
+            image: !secret LOW_TEMP_IMAGE
+            badge: !secret LOW_TEMP_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! Yah shes colder den duh witches titties out dare for shore! The current outdoor apparent temperature is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
+          quiet_play: 'false'
+
+###################################################################################################
+## Weather - Low Temperature Notification Closed
+###################################################################################################
+  - id: weather_low_temperature_notification_closed
+    alias: "[Weather] Low Temperature Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'outdoor_low_temp_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'outdoor_low_temp_alert'
+
+###################################################################################################
+## Weather - Low Temperature Alert Cancelled
+###################################################################################################
+  - id: weather_low_temperature_alert_cancelled
+    alias: "[Weather] Low Temperature Alert Cancelled"
+    description: "Dismiss notifications when low outdoor temperature alert turns off."
+    initial_state: 'on'
+
+    trigger:
+     # run when the low temp alert turns off
+      - platform: state
+        entity_id: binary_sensor.weather_low_temperature_alert
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'outdoor_low_temp_alert'
+
+###################################################################################################
+## Weather - Low Temperature Alert Pause
+###################################################################################################
+  - id: weather_low_temperature_alert_pause
+    alias: "[Weather] Low Temperature Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'outdoor_low_temp_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'outdoor_low_temp_alert'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.weather_low_temperature_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.weather_low_temperature_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.weather_low_temperature_alert
+
+###################################################################################################
+## High UV Index Alert
+###################################################################################################
+  - id: weather_uv_index_alert
+    alias: "[Weather] UV Index Alert"
+    description: "Send notification when UV index alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the uv alert sensor is on
+      - platform: state
+        entity_id: binary_sensor.alert_uv_index
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if weather automation is enabled
+          - condition: state
+            entity_id: input_boolean.weather_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "High UV Alert"
+          message: "Today's UV risk level is {{ states('sensor.uv_max_level')}}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'uv_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'uv_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 14400
+            priority: normal
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/weather'
+            icon: !secret UV_ICON
+            image: !secret UV_IMAGE
+            badge: !secret UV_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! The UV Index warning is active. Today's UV risk level is {{ states('sensor.uv_max_level')}}"
+          quiet_play: 'false'
+
+###################################################################################################
+## Weather - UV Index Notification Closed
+###################################################################################################
+  - id: weather_uv_index_notification_closed
+    alias: "[Weather] UV Index Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'uv_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'uv_alert'
+
+###################################################################################################
+## Weather - UV Index Alert Cancelled
+###################################################################################################
+  - id: weather_uv_index_alert_cancelled
+    alias: "[Weather] UV Index Alert Cancelled"
+    description: "Dismiss notifications when UV index alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the uv index alert turns off
+      - platform: state
+        entity_id: binary_sensor.alert_uv_index
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'uv_alert'
+
+###################################################################################################
+## Action - UV Index Alert Pause
+###################################################################################################
+  - id: weather_uv_index_alert_pause
+    alias: "[Weather] UV Index Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'uv_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'uv_alert'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.weather_uv_index_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.weather_uv_index_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.weather_uv_index_alert
+
+###################################################################################################
+## Air Quality Alert
+###################################################################################################
+  - id: weather_air_quality_alert
+    alias: "[Weather] Air Quality Alert"
+    description: "Send notification when air quality alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the air quality alert sensor is on
+      - platform: state
+        entity_id: binary_sensor.air_quality_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if weather automation is enabled
+          - condition: state
+            entity_id: input_boolean.weather_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Air Quality Alert"
+          message: "The current index is {{ states('sensor.aqi_risk_level')}}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'aqi_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'aqi_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 14400
+            priority: normal
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/weather'
+            icon: !secret AQI_ICON
+            image: !secret AQI_IMAGE
+            badge: !secret AQI_BADGE
+
+      # wait for any other announcments to finish, avoid skipping play because script already running
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '0:01:00'
+        continue_on_timeout: false
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! The Air Quality Alert is active. The current local air quality index is {{ states('sensor.aqi_risk_level')}}"
+          quiet_play: 'false'
+
+###################################################################################################
+## Weather - AQI Index Notification Closed
+###################################################################################################
+  - id: weather_aqi_index_notification_closed
+    alias: "[Weather] AQI Index Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'aqi_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'aqi_alert'
+
+###################################################################################################
+## Weather - AQI Index Alert Cancelled
+###################################################################################################
+  - id: weather_aqi_index_alert_cancelled
+    alias: "[Weather] AQI Index Alert Cancelled"
+    description: "Dismiss notifications when air quality alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the aqi alert turns off
+      - platform: state
+        entity_id: binary_sensor.air_quality_alert
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'aqi_alert'
+
+###################################################################################################
+## Action - Air Quality Alert Pause
+###################################################################################################
+  - id: weather_air_quality_alert_pause
+    alias: "[Weather] Air Quality Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'aqi_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'aqi_alert'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.weather_air_quality_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.weather_air_quality_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.weather_air_quality_alert
+
+###################################################################################################
+## Allergy Alert (High Pollen Count)
+###################################################################################################
+  - id: weather_allergy_risk_alert
+    alias: "[Weather] Allergy Risk Alert"
+    description: "Send notification when allergy risk alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the allery alert sensor is active
+      - platform: state
+        entity_id: binary_sensor.weather_allergy_risk_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if weather automation is enabled
+          - condition: state
+            entity_id: input_boolean.weather_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Allergy Alert"
+          message: "{{ states('sensor.allergy_risk_today') }} risk today and {{ states('sensor.allergy_risk_tomorrow') | lower }} risk tomorrow."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'allergy_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'allergy_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 14400
+            priority: normal
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/weather'
+            icon: !secret ALLERGY_ICON
+            image: !secret ALLERGY_IMAGE
+            badge: !secret ALLERGY_BADGE
+
+      # wait for any other announcments to finish
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! The allergen level alert is active. Today's allergy risk level is {{ states('sensor.allergy_risk_today') }} and {{ states('sensor.allergy_risk_tomorrow') }} for tomorrow."
+          quiet_play: 'false'
+
+###################################################################################################
+## Weather - Allergy Index Notification Closed
+###################################################################################################
+  - id: weather_allergy_index_notification_closed
+    alias: "[Weather] Allergy Index Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'allergy_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'allergy_alert'
+
+###################################################################################################
+## Weather - Allergy Index Alert Cancelled
+###################################################################################################
+  - id: weather_allergy_index_alert_cancelled
+    alias: "[Weather] Allergy Index Alert Cancelled"
+    description: "Dismiss notifications when allergy risk alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the allergy alert turns off
+      - platform: state
+        entity_id: binary_sensor.weather_allergy_risk_alert
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'allergy_alert'
+
+###################################################################################################
+## Action - Allegy Alert Pause
+###################################################################################################
+  - id: weather_allergy_alert_pause
+    alias: "[Weather] Allergy Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'allergy_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'allergy_alert'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.weather_allergy_risk_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.weather_allergy_risk_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.weather_allergy_risk_alert
+
+###################################################################################################
+# Asthma Alert
+###################################################################################################
+  - id: weather_asthma_risk_alert
+    alias: "[Weather] Asthma Risk Alert"
+    description: "Send notification when asthma risk alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when the asthma alert sensor is active
+      - platform: state
+        entity_id: binary_sensor.weather_asthma_risk_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if weather automation is enabled
+          - condition: state
+            entity_id: input_boolean.weather_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Asthma Alert"
+          message: "{{ states('sensor.asthma_risk_today') }} risk today and {{ states('sensor.asthma_risk_tomorrow') | lower }} risk tomorrow."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'asthma_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'asthma_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 14400
+            priority: normal
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/weather'
+            icon: !secret ASTHMA_ICON
+            image: !secret ASTHMA_IMAGE
+            badge: !secret ASTHMA_BADGE
+
+      # wait for any other announcments to finish
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "Attention! The asthma risk alert is active. Today's asthma risk level is {{ states('sensor.asthma_risk_today') }}, and tomorrows asthma risk level is {{ states('sensor.asthma_risk_tomorrow') }} Remember to bring your puffer with you."
+          quiet_play: 'false'
+
+###################################################################################################
+## Weather - Asthma Index Notification Closed
+###################################################################################################
+  - id: weather_asthma_index_notification_closed
+    alias: "[Weather] Asthma Index Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'asthma_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'asthma_alert'
+
+###################################################################################################
+## Weather - Asthma Index Alert Cancelled
+###################################################################################################
+  - id: weather_asthma_index_alert_cancelled
+    alias: "[Weather] Asthma Index Alert Cancelled"
+    description: "Dismiss notifications when asthma risk alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the asthma alert turns off
+      - platform: state
+        entity_id: binary_sensor.weather_asthma_risk_alert
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'asthma_alert'
+
+###################################################################################################
+## Action - Asthma Alert Pause
+###################################################################################################
+  - id: weather_asthma_alert_pause
+    alias: "[Weather] Asthma Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'asthma_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'asthma_alert'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.weather_asthma_risk_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.weather_asthma_risk_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.weather_asthma_risk_alert
+
+###################################################################################################
+## NOAA Alert
+## attr: event_type, event_severity, urgency, headline, description, instruction
+## event_severity values: Extreme, Severe, Moderate, Minor, Unknown
+## urgency values: Immediate, Expected, Future, Past, Unknown
+## - fires when sensor changes resends if additional alert is added, wont send when alert cancelled ( 0 value)
+## - not disabled in silent mode
+###################################################################################################
+  - id: weather_alert_noaa_alert
+    alias: "[Weather Alert] NOAA Alert"
+    description: "Display weather alert on UI and send notification when NOAA weather alert is active."
+    initial_state: 'on'
+
+    trigger:
+      # run when weather alert state changes (refire if updated/new alert)
+      - platform: state
+        entity_id: sensor.noaa_alerts_miz076
+
+    condition:
+      # only run if an active alert
+      - condition: numeric_state
+        entity_id: sensor.noaa_alerts_miz076
+        above: 0
+
+    action:
+      # turn on display alert boolean if was turned off last alert
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.display_weather_alert
+
+      # stop any announcement playing, alert has priority
+      - service: script.turn_off
+        entity_id: script.play_announcement
+
+      # if severe or extreme play as alert otherwise play as an announcement
+      - service_template: >-
+          {% if state_attr('sensor.noaa_alerts_miz076', 'event_severity')  == 'Severe'
+             or state_attr('sensor.noaa_alerts_miz076', 'event_severity')  == 'Extreme' %}
+            script.play_alert
+          {% else %} script.play_announcement
+          {% endif %}
+        data_template:
+          play_message: >-
+            Attention! Weather Alert!
+            The U S National Weather Service has issued a
+             {{ state_attr('sensor.noaa_alerts_miz076', 'event_severity') | striptags }}
+             {{ state_attr('sensor.noaa_alerts_miz076', 'event_type' | striptags ) }}
+            Again, The National Weather Service has issued a
+             {{ state_attr('sensor.noaa_alerts_miz076', 'event_severity') | striptags }}
+             {{ state_attr('sensor.noaa_alerts_miz076', 'event_type' | striptags ) }}
+          quiet_play: 'true'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "{{ state_attr('sensor.noaa_alerts_miz076', 'event_type') }}"
+          message: >-
+              Urgency: {{ state_attr('sensor.noaa_alerts_miz076', 'urgency') }}
+              Severity: {{ state_attr('sensor.noaa_alerts_miz076', 'event_severity') }}
+              {{ state_attr('sensor.noaa_alerts_miz076', 'headline') }}
+          target:
+            - jphone
+            - sphone
+            - jlaptop
+          data:
+            tag: 'noaa_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: 'https://forecast.weather.gov/MapClick.php?zoneid=MIZ076'
+            icon: !secret STORM_ICON
+            badge: !secret STORM_BADGE
+
+##################################################################################################
+## Environment Canada Weather Alert
+## - states are empty strings '' not null values
+## - this will fire any time an envcan sensor state changes so a notification is sent if the
+##   alert is updated or if a higher priority alert is cancelled the lower alert will resend if
+##   the alert time has also changed.
+## - only the highest priority alert notification will send at any time
+## - not disabled in silent mode
+##################################################################################################
+  - id: weather_alert_envcan_alert
+    alias: "[Weather Alert] EnvCan Alert"
+    description: "Display weather alert on UI and send notification when EnvCan weather alert is active."
+    initial_state: 'on'
+
+    trigger:
+      # run when alert sensor state changes
+      - platform: state
+        entity_id: sensor.warnings
+
+      # run when alert sensor state changes
+      - platform: state
+        entity_id: sensor.watches
+
+      # run when alert sensor state changes
+      - platform: state
+        entity_id: sensor.advisories
+
+      # run when alert sensor state changes
+      - platform: state
+        entity_id: sensor.statements
+
+    condition:
+      - condition: or
+        conditions:
+          # only run if one of the alert sensors state is not blank
+          - condition: template
+            value_template: "{{ not states('sensor.warnings') == '' }}"
+
+          - condition: template
+            value_template: "{{ not states('sensor.watches') == '' }}"
+
+          - condition: template
+            value_template: "{{ not states('sensor.advisories') == '' }}"
+
+          - condition: template
+            value_template: "{{ not states('sensor.statements') == '' }}"
+
+      # only run if the alert time has changed (to prevent multiple triggers), should be "None" first time triggered
+      # only fires if top priority alert has changed
+      - condition: template
+        value_template: >-
+          {% if not is_state('sensor.warnings', '') %}{% if not state_attr( 'sensor.warnings', 'alert time' ) == states('input_text.warnings_alert_time') %} true {% endif %}
+          {% elif not is_state('sensor.watches', '') %}{% if not state_attr( 'sensor.watches', 'alert time' ) == states('input_text.watches_alert_time') %} true {% endif %}
+          {% elif not is_state('sensor.advisories', '') %}{% if not state_attr( 'sensor.advisories', 'alert time' ) == states('input_text.advisories_alert_time') %} true {% endif %}
+          {% elif not is_state('sensor.statements', '') %}{% if not state_attr( 'sensor.statements', 'alert time' ) == states('input_text.statements_alert_time') %} true {% endif %}
+          {% else %} false
+          {% endif %}
+
+    action:
+      # turn on display alert boolean (for lovelace conditions)
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.display_weather_alert
+
+      # stop any announcement playing, weather alert has priority
+      - service: script.turn_off
+        entity_id: script.play_announcement
+
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.warnings_alert_time
+          value: "{{ state_attr('sensor.warnings','alert time') }}"
+
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.watches_alert_time
+          value: "{{ state_attr('sensor.watches','alert time') }}"
+
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.advisories_alert_time
+          value: "{{ state_attr('sensor.advisories','alert time') }}"
+
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.statements_alert_time
+          value: "{{ state_attr('sensor.statements','alert time') }}"
+
+      # if alert is warning play alert, else play announcement
+      # this will give the highest severity title then read all alert details
+      - service_template: >-
+          {% if not states('sensor.warnings') == '' %} script.play_alert
+          {% else %} script.play_announcement
+          {% endif %}
+        data_template:
+          play_message: >-
+            Attention! Weather Alert!
+            Environment Canada has issued a
+             {% if not states('sensor.warnings') == '' %}{% set prev = true %} {{ states('sensor.warnings') }}{% endif %}
+             {% if prev == true %} and a {% endif %}
+             {% if not states('sensor.watches') == '' %}{% set prev = true %} {{ states('sensor.watches') }}{% endif %}
+             {% if prev == true %} and a {% endif %}
+             {% if not states('sensor.advisories') == '' %}{% set prev = true %} {{ states('sensor.advisories') }}{% endif %}
+             {% if prev == true %} and a {% endif %}
+             {% if not states('sensor.statements') == '' %} {{ states('sensor.statements') }}{% endif %}
+             for your immediate area.
+            Again, Environment Canada has issued a
+             {% if not states('sensor.warnings') == '' %}{% set prev = true %} {{ states('sensor.warnings') }}{% endif %}
+             {% if prev == true %} and a {% endif %}
+             {% if not states('sensor.watches') == '' %}{% set prev = true %} {{ states('sensor.watches') }}{% endif %}
+             {% if prev == true %} and a {% endif %}
+             {% if not states('sensor.advisories') == '' %}{% set prev = true %} {{ states('sensor.advisories') }}{% endif %}
+             {% if prev == true %} and a {% endif %}
+             {% if not states('sensor.statements') == '' %} {{ states('sensor.statements') }}{% endif %}
+             for your immediate area.
+          quiet_play: 'true'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: >-
+            Environment Canada
+            {% if not states('sensor.warnings') == '' and not states('sensor.warnings') == 'unknown' %}
+              {{ '\n' + states('sensor.warnings') }}
+            {% elif not states('sensor.watches') == '' and not states('sensor.warnings') == 'unknown' %}
+              {{ '\n' + states('sensor.watches') }}
+            {% elif not states('sensor.advisories') == '' and not states('sensor.advisories') == 'unknown' %}
+              {{ '\n' + states('sensor.advisories') }}
+            {% elif not states('sensor.statements') == '' and not states('sensor.statements') == 'unknown' %}
+              {{ '\n' + states('sensor.statements') }}
+            {% endif %}
+          message: >-
+            {% if not is_state('sensor.warnings','') and not states('sensor.warnings') == 'unknown' %}
+              {{ state_attr('sensor.warnings', 'alert detail') + '\n'}}
+            {% elif not is_state('sensor.watches','') and not states('sensor.watches') == 'unknown' %}
+              {{ state_attr('sensor.watches', 'alert detail') + '\n'}}
+            {% elif not is_state('sensor.advisories','') and not states('sensor.watches') == 'advisories' %}
+              {{ state_attr('sensor.advisories', 'alert detail') + '\n'}}
+            {% elif not is_state('sensor.statements','') and not states('sensor.statements') == 'unknown' %}
+              {{ state_attr('sensor.statements', 'alert detail')}}
+            {% endif %}
+          target:
+            - jphone
+            - sphone
+            - jlaptop
+          data:
+            tag: 'envcan_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: 'https://weather.gc.ca/warnings/report_e.html?on16'
+            icon: !secret STORM_ICON
+            badge: !secret STORM_BADGE
+
+##################################################################################################
+## Weather Alert - Turn Display Alert On
+## - when alert sensor state changes turn display alerts back on
+##################################################################################################
+  - id: weather_alert_display_alert_on
+    alias: "[Weather Alert] Display Alert On"
+    description: "Turn the display weather alert boolean back on if weather alert has changed."
+    initial_state: 'on'
+
+    trigger:
+      # run when the active weather alert sensor turns on
+      - platform: state
+        entity_id:
+          - sensor.warnings
+          - sensor.watches
+          - sensor.advisories
+          - sensor.statements
+          - sensor.endings
+          - sensor.noaa_alerts_miz076
+          - sensor.noaa_alerts_mic163
+
+    condition:
+      # only run if the alert time has changed (to prevent multiple triggers), should be "None" first time triggered
+      #ISSUE only fires if top priority alert has changed
+      - condition: template
+        value_template: >-
+          {% if not is_state('sensor.warnings', '') %}{% if not state_attr( 'sensor.warnings', 'alert time' ) == states('input_text.warnings_alert_time') %} true {% endif %}
+          {% elif not is_state('sensor.watches', '') %}{% if not state_attr( 'sensor.watches', 'alert time' ) == states('input_text.watches_alert_time') %} true {% endif %}
+          {% elif not is_state('sensor.advisories', '') %}{% if not state_attr( 'sensor.advisories', 'alert time' ) == states('input_text.advisories_alert_time') %} true {% endif %}
+          {% elif not is_state('sensor.statements', '') %}{% if not state_attr( 'sensor.statements', 'alert time' ) == states('input_text.statements_alert_time') %} true {% endif %}
+          {% elif trigger.entity_id == 'sensor.noaa_alerts_miz076' and states('sensor.noaa_alerts_miz076') | int > 0 %} true
+          {% else %} false
+          {% endif %}
+
+    action:
+      # turn on display weather alert boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.display_weather_alert
+
+##################################################################################################
+## Weather Alert - Active Environment Canada Alert Off
+##################################################################################################
+  - id: weather_alert_active_envcan_alert_pause
+    alias: "[Weather Alert] Active EnvCan Alert Off"
+    description: "Dismiss all notifications when EnvCan weather alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the active weather alert sensor turns off
+      - platform: state
+        entity_id: binary_sensor.active_envcan_alert
+        to: 'off'
+
+    action:
+      # reset alert time text values
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.warnings_alert_time
+          value: 'None'
+
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.watches_alert_time
+          value: 'None'
+
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.advisories_alert_time
+          value: 'None'
+
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.statements_alert_time
+          value: 'None'
+
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'envcan_alert'
+
+##################################################################################################
+## Weather Alert - Active NOAA Alert Off
+##################################################################################################
+  - id: weather_alert_active_noaa_alert_pause
+    alias: "[Weather Alert] Active NOAA Alert Off"
+    description: "Dismiss all notifications when NOAA weather alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the active weather alert sensor turns off
+      - platform: state
+        entity_id: binary_sensor.active_noaa_alert
+        to: 'off'
+
+    action:
+      # dismiss push notifications
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'noaa_alert'
+
+##################################################################################################
+## Weather Alert - All Alerts Cancelled
+##################################################################################################
+  - id: weather_alert_all_alerts_cancelled
+    alias: "[Weather Alert] All Alerts Cancelled"
+    description: "Play announcement when all weather alerts have been cancelled."
+    initial_state: 'on'
+
+    trigger:
+      # run when the active weather alert sensor turns off
+      - platform: state
+        entity_id: binary_sensor.active_weather_alert
+        to: 'off'
+
+
+    action:
+      # wait for other announcments to finish
+      - wait_template: "{{ is_state('script.play_announcement', 'off') or is_state('binary_sensor.quiet_hours_active','on') }}"
+        timeout: '00:01:00'
+        continue_on_timeout: false
+
+      # play announcement
+      - service: script.play_announcement
+        data_template:
+          play_message: "All active weather alerts have been cancelled."
+          quiet_play: 'false'

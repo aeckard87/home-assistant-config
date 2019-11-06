@@ -1,0 +1,29 @@
+##################################################################################################
+## Saturday Workday Scheduled
+## include saturdays in workday automations
+##################################################################################################
+  saturday_workday:
+    name: Saturday Work Scheduled
+    icon: mdi:calendar-star
+
+##################################################################################################
+## Work Schedule
+## - used to trigger workday automations, turn off for "vacation"
+##################################################################################################
+  work_schedule:
+    name: Work Schedule
+    icon: mdi:worker
+
+##################################################################################################
+## Schedule Automation
+##################################################################################################
+  schedule_automation:
+    name: Schedule Automation
+    icon: mdi:calendar-multiple-check
+
+##################################################################################################
+## Shift Overrride Enabled
+##################################################################################################
+  shift_override:
+    name: Shift Override
+    icon: mdi:calendar-remove

@@ -1,0 +1,195 @@
+title: Presence
+icon: mdi:human-male-female
+path: presence
+cards:
+
+  - type: vertical-stack
+    cards:
+
+      - type: entities
+        title: Household Presence
+        icon: mdi:home-account #ISSUE doesn't work
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.google_location_connected
+          - entity: binary_sensor.someone_home
+          - entity: input_select.occupancy_mode
+          - entity: sensor.house_alarm_status
+            tap_action:
+              action: call-service
+              service: browser_mod.popup
+              service_data:
+                deviceID: this
+                title: House Alarm Panel
+                card:
+                  !include /config/lovelace/include/alarm_control_panel_full.yaml
+
+          - entity: sensor.last_person_to_leave
+          - entity: input_datetime.time_last_person_left
+
+      - type: conditional
+        conditions:
+          - entity: input_boolean.advanced_view
+            state: 'on'
+        card:
+          type: entities
+          show_header_toggle: false
+          entities:
+            - type: custom:auto-entities
+              card:
+                type: custom:fold-entity-row
+                head: input_boolean.presence_automation
+              entities:
+                - type: custom:fold-entity-row
+                  head: input_boolean.override_presence
+                  group_config:
+                    secondary_info: last-changed
+                  items:
+                    - entity: input_boolean.jason_home
+                    - entity: input_boolean.sheri_home
+
+                - entity: input_boolean.occupancy_mode_alerts
+
+              filter:
+                include:
+                  - entity_id: "automation.presence_*"
+
+      - type: map
+        aspect_ratio: '16:9'
+        default_zoom: 22
+        entities:
+          - entity: device_tracker.jason_tracker
+          - entity: device_tracker.sheri_tracker
+          - entity: zone.home
+          - entity: zone.work
+          - entity: zone.moms
+
+      - type: history-graph
+        title: Presence History
+        hours_to_show: 72
+        refresh_interval: 0
+        entities:
+          - entity: sensor.occupancy_mode
+            name: Occ. Mode
+          - entity: alarm_control_panel.house
+            name: Alarm
+          - entity: binary_sensor.someone_home
+            name: Someone Home
+          - entity: binary_sensor.home_away
+            name: Nest Away
+          - entity: binary_sensor.jason_home
+            name: Jason Home
+          - entity: binary_sensor.sheri_home
+            name: Sheri Home
+
+  - type: vertical-stack
+    cards:
+
+      - type: entities
+        title: Jason
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.jason_home
+
+          - type: custom:fold-entity-row
+            head: person.jason
+            group_config:
+              secondary_info: last-changed
+            items:
+              - entity: device_tracker.jphone_ping
+              - entity: device_tracker.jphone_bt
+              - entity: device_tracker.google_maps_101131226839468750203
+
+          - type: custom:fold-entity-row
+            head: binary_sensor.jason_phone_connected
+            group_config:
+              secondary_info: last-changed
+            items:
+              - entity: sensor.jphone_last_update
+              - entity: binary_sensor.jason_phone_ping
+
+          - entity: camera.jason_location
+          - entity: proximity.jhome
+
+          - !include /config/lovelace/include/jason_radio_settings_entity.yaml
+
+      - type: horizontal-stack
+        cards:
+
+          - !include /config/lovelace/include/jason_time_home_gauge.yaml
+          - !include /config/lovelace/include/jason_time_work_gauge.yaml
+
+      - type: history-graph
+        title: Jason History
+        hours_to_show: 72
+        refresh_interval: 0
+        entities:
+          - entity: person.jason
+            name: Person
+          - entity: binary_sensor.jason_home
+            name: Home
+          - entity: device_tracker.jphone_ping
+            name: Phone Ping
+          - entity: device_tracker.jphone_bt
+            name: Phone BT
+          - entity: device_tracker.google_maps_101131226839468750203
+            name: Google GPS
+          - entity: binary_sensor.jason_phone_connected
+            name: Phone Connected
+          - entity: proximity.jhome
+            name: Proximity
+
+  - type: vertical-stack
+    cards:
+
+      - type: entities
+        title: Sheri
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.sheri_home
+
+          - type: custom:fold-entity-row
+            head: person.sheri
+            group_config:
+              secondary_info: last-changed
+            items:
+              - entity: device_tracker.sphone_ping
+              - entity: device_tracker.sphone_bt
+              - entity: device_tracker.google_maps_115097751563829374630
+
+          - type: custom:fold-entity-row
+            head: binary_sensor.sheri_phone_connected
+            items:
+              - entity: sensor.sphone_last_update
+              - entity: binary_sensor.sheri_phone_ping
+
+          - !include /config/lovelace/include/radio_settings_sheri_entity.yaml
+
+          - entity: camera.sheri_location
+          - entity: proximity.shome
+
+      - type: horizontal-stack
+        cards:
+
+          - !include /config/lovelace/include/sheri_time_home_gauge.yaml
+          - !include /config/lovelace/include/sheri_time_work_gauge.yaml
+
+      - type: history-graph
+        title: Sheri History
+        hours_to_show: 72
+        refresh_interval: 0
+        entities:
+          - entity: person.sheri
+            name: Person
+          - entity: binary_sensor.sheri_home
+            name: Home
+          - entity: device_tracker.sphone_ping
+            name: Phone Ping
+          - entity: device_tracker.sphone_bt
+            name: Phone BT
+          - entity: device_tracker.google_maps_115097751563829374630
+            name: Google GPS
+          - entity: binary_sensor.sheri_phone_connected
+            name: Phone Connected
+          - entity: proximity.shome
+            name: Proximity

@@ -1,0 +1,10 @@
+action: call-service
+service: browser_mod.popup
+service_data:
+  deviceID: this
+  title: Work Commute Traffic
+  large: false
+  card:
+    type: iframe
+    url: !secret TRAFFIC_MAP_URL
+    aspect_ratio: 100%

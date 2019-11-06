@@ -1,0 +1,14 @@
+##################################################################################################
+## panel_custom.yaml
+## https://www.home-assistant.io/components/panel_custom/
+##################################################################################################
+
+##################################################################################################
+## ZWave Control Panel
+## https://community.home-assistant.io/t/z-wave-graph-without-the-python/64275
+##################################################################################################
+  - name: zwavegraph2
+    sidebar_title: ZWave Graph
+    sidebar_icon: mdi:access-point-network
+    url_path: zwave
+    require_admin: true

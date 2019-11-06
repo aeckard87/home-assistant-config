@@ -1,0 +1,125 @@
+##################################################################################################
+## Days Leave Work Time
+##################################################################################################
+  days_leave_work_time:
+    name: Days Leave Work
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Days Arrive Home Time
+##################################################################################################
+  days_arrive_home_time:
+    name: Days Arrive Home
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Days Leave Home Time
+##################################################################################################
+  days_leave_home_time:
+    name: Days Leave Home
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Days Arrive Work Time
+##################################################################################################
+  days_arrive_work_time:
+    name: Days Arrive Work
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Afternoons Leave Work Time
+##################################################################################################
+  afternoons_leave_work_time:
+    name: Afternoons Leave Work
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Afternoons Arrive Home Time
+##################################################################################################
+  afternoons_arrive_home_time:
+    name: Afternoons Arrive Home
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Afternoons Leave Home Time
+##################################################################################################
+  afternoons_leave_home_time:
+    name: Afternoons Leave Home
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Afternoons Arrive Work Time
+##################################################################################################
+  afternoons_arrive_work_time:
+    name: Afternoons Arrive Work
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Wake Times
+##################################################################################################
+  days_waketime:
+    name: Days Wake Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+  afternoons_waketime:
+    name: Afternoons Wake Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+  weekend_waketime:
+    name: Weekend Wake Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+  house_waketime:
+    name: House Wake Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+##################################################################################################
+## Bed Times
+##################################################################################################
+  days_bedtime:
+    name: Days Bed Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+  afternoons_bedtime:
+    name: Afternoons Bed Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+  weekend_days_bedtime:
+    name: Weekend Days Bed Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true
+
+  weekend_afternoons_bedtime:
+    name: Weekend Afternoons Bed Time
+    icon: mdi:clock
+    has_date: false
+    has_time: true

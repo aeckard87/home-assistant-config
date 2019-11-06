@@ -1,0 +1,14 @@
+type: custom:fold-entity-row
+head: input_boolean.radio_enabled_night
+entities:
+  - entity: input_select.radio_station_night
+    name: Station
+  - entity: input_select.media_player_radio_night
+    name: Speakers
+  - entity: input_number.radio_volume_night
+    name: Volume
+  - entity: input_number.radio_sleep_time
+  - type: call-service
+    name: Play Night Radio
+    service: script.play_radio_night
+    action_name: PLAY

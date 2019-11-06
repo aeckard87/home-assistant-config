@@ -1,0 +1,304 @@
+##################################################################################################
+## House Alarm Triggered
+## - play_message contains message to display/play
+## - no tag - every alarm shown separately so we don't miss any
+## - no light in use conditions alarm lights must always turn on
+## - notifications are sent in individual alarm event automations
+##################################################################################################
+  house_alarm_triggered:
+    sequence:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      # set the input_text value for active alarm
+      # automation.house_alarm_active_alert tts uses this for repeating alert
+      # strip tags, underscores from play_message
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.current_house_alarm
+          value: "{{ play_message | striptags | title | replace('_',' ') }}"
+
+      # save current light settings
+      - service: script.save_lights
+        data:
+          store_name: 'house_alarm_store'
+          entity_ids: 'light.living_room_pot_lights'
+
+      # turn on alarm lights
+      - service: script.turn_light_on
+        data:
+          light_name: 'alarm_lights'
+          brightness: 100
+          ignore_user_state: 'true'
+          fade_time: 0
+
+      # play alert here first so no delay in alarm
+      - service: script.play_alert
+        data_template:
+          play_message: "ATTENTION! ALERT! {{ play_message }}"
+
+      # turn on repeat alert automation, loops alert message
+      - service: automation.turn_on
+        data:
+          entity_id: automation.house_alarm_active_alert
+
+      # create persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: "House Alarm Triggered"
+          notification_id: 'house_alarm_triggered'
+          message: "**{{ play_message | striptags | title | replace('_',' ') }}**\n{{now().strftime('%H:%M  %Y-%m-%d')}}"
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "House Alarm Triggered"
+          message: "{{ play_message | striptags | title | replace('_',' ') }}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            tag: 'alarm_triggered_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 86400
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/alarm'
+            icon: !secret ALARM_ICON
+            badge: !secret ALARM_BADGE
+
+      # delay to allow state changes to register
+      # done here to avoid delay in audio alert, notifications
+      - delay: '00:00:05'
+
+      # wait 15 minutes for alert to be cancelled then cancel it here because
+      # obviously no one is home or we're already dead and the dogs are going nuts
+      - wait_template: "{{ is_state('automation.house_alarm_active_alert', 'off') }}"
+        timeout: '00:15:00'
+        continue_on_timeout: true
+
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_active_alert
+
+      # wait for alarm to be rearmed or timeout to restore lights
+      - wait_template: "{{ not is_state('alarm_control_panel.house', 'disarmed') }}"
+        timeout: '00:10:00'
+        continue_on_timeout: true
+
+      # restore previous light settings
+      # will always be warning light settings if triggered after warning
+      - service: script.restore_lights
+        data:
+          store_name: 'house_alarm_store'
+
+##################################################################################################
+## Arm Alarm Home MQTT
+##################################################################################################
+  arm_alarm_home_mqtt:
+    sequence:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      # arm alarm in away mode via mqtt
+      - service: mqtt.publish
+        data_template:
+          topic: "home/alarm/set"
+          payload: "ARM_HOME"
+
+##################################################################################################
+## Arm Alarm Away MQTT
+##################################################################################################
+  arm_alarm_away_mqtt:
+    sequence:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      # arm alarm in away mode via mqtt
+      - service: mqtt.publish
+        data_template:
+          topic: "home/alarm/set"
+          payload: "ARM_AWAY"
+
+##################################################################################################
+## Arm Alarm Night MQTT
+## - not using night mode due to MQTT android app compatibility
+##################################################################################################
+  arm_alarm_perimeter_mqtt:
+    sequence:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: binary_sensor.house_alarm_disabled
+        state: 'off'
+
+      # arm alarm in away mode via mqtt
+      - service: mqtt.publish
+        data_template:
+          topic: "home/alarm/set"
+          payload: "ARM_HOME"
+         #payload: "ARM_NIGHT"
+
+##################################################################################################
+## Disarm Alarm MQTT
+#IDEA enable code for disarm mqtt
+##################################################################################################
+  disarm_alarm_mqtt:
+    sequence:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      # arm alarm in away mode via mqtt
+      - service: mqtt.publish
+        data_template:
+          topic: "home/alarm/set"
+          payload: "DISARM"
+
+##################################################################################################
+## Trigger Alarm
+##################################################################################################
+  trigger_alarm:
+    sequence:
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      - service: alarm_control_panel.alarm_trigger
+        entity_id: alarm_control_panel.house
+
+##################################################################################################
+## Arm Alarm Home Mode
+##################################################################################################
+  arm_alarm_home:
+    sequence:
+      # if alarm is armed disarm it so we can re-arm in home mode
+      - service: script.disarm_alarm_temp
+
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      - service: alarm_control_panel.alarm_arm_home
+        entity_id: alarm_control_panel.house
+        #data:
+        #TODO   code: !secret ALARM_HASSIO
+
+##################################################################################################
+## Arm Alarm Night Mode
+## - not using night mode, use alarm home mode for MQTT android app compatibility
+##################################################################################################
+  arm_alarm_night:
+    sequence:
+      # if alarm is armed disarm it so we can re-arm in night mode
+      - service: script.disarm_alarm_temp
+
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      - service: alarm_control_panel.alarm_arm_home
+        entity_id: alarm_control_panel.house
+        #data:
+        #TODO   code: !secret ALARM_HASSIO
+
+      #DISABLED - service: alarm_control_panel.alarm_arm_night
+      #   entity_id: alarm_control_panel.house
+      #   #data:
+      #TODO      code: !secret ALARM_HASSIO
+
+##################################################################################################
+## Arm Alarm Away Mode
+##################################################################################################
+  arm_alarm_away:
+    sequence:
+      # if alarm is armed disarm it so we can re-arm in away mode
+      - service: script.disarm_alarm_temp
+
+      # only run if alarm is enabled
+      - condition: state
+        entity_id: input_boolean.house_alarm_enabled
+        state: 'on'
+
+      - service: alarm_control_panel.alarm_arm_away
+        entity_id: alarm_control_panel.house
+        #data:
+        #TODO  code: !secret ALARM_HASSIO
+
+##################################################################################################
+## Disarm Alarm
+##################################################################################################
+  disarm_alarm:
+    sequence:
+      # disarm the house alarm
+      - service: alarm_control_panel.alarm_disarm
+        entity_id: alarm_control_panel.house
+        data:
+          code: !secret ALARM_HASSIO
+
+##################################################################################################
+## Disarm Alarm Auto
+##################################################################################################
+  disarm_alarm_auto:
+    sequence:
+      - condition: and
+        conditions:
+          # only continue if house alarm enabled
+          - condition: state
+            entity_id: input_boolean.house_alarm_enabled
+            state: 'on'
+
+          # only continue if house alarm auto arming is on
+          - condition: state
+            entity_id: input_boolean.house_alarm_auto_arming
+            state: 'on'
+
+      # disarm alarm
+      - service: script.disarm_alarm
+
+##################################################################################################
+## Disarm Alarm Temp
+## - temporarily disarm alarm so it can be rearmed in a different mode
+## - disable alarm disarmed automation so we don't trigger guest mode, announcements etc.
+##################################################################################################
+  disarm_alarm_temp:
+    sequence:
+      # only run if alarm is armed, pending
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: alarm_control_panel.house
+            state: 'armed_home'
+
+          - condition: state
+            entity_id: alarm_control_panel.house
+            state: 'armed_night'
+
+          - condition: state
+            entity_id: alarm_control_panel.house
+            state: 'armed_away'
+
+          - condition: state
+            entity_id: alarm_control_panel.house
+            state: 'pending'
+
+      # turn alarm disarmed automation off
+      - service: automation.turn_off
+        entity_id: automation.house_alarm_disarmed
+
+      # disarm the house alarm
+      - service: script.disarm_alarm
+
+      # turn alarm disarmed automation back on
+      - service: automation.turn_on
+        entity_id: automation.house_alarm_disarmed

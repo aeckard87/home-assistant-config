@@ -1,0 +1,25 @@
+action: call-service
+service: browser_mod.popup
+service_data:
+  deviceID: this
+  title: Radio Settings
+  large: false
+  card:
+    type: entities
+    show_header_toggle: false
+    entities:
+      - entity: input_boolean.radio_enabled_morning
+      - entity: input_select.radio_station_morning
+        name: Station
+      - entity: input_select.media_player_radio_morning
+        name: Speakers
+      - entity: input_number.radio_volume_wake
+        name: Wake Volume
+      - entity: input_number.radio_volume_morning
+        name: Volume
+      - entity: input_number.morning_radio_volume_delay
+        name: Volume Delay
+      - type: call-service
+        name: Play Morning Radio
+        service: script.play_radio_morning
+        action_name: PLAY

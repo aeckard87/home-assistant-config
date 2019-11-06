@@ -1,0 +1,183 @@
+type: entities
+title: Media Players
+show_header_toggle: false
+entities:
+  - type: 'custom:mini-media-player'
+    entity: media_player.all_speakers
+    name: All Speakers
+    icon: 'mdi:google-home'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.broadcast_speakers
+    name: Broadcast Speakers
+    icon: 'mdi:google-home'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.music_speakers
+    name: Music Speakers
+    icon: 'mdi:google-home'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.dining_room_speaker
+    name: Google Home DH
+    icon: 'mdi:google-home'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.bedroom_speaker
+    name: Google Mini Bedroom
+    icon: 'mdi:google-home'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.living_room_tv
+    name: Living Room TV
+    icon: 'mdi:cast'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.bedroom_tv
+    name: Bedroom TV
+    icon: 'mdi:cast'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.deck_tv
+    name: Deck TV
+    icon: 'mdi:cast'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.jlaptop_chrome
+    name: Jason Laptop
+    icon: 'mdi:cast'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.jwork_chrome
+    name: Jason Work
+    icon: 'mdi:cast'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.jphone_chrome
+    name: Jason Phone
+    icon: 'mdi:cast'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle
+
+  - type: 'custom:mini-media-player'
+    entity: media_player.sphone_chrome
+    name: Sheri Phone
+    icon: 'mdi:cast'
+    more_info: true
+    group: true
+    artwork: full-cover
+    source: full
+    info: scroll
+    volume_stateless: false
+    max_volume: 100
+    replace_mute: false
+    toggle_power: false
+    idle_view: when_idle

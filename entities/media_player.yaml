@@ -1,0 +1,10 @@
+##################################################################################################
+## Spotify Media Player
+## https://www.home-assistant.io/components/media_player.spotify/
+## https://support.spotify.com/us/article/sharing-music/
+## https://developer.spotify.com/dashboard/applications
+##################################################################################################
+  - platform: spotify
+    name: Spotify
+    client_id: !secret SPOTIFY_CLIENTID
+    client_secret: !secret SPOTIFY_SECRET

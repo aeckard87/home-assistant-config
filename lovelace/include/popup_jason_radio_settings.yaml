@@ -1,0 +1,23 @@
+action: call-service
+service: browser_mod.popup
+service_data:
+  deviceID: this
+  title: Jason Radio
+  large: false
+  card:
+    type: entities
+    show_header_toggle: false
+    entities:
+      - entity: input_select.radio_station_jason
+        name: Station
+      - entity: input_select.media_player_radio_jason
+        name: Speaker
+      - entity: input_number.radio_volume_jason
+        name: Volume
+      - entity: input_boolean.radio_enabled_jason
+      - type: call-service
+        name: Play Jason's Radio
+        service: script.play_radio
+        data:
+          preset: Jason
+        action_name: PLAY

@@ -1,0 +1,227 @@
+##################################################################################################
+## Vent Fan - Auto Off
+##################################################################################################
+  - id: vent_fan_auto_off
+    alias: "[Vent Fan] Auto Off"
+    description: "Turn fan off when in use timer finished."
+    initial_state: 'on'
+
+    trigger:
+      # run when the entity in use timer has finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.upstairs_bathroom_fan
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if vent fan automation is enabled
+          - condition: state
+            entity_id: input_boolean.vent_fan_automation
+            state: 'on'
+
+          # donly run if manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run if vent fan is on
+          - condition: state
+            entity_id: fan.upstairs_bathroom_fan
+            state: 'on'
+
+    action:
+      # turn off vent fan
+      - service: script.vent_fan_off
+        data_template:
+          fan_name: "{%- set device = trigger.event.data.entity_id.split('.')[1] -%}{{ device }}"
+          ignore_user_state: 'true'
+
+###################################################################################################
+## Vent Fan - Upstairs Bathroom Humidity Fan
+## - runs for at least 15 minutes
+## - this will turn speed to high if fan already on
+## - runs until humidity is below threshold or for 1 hour
+###################################################################################################
+  - id: vent_fan_upstairs_bathroom_humidity_fan
+    alias: "[Vent Fan] Upstairs Bathroom Humidity Fan"
+    description: "Turn fan on when bathroom humidity alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run every 5 minutes
+      - platform: time_pattern
+        minutes: '/5'
+
+      # run when bathroom humidity alert is on
+      - platform: state
+        entity_id: binary_sensor.upstairs_bathroom_humidity_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if vent fan automation is enabled
+          - condition: state
+            entity_id: input_boolean.vent_fan_automation
+            state: 'on'
+
+          # donly run if manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run when bathroom humidity alert is on
+          - condition: state
+            entity_id: binary_sensor.upstairs_bathroom_humidity_alert
+            state: 'on'
+
+    action:
+      # turn on vent fan
+      - service: script.vent_fan_on
+        data:
+          fan_name: 'upstairs_bathroom_fan'
+          new_speed: 'high'
+
+      # delay to run fan for at least 15 minutes
+      - delay: '0:15:00'
+
+      # wait for humidity to fall back threshold or continue after timeout, automation will refire if conditions are still true
+      - wait_template: "{{ is_state('binary_sensor.upstairs_bathroom_humidity_alert','off') }}"
+        timeout: '1:00:00'
+        continue_on_timeout: true
+
+      # turn off vent fan if not in use
+      - service: script.vent_fan_off
+        data:
+          fan_name: 'upstairs_bathroom_fan'
+          ignore_user_state: 'false'
+
+###################################################################################################
+## Vent Fan - Upstairs Bathroom Mold Prevention Fan
+## - runs for at least 15 minutes
+## - runs until mold sensor is below threshold or for 1 hour
+###################################################################################################
+  - id: vent_fan_upstairs_bathroom_mold_prevention_fan
+    alias: "[Vent Fan] Upstairs Bathroom Mold Prevention Fan"
+    description: "Turn fan on when bathroom mold risk indicator alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run every 5 minutes
+      - platform: time_pattern
+        minutes: '/5'
+
+      # run when bathroom mold alert is on
+      - platform: state
+        entity_id: binary_sensor.upstairs_bathroom_mold_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if vent fan automation is enabled
+          - condition: state
+            entity_id: input_boolean.vent_fan_automation
+            state: 'on'
+
+          # donly run if manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run when bathroom mold alert is on
+          - condition: state
+            entity_id: binary_sensor.upstairs_bathroom_mold_alert
+            state: 'on'
+
+          # only run if vent fan is off - don't switch to lower speed
+          - condition: state
+            entity_id: fan.upstairs_bathroom_fan
+            state: 'off'
+
+    action:
+      # turn on vent fan
+      - service: script.vent_fan_on
+        data:
+          fan_name: 'upstairs_bathroom_fan'
+          new_speed: 'low'
+
+      # delay to run fan for at least 15 minutes
+      - delay: '0:15:00'
+
+      # wait for mold alert to fall back threshold or continue after timeout, automation will refire if conditions are still true
+      - wait_template: "{{ is_state('binary_sensor.upstairs_bathroom_mold_alert','off') }}"
+        timeout: '1:00:00'
+        continue_on_timeout: true
+
+      # turn off vent fan if not in use
+      - service: script.vent_fan_off
+        data:
+          fan_name: 'upstairs_bathroom_fan'
+          ignore_user_state: 'false'
+
+###################################################################################################
+## Vent Fan - Upstairs Bathroom Temperature Fan
+## - runs for at least 5 minutes
+## - runs until temperature is below threshold or for 30 minutes
+###################################################################################################
+  - id: vent_fan_upstairs_bathroom_temperature_fan
+    alias: "[Vent Fan] Upstairs Bathroom Temperature Fan"
+    description: "Turn fan on when bathroom temperature alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run every 5 minutes
+      - platform: time_pattern
+        minutes: '/5'
+
+      # run when bathroom temperature alert is on
+      - platform: state
+        entity_id: binary_sensor.upstairs_bathroom_temperature_alert
+        to: 'on'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if vent fan automation is enabled
+          - condition: state
+            entity_id: input_boolean.vent_fan_automation
+            state: 'on'
+
+          # donly run if manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run when temperature alert is on
+          - condition: state
+            entity_id: binary_sensor.upstairs_bathroom_temperature_alert
+            state: 'on'
+
+          # only run if vent fan is off - don't switch to lower speed
+          - condition: state
+            entity_id: fan.upstairs_bathroom_fan
+            state: 'off'
+
+    action:
+      # turn on vent fan
+      - service: script.vent_fan_on
+        data:
+          fan_name: 'upstairs_bathroom_fan'
+          new_speed: 'low'
+
+      # delay to run fan for at least 5 minutes
+      - delay: '0:05:00'
+
+      # wait for temperature difference to equalize or continue after timeout, automation will refire if conditions are still true
+      - wait_template: "{{ is_state('binary_sensor.upstairs_bathroom_temperature_alert','off') }}"
+        timeout: '0:15:00'
+        continue_on_timeout: true
+
+      # turn off vent fan if not in use
+      - service: script.vent_fan_off
+        data:
+          fan_name: 'upstairs_bathroom_fan'
+          ignore_user_state: 'false'

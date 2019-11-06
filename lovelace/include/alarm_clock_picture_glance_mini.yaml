@@ -1,0 +1,87 @@
+type: vertical-stack
+cards:
+  - type: picture-glance
+    entity: input_boolean.alarm_clock_active
+    image: /local/images/clock.jpg
+    tap_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.alarm_clock_snooze
+    hold_action:
+      action: call-service
+      service: input_boolean.toggle
+      service_data:
+        entity_id: input_boolean.alarm_clock_active
+    entities:
+      - entity: sensor.alarm_clock_status_auto
+        name: Auto Alarm
+        tap_action: !include /config/lovelace/include/popup_auto_alarm.yaml
+      - entity: sensor.alarm_clock_status_manual
+        name: Manual Alarm
+        tap_action: !include /config/lovelace/include/popup_manual_alarm.yaml
+      - entity: sensor.alarm_clock_status_nap
+        name: Nap Alarm
+        tap_action: !include /config/lovelace/include/popup_nap_alarm.yaml
+      - entity: input_boolean.alarm_clock_snooze
+      - entity: input_boolean.alarm_clock_active
+
+  # only show timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.alarm_clock_restart
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_restart
+          name: Restart
+    style: |
+      ha-card {
+        font-size: 12px;
+      }
+
+  # only show timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.alarm_clock_nap
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_nap
+          name: Nap
+      style: |
+        ha-card {
+          font-size: 12px;
+        }
+
+  # only show timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.alarm_clock_volume_steps
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_volume_steps
+          name: Volume Step
+      style: |
+        ha-card {
+          font-size: 12px;
+        }
+
+  # only show timer when active
+  - type: conditional
+    conditions:
+      - entity: timer.alarm_clock_snooze
+        state_not: idle
+    card:
+      type: entities
+      entities:
+        - entity: timer.alarm_clock_snooze
+          name: Snooze
+      style: |
+        ha-card {
+          font-size: 12px;
+        }

@@ -1,0 +1,19 @@
+action: call-service
+service: browser_mod.popup
+service_data:
+  deviceID: this
+  title: Auto Alarm Clock
+  large: false
+  card:
+    type: entities
+    show_header_toggle: false
+    entities:
+      - entity: input_boolean.alarm_clock_auto
+      - entity: input_boolean.alarm_clock_auto_weekends
+      - entity: input_select.alarm_clock_sound_auto
+      - entity: input_select.alarm_clock_radio_station_auto
+      - entity: input_select.alarm_clock_media_player_auto
+      - entity: input_number.alarm_clock_volume_auto
+      - entity: input_number.alarm_clock_snooze_time
+      - entity: input_boolean.alarm_clock_active_auto
+        name: Play Auto Alarm

@@ -1,0 +1,64 @@
+###################################################################################################
+## Template Binary Sensors
+###################################################################################################
+  - platform: template
+    sensors:
+
+##################################################################################################
+## Vent Fans State
+## used for lovelace fold entity
+##################################################################################################
+      vent_fans:
+        friendly_name: Vent Fans
+        icon_template: mdi:fan
+        value_template: >-
+          {% set entities = state_attr('group.vent_fans', 'entity_id') %}
+          {% set active = states.fan | selectattr('entity_id', 'in', entities)
+                                        | selectattr('state','eq','on')
+                                        | map(attribute='entity_id')
+                                        | list
+                                        | length %}
+          {{ active >= 1 }}
+
+##################################################################################################
+## Vent Fan In Use State
+## used for lovelace fold entity
+##################################################################################################
+      vent_fan_in_use:
+        friendly_name: Vent Fan In Use
+        icon_template: mdi:light-switch
+        value_template: >-
+          {% set entities = state_attr('group.vent_fans_in_use', 'entity_id') %}
+          {% set active = states.input_boolean | selectattr('entity_id', 'in', entities)
+                                               | selectattr('state','eq','on')
+                                               | map(attribute='entity_id')
+                                               | list
+                                               | length %}
+          {{ active >= 1 }}
+
+##################################################################################################
+## Upstairs Bathroom Humidity Alert
+##################################################################################################
+      upstairs_bathroom_humidity_alert:
+        friendly_name: Upstairs Bathroom Humidity Alert
+        icon_template: mdi:water
+        value_template: "{{ states('sensor.upstairs_bathroom_humidity') | int > states('input_number.bathroom_humidity_fan_threshold') | int  }}"
+
+##################################################################################################
+## Upstairs Bathroom Mold Alert
+##################################################################################################
+      upstairs_bathroom_mold_alert:
+        friendly_name: Upstairs Bathroom Mold Alert
+        icon_template: mdi:mushroom
+        value_template: "{{ states('sensor.upstairs_bathroom_mold_indicator') | int > states('input_number.mold_risk_threshold') | int  }}"
+
+##################################################################################################
+## Upstairs Bathroom Temperature Alert
+## - uses absolute value so we can use temp above or below (negative value)
+##################################################################################################
+      upstairs_bathroom_temperature_alert:
+        friendly_name: Upstairs Bathroom Temperature Alert
+        icon_template: mdi:thermometer-lines
+        value_template: >-
+          {{ ( states('sensor.upstairs_bathroom_temperature') | int - states('sensor.upstairs_thermostat_temperature') | int ) | abs
+            >= states('input_number.bathroom_temperature_differential') | int }}

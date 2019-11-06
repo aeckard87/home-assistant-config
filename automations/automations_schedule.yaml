@@ -1,0 +1,1122 @@
+###################################################################################################
+## Schedule - Hassio Startup
+###################################################################################################
+  - id: schedule_hassio_startup
+    alias: "[Schedule] Hassio Startup"
+    description: "Run shift select at startup, turn on override if calendar not connected."
+    initial_state: 'on'
+
+    trigger:
+      # run when home assistant started
+      - platform: homeassistant
+        event: start
+
+    action:
+      # wait for delayed automations to turn on
+      - wait_template: "{{ is_state('group.delayed_automations', 'on') }}"
+        timeout: '00:05:00'
+        continue_on_timeout: true
+
+      # turn off so we trigger schedule_auto_shift_select and override alert if it turns back on
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.shift_override
+
+      # force current shift update
+      - service: automation.trigger
+        entity_id: automation.schedule_auto_shift_select
+
+      # turn shift override on if calendar not connected
+      # calendar doesn't go from off-> on at startup so automation won't be triggered so manually call here
+      - service_template: >-
+          {% if is_state('binary_sensor.work_calendar_connected','off') %} input_boolean.turn_on
+          {% else %} input_boolean.turn_off
+          {% endif %}
+        entity_id: input_boolean.shift_override
+
+##################################################################################################
+## Schedule - Work Schedule Mode Check
+##################################################################################################
+  - id: schedule_work_schedule_mode_check
+    alias: "[Schedule] Work Schedule Mode Check"
+    description: "Turn work schedule back off if turned on in manual mode."
+    initial_state: 'on'
+
+    trigger:
+      # run when work schedule is turned on
+      - platform: state
+        entity_id: input_boolean.work_schedule
+        to: 'on'
+
+    condition:
+      - condition: or
+        conditions:
+        # run if schedule automation is disabled
+        - condition: state
+          entity_id: input_boolean.schedule_automation
+          state: 'off'
+
+         # run if manual mode is on
+        - condition: state
+          entity_id: input_boolean.manual_mode
+          state: 'on'
+
+    action:
+      # turn work schedule back off
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.work_schedule
+
+##################################################################################################
+## Schedule - Morning Before Alarm
+## - turn eco mode off to preheat/cool house when waking up
+## - runs 15 minutes before scheduled wake time or at preset time if not already in home mode
+## - default to days time if shift state unknown
+##################################################################################################
+  - id: schedule_morning_before_alarm
+    alias: "[Schedule] Morning Before Alarm"
+    description: "Routine to run before morning alarm."
+    initial_state: 'on'
+
+    trigger:
+      - platform: template
+        # shift dependent time trigger
+        value_template: >-
+          {% if is_state('binary_sensor.work_today', 'on') %}
+            {% if is_state('sensor.current_shift', 'Afternoons') %}
+              {{ ( states('sensor.time') == ( states.input_datetime.afternoons_waketime.attributes.timestamp  | int - (15*60) ) | timestamp_custom("%H:%M", false) )
+                 or states('sensor.time') == ( states.input_datetime.house_waketime.attributes.timestamp  | int - (15*60) ) | timestamp_custom("%H:%M", false) }}
+            {% else %}
+              {{ states('sensor.time') ==  ( states.input_datetime.days_waketime.attributes.timestamp  | int - (15*60) ) | timestamp_custom("%H:%M", false) }}
+            {% endif %}
+          {% else %}
+            {{ ( states('sensor.time') ==  ( states.input_datetime.weekend_waketime.attributes.timestamp  | int - (15*60) ) | timestamp_custom("%H:%M", false) )
+                or states('sensor.time') == ( states.input_datetime.house_waketime.attributes.timestamp  | int - (15*60) ) | timestamp_custom("%H:%M", false) }}
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run if jason or sheri is home (not guest)
+          - condition: template
+            value_template: "{{ is_state('binary_sensor.jason_home','on') or is_state('binary_sensor.sheri_home','on') }}"
+
+          # only run if house in night mode
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+    action:
+      # put house into home mode, this turns of eco mode starts heat/cool if necessary
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Home'
+
+##################################################################################################
+## Schedule - Leaving Work
+## - turn eco mode off to preheat/cool house when leaving work
+## - runs 30 minutes before scheduled work leave time
+## - default to days time if shift state unknown
+##################################################################################################
+  - id: schedule_leaving_work
+    alias: "[Schedule] Leaving Work"
+    description: "House into override to preheat/cool house when leaving work."
+    initial_state: 'on'
+
+    trigger:
+      # shift dependent time trigger
+      # only run if someone at work - not in conditions so we don't kill proximity trigger
+      - platform: template
+        value_template: >-
+          {% if is_state('person.jason','Work') or is_state('person.sheri', 'Work') %}
+            {% if is_state('sensor.current_shift', 'Afternoons') %}
+              {{ states('sensor.time') ==  (states.input_datetime.afternoons_leave_work_time.attributes.timestamp  | int - (30*60)) | timestamp_custom("%H:%M", false) }}
+            {% else %}
+              {{ states('sensor.time') ==  (states.input_datetime.days_leave_work_time.attributes.timestamp  | int - (30*60)) | timestamp_custom("%H:%M", false) }}
+            {% endif %}
+          {% else %}
+            false
+          {% endif %}
+
+      # proximity trigger in case we left work early
+      - platform: template
+        value_template: >-
+          {{ ( states('proximity.jhome') | int < 5 and states.proximity.shome.attributes.dir_of_travel == "towards" )
+            or ( states('proximity.shome') | int < 5 and states.proximity.shome.attributes.dir_of_travel == "towards" ) }}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run if today is a work day
+          - condition: state
+            entity_id: binary_sensor.work_today
+            state: 'on'
+
+          # only run if nobody is home
+          - condition: state
+            entity_id: binary_sensor.someone_home
+            state: 'off'
+
+          - condition: or
+            conditions:
+              # run if away mode
+              - condition: state
+                entity_id: input_select.occupancy_mode
+                state: 'Away'
+
+              # run in vacation mode
+              - condition: state
+                entity_id: input_select.occupancy_mode
+                state: 'Vacation'
+
+    action:
+      # put house into override so HVAC eco mode turns off
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Override'
+
+##################################################################################################
+## Schedule - Workday Morning
+## - default to days time if shift state unknown
+##################################################################################################
+  - id: schedule_workday_morning
+    alias: "[Schedule] Workday Morning"
+    description: "Run wake up routine on workday mornings."
+    initial_state: 'on'
+
+    trigger:
+      # shift dependent time trigger
+      - platform: template
+        value_template: >-
+          {% if is_state('sensor.current_shift', 'Afternoons') %} {{ states('sensor.time') == states('input_datetime.afternoons_waketime')[0:5] }}
+          {% else %} {{ states('sensor.time') == states('input_datetime.days_waketime')[0:5] }}
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run if today is a work day
+          - condition: state
+            entity_id: binary_sensor.work_today
+            state: 'on'
+
+          # only run if jason or sheri is home (not just a guest)
+          - condition: template
+            value_template: "{{ is_state('binary_sensor.jason_home','on') or is_state('binary_sensor.sheri_home','on') }}"
+
+          # only run if still in night mode
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+    action:
+      - service: script.wake_up_routine
+
+##################################################################################################
+## Schedule - Weekends Morning
+##################################################################################################
+  - id: schedule_weekend_morning
+    alias: "[Schedule] Weekend Morning"
+    description: "Run wake up routine on weekend mornings."
+    initial_state: 'on'
+
+    trigger:
+      # run at set waketime
+      - platform: template
+        value_template: "{{ is_state('sensor.time',states('input_datetime.weekend_waketime')[0:5]) }}"
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run if today is not a work day
+          - condition: state
+            entity_id: binary_sensor.work_today
+            state: 'off'
+
+          # only run if jason or sheri is home (not just a guest)
+          - condition: template
+            value_template: "{{ is_state('binary_sensor.jason_home','on') or is_state('binary_sensor.sheri_home','on') }}"
+
+          # only run if still in night mode
+          - condition: state
+            entity_id: input_select.occupancy_mode
+            state: 'Night'
+
+    action:
+      - service: script.wake_up_routine
+
+##################################################################################################
+## Schedule - Workday Night
+## - default to days time if shift sensor state unknown
+## - bedtime between 12am and 12pm check to see if TODAY is a workday
+## - eg. Thursday night 1am is actually Friday morning, if Saturday isn't a workday automation won't trigger
+## - unless we account for bedtimes after midnight by checking if today (Friday) is a workday
+##################################################################################################
+  - id: schedule_workday_night
+    alias: "[Schedule] Workday Night"
+    description: "Run bed time routine on workday nights."
+    initial_state: 'on'
+
+    trigger:
+      # shift dependent time trigger
+      - platform: template
+        value_template: >-
+          {% if (is_state('sensor.current_shift', 'Afternoons') and (states('input_datetime.afternoons_bedtime')[0:5] > '00:00') and (states('input_datetime.afternoons_bedtime')[0:5] < '12:00'))
+            or (( states('input_datetime.days_bedtime')[0:5] > '00:00') and (states('input_datetime.days_bedtime')[0:5] < '12:00' )) %}
+            {% if is_state('sensor.current_shift', 'Afternoons') and is_state('binary_sensor.work_today', 'on')%}
+              {{ states('sensor.time') == states('input_datetime.afternoons_bedtime')[0:5] }}
+            {% elif is_state('binary_sensor.work_today', 'on') %}
+              {{ states('sensor.time') == states('input_datetime.days_bedtime')[0:5] }}
+            {% else %}
+              false
+            {% endif %}
+          {% else %}
+            {% if is_state('sensor.current_shift', 'Afternoons') and is_state('binary_sensor.work_tomorrow', 'on')%}
+              {{ states('sensor.time') == states('input_datetime.afternoons_bedtime')[0:5] }}
+            {% elif is_state('binary_sensor.work_tomorrow', 'on') %}
+              {{ states('sensor.time') == states('input_datetime.days_bedtime')[0:5] }}
+            {% else %}
+              false
+            {% endif %}
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run if jason or sheri is home (not just a guest)
+          - condition: template
+            value_template: "{{ is_state('binary_sensor.jason_home','on') or is_state('binary_sensor.sheri_home','on') }}"
+
+          - condition: or
+            conditions:
+              # run in home mode
+              - condition: state
+                entity_id: input_select.occupancy_mode
+                state: 'Home'
+
+              # run in night mode
+              - condition: state
+                entity_id: input_select.occupancy_mode
+                state: 'Night'
+
+    action:
+     - service: script.bed_time_routine
+
+##################################################################################################
+## Schedule - Weekend Night
+## - default to days time if shift sensor state unknown
+## - bedtime between 12am and 12pm check to see if TODAY is a workday
+## - eg. Saturday night 1am is actually Sunday morning, if Monday is a workday automation won't trigger
+## - unless we account for bedtimes after midnight by checking if today (Sunday) is a workday
+##################################################################################################
+  - id: schedule_weekend_night
+    alias: "[Schedule] Weekend Night"
+    description: "Run bed time routine on weekend nights."
+    initial_state: 'on'
+
+    trigger:
+      # shift dependent time trigger
+      - platform: template
+        value_template: >-
+          {% if (states('input_datetime.weekend_afternoons_bedtime')[0:5] > '00:00' and states('input_datetime.weekend_afternoons_bedtime')[0:5] < '12:00')
+            or if (states('input_datetime.weekend_days_bedtime')[0:5] > '00:00' and states('input_datetime.weekend_days_bedtime')[0:5] < '12:00') %}
+            {% if is_state('sensor.current_shift', 'Afternoons') and is_state('binary_sensor.work_today', 'off')%}
+              {{ states('sensor.time') == states('input_datetime.weekend_afternoons_bedtime')[0:5] }}
+            {% elif is_state('binary_sensor.work_today', 'off') %}
+              {{ states('sensor.time') == states('input_datetime.weekend_days_bedtime')[0:5] }}
+            {% else %}
+              false
+            {% endif %}
+          {% else %}
+            {% if is_state('sensor.current_shift', 'Afternoons') and is_state('binary_sensor.work_tomorrow', 'off') %}
+              {{ states('sensor.time') == states('input_datetime.weekend_afternoons_bedtime')[0:5] }}
+            {% elif is_state('binary_sensor.work_tomorrow', 'off')  %}
+              {{ states('sensor.time') == states('input_datetime.weekend_days_bedtime')[0:5] }}
+            {% else %}
+              false
+            {% endif %}
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
+
+          # only run if jason or sheri is home (not just a guest)
+          - condition: template
+            value_template: "{{ is_state('binary_sensor.jason_home','on') or is_state('binary_sensor.sheri_home','on') }}"
+
+          - condition: or
+            conditions:
+              # run in home mode
+              - condition: state
+                entity_id: input_select.occupancy_mode
+                state: 'Home'
+
+              # run in night mode
+              - condition: state
+                entity_id: input_select.occupancy_mode
+                state: 'Night'
+
+    action:
+      - service: script.bed_time_routine
+
+###################################################################################################
+## Schedule - Goodnight Timer Finished
+## - turn goodnight lights off, turn TV's off
+## - do not turn anything in the bedroom off!
+###################################################################################################
+  - id: schedule_goodnight_timer_finished
+    alias: "[Schedule] Goodnight Timer Finished"
+    description: "Shut down lights and media players when goodnight timer finished."
+    initial_state: 'on'
+
+    trigger:
+      # run when light timer has finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.goodnight
+
+    action:
+      # make sure televisions, speakers are off (except bedroom)
+      - service: media_player.turn_off
+        data:
+          entity_id:
+            - media_player.all_speakers
+            - media_player.broadcast_speakers
+            - media_player.music_speakers
+            - media_player.dining_room_speaker
+            - media_player.living_room_tv
+            - media_player.deck_tv
+
+      # turn all lights off except night lighting
+      - service: script.turn_light_off
+        data:
+          light_name: goodnight_lights
+          ignore_user_state: 'true'
+
+##################################################################################################
+## Schedule - Morning Radio Disabled
+## - volume timer might still be running
+##################################################################################################
+  - id: schedule_morning_radio_disabled
+    alias: "[Schedule] Morning Radio Disabled"
+    description: "Cancel morning radio volume timer if morning radio disabled."
+    initial_state: 'on'
+
+    trigger:
+      # run when morning radio enabled turned off
+      - platform: state
+        entity_id: input_boolean.radio_enabled_morning
+        to: 'off'
+
+    action:
+      - service: timer.cancel
+        entity_id: timer.morning_radio_volume_delay
+
+##################################################################################################
+## Schedule - Auto Shift Override On
+##################################################################################################
+  - id: schedule_auto_shift_override_on
+    alias: "[Schedule] Auto Shift Override On"
+    description: "Turn shift override on if calandar disconnects."
+    initial_state: 'on'
+
+    trigger:
+      # run when work calendar connection turns off
+      - platform: state
+        entity_id: binary_sensor.work_calendar_connected
+        to: 'off'
+
+    action:
+      # turn on shift override boolean
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.shift_override
+
+##################################################################################################
+## Schedule - Auto Shift Override Off
+##################################################################################################
+  - id: schedule_auto_shift_override_off
+    alias: "[Schedule] Auto Shift Override Off"
+    description: "Turn shift override off when calandar reconnects."
+    initial_state: 'on'
+
+    trigger:
+      # run when work calendar connection turns on
+      - platform: state
+        entity_id: binary_sensor.work_calendar_connected
+        to: 'on'
+
+    action:
+      # turn off shift override boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.shift_override
+
+##################################################################################################
+## Schedule - Shift Override Off
+##################################################################################################
+  - id: schedule_shift_override_off
+    alias: "[Schedule] Shift Override Off"
+    description: "Select current shift from calendar, dismiss any override alerts."
+    initial_state: 'on'
+
+    trigger:
+      # run when shift override boolean turns off
+      - platform: state
+        entity_id: input_boolean.shift_override
+        to: 'off'
+
+    condition:
+      # only run when calendar is connected
+      - condition: state
+        entity_id: binary_sensor.work_calendar_connected
+        state: 'on'
+
+    action:
+      # set shift to current calendar value
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.shift_selection
+          option: &shift_selection >-
+            {% if is_state('calendar.afternoons','on') %} Afternoons
+            {% else %} Days
+            {% endif %}
+
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'shift_alert'
+
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'shift_alert'
+
+##################################################################################################
+## Schedule - Shift Override Alert
+## - group.schedule_alert_automations
+##################################################################################################
+  - id: schedule_shift_override_alert
+    alias: "[Schedule] Shift Override Alert"
+    description: "Send notification when shift override turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when shift override boolean turns on
+      - platform: state
+        entity_id: input_boolean.shift_override
+        to: 'on'
+
+    action:
+      # send shift override alert
+      - service: script.shift_override_alert
+
+##################################################################################################
+## Schedule - Shift Override Off Check
+##################################################################################################
+  - id: schedule_shift_override_off_check
+    alias: "[Schedule] Shift Override Off Check"
+    description: "Turn shift override back on if calendar disconnected."
+    initial_state: 'on'
+
+    trigger:
+      # run when shift override boolean is turned off
+      - platform: state
+        entity_id: input_boolean.shift_override
+        to: 'off'
+
+    condition:
+      # only run when calendar is connected
+      - condition: state
+        entity_id: binary_sensor.work_calendar_connected
+        state: 'off'
+
+    action:
+      # turn shift override boolean back on
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.shift_override
+
+##################################################################################################
+## Schedule - Shift Selection Check
+## - doesn't allow wrong shift to be selected without using override
+##################################################################################################
+  - id: schedule_shift_selection_check
+    alias: "[Schedule] Shift Selection Check"
+    description: "Select correct shift from calendar when shift selection changes."
+    initial_state: 'on'
+
+    trigger:
+      # run when shift selection changes
+      - platform: state
+        entity_id: input_select.shift_selection
+
+    condition:
+      - condition: and
+        conditions:
+          # only run when calendar is connected
+          - condition: state
+            entity_id: binary_sensor.work_calendar_connected
+            state: 'on'
+
+          # only run when shift override is off
+          - condition: state
+            entity_id: input_boolean.shift_override
+            state: 'off'
+
+    action:
+      # select the calendar shift
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.shift_selection
+          option: *shift_selection
+
+##################################################################################################
+## Schedule - Auto Shift Select
+## - stores current value if calendar goes offline, defaults to previous value
+## - group.delayed_automations
+##################################################################################################
+  - id: schedule_auto_shift_select
+    alias: "[Schedule] Auto Shift Select"
+    description: "Select current shift from calandar when calendar changes."
+    initial_state: 'off'
+
+    trigger:
+      # run when calendar work shifts change or work schedule changes
+      - platform: state
+        entity_id:
+          - calendar.days
+          - calendar.afternoons
+          - input_boolean.work_schedule
+
+    condition:
+      - condition: state
+        entity_id: input_boolean.shift_override
+        state: 'off'
+
+    action:
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.shift_selection
+          option: >-
+            {% if is_state('binary_sensor.work_schedule_disabled','on') %} None
+            {% elif is_state('calendar.afternoons','on') %} Afternoons
+            {% elif is_state('calendar.afternoons','on') %} Days
+            {% else %} {{ states('input_select.shift_selection') }}
+            {% endif %}
+
+##################################################################################################
+## Schedule - Shift Override Alert Sunday Alert
+## - group.schedule_alert_automations
+##################################################################################################
+  - id: schedule_shift_override_alert_sunday_alert
+    alias: "[Schedule] Shift Override Alert Sunday Alert"
+    description: "Send notification to check shift on Sundays if shift override is on."
+    initial_state: 'on'
+
+    trigger:
+      # run at 4pm
+      - platform: time
+        at: '16:00'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if shift override is on
+          - condition: state
+            entity_id: input_boolean.shift_override
+            state: 'on'
+
+          # only run on Sundays
+          - condition: time
+            weekday:
+              - sun
+
+    action:
+      # send shift override alert
+      - service: script.shift_override_alert
+
+###################################################################################################
+## Schedule - Shift Override Alert Notification Closed
+###################################################################################################
+  - id: schedule_shift_override_alert_notification_closed
+    alias: "[Schedule] Shift Override Alert Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'shift_alert'
+
+    action:
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'shift_alert'
+
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'shift_alert'
+
+###################################################################################################
+## Schedule - Shift Override Alert Cancelled
+###################################################################################################
+  - id: schedule_shift_override_alert_cancelled
+    alias: "[Schedule] Shift Override Alert Cancelled"
+    description: "Dismiss notifications when calandar reconnects."
+    initial_state: 'on'
+
+    trigger:
+      # run when the calendar offline alert turns off
+      - platform: state
+        entity_id: binary_sensor.calendar_connected
+        to: 'on'
+
+    action:
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'shift_alert'
+
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'shift_alert'
+
+##################################################################################################
+## Schedule - Calendar Offline Alert
+## - group.schedule_alert_automations
+##################################################################################################
+  - id: schedule_calendar_offline_alert
+    alias: "[Schedule] Calendar Offline Alert"
+    description: "Send notification when calendar disconnects."
+    initial_state: 'on'
+
+    trigger:
+      # run when the google calendar connection sensor turns off
+      - platform: state
+        entity_id: binary_sensor.calendar_connected
+        to: 'off'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Google Calendar Offline"
+          message: "Calendar is offline.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
+          target:
+            - jphone
+            - jlaptop
+          data:
+            actions:
+              - action: 'calendar_alert_pause'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'calendar_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: false
+            ttl: 43200
+            priority: high
+            requireInteraction: false
+            silent: false
+            url: '/lovelace/schedule'
+            icon: !secret OFFLINE_ICON
+            image: !secret OFFLINE_IMAGE
+            badge: !secret OFFLINE_BADGE
+
+###################################################################################################
+## Schedule - Calendar Offline Notification Closed
+###################################################################################################
+  - id: schedule_calendar_offline_notification_closed
+    alias: "[Schedule] Calendar Offline Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'calendar_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'calendar_alert'
+
+###################################################################################################
+## Schedule - Calendar Offline Alert Cancelled
+###################################################################################################
+  - id: schedule_calendar_offline_alert_cancelled
+    alias: "[Schedule] Calendar Offline Alert Cancelled"
+    description: "Dismiss notifications when calendar reconnects."
+    initial_state: 'on'
+
+    trigger:
+      # run when the calendar offline alert turns off
+      - platform: state
+        entity_id: binary_sensor.calendar_connected
+        to: 'on'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'calendar_alert'
+
+##################################################################################################
+## Schedule - Calendar Offline Alert Pause
+##################################################################################################
+  - id: schedule_calendar_offline_alert_pause
+    alias: "[Schedule] Calendar Offline Alert Pause"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'calendar_alert_pause'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'calendar_alert'
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.schedule_calendar_offline_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.schedule_calendar_offline_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.schedule_calendar_offline_alert
+
+##################################################################################################
+## Schedule - Garbage Day Alert
+## - default to afternoons time so we get notification early in day if shift unknown
+## - group.schedule_alert_automations
+##################################################################################################
+  - id: schedule_garbage_day_alert
+    alias: "[Schedule] Garbage Day Alert"
+    description: "Send notification when garbage day alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # shift dependant time trigger
+      - platform: template
+        value_template: >-
+          {% if is_state('sensor.current_shift', 'Days') and is_state('sensor.time','18:00') %} true
+          {% elif is_state('sensor.time','11:00') %} true
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if tomorrow is garbage day
+          - condition: state
+            entity_id: binary_sensor.garbage_tomorrow
+            state: 'on'
+
+    action:
+      # script might still be in delay from last notification so turn it off
+      - service: script.turn_off
+        entity_id: script.garbage_day_notification
+
+      # send notification
+      - service: script.garbage_day_notification
+        data:
+          pickup_type: 'Garbage'
+
+##################################################################################################
+## Schedule - Recycle Alert
+## - default to afternoons time so we get notification early in day if shift unknown
+## - group.schedule_alert_automations
+##################################################################################################
+  - id: schedule_recycle_day_alert
+    alias: "[Schedule] Recycle Day Alert"
+    description: "Send notification when recycle day alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # shift dependant time trigger
+      - platform: template
+        value_template: >-
+          {% if is_state('sensor.current_shift', 'Days') and is_state('sensor.time','18:00') %} true
+          {% elif is_state('sensor.time','11:00') %} true
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if tomorrow is recycle day
+          - condition: state
+            entity_id: binary_sensor.recycle_tomorrow
+            state: 'on'
+
+    action:
+      # script might still be in delay from last notification so turn it off
+      - service: script.turn_off
+        entity_id: script.garbage_day_notification
+
+      # send notification
+      - service: script.garbage_day_notification
+        data:
+          pickup_type: 'Recycle'
+
+##################################################################################################
+## Schedule - Yard Waste Day Alert
+## - default to afternoons time so we get notification early in day if shift unknown
+## - group.schedule_alert_automations
+##################################################################################################
+  - id: schedule_yard_waste_day_alert
+    alias: "[Schedule] Yard Waste Day Alert"
+    description: "Send notification when yard waste day alert turns on."
+    initial_state: 'on'
+
+    trigger:
+      # shift dependant time trigger
+      - platform: template
+        value_template: >-
+          {% if is_state('sensor.current_shift', 'Days') and is_state('sensor.time','18:00') %} true
+          {% elif is_state('sensor.time','11:00') %} true
+          {% endif %}
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if tomorrow is yardwaste day
+          - condition: state
+            entity_id: binary_sensor.yardwaste_tomorrow
+            state: 'on'
+
+    action:
+      # send notification
+      - service: script.garbage_day_notification
+        data:
+          pickup_type: 'Yard Waste'
+
+###################################################################################################
+## Schedule - Garbage Day Alert Cancelled
+## - also for recycle and yard waste notifications
+###################################################################################################
+  - id: schedule_garbage_day_alert_cancelled
+    alias: "[Schedule] Garbage Day Alert Cancelled"
+    description: "Dismiss notifications when garbage day alert turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when the garbage day calendar alert turns off
+      - platform: state
+        entity_id:
+          - binary_sensor.garbage_tomorrow
+          - binary_sensor.recycle_tomorrow
+          - binary_sensor.yardwaste_tomorrow
+        to: 'off'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'garbage_alert'
+
+##################################################################################################
+## Schedule - Hot Tub Maintenance Alert
+## - group.schedule_alert_automations
+##################################################################################################
+  - id: schedule_hot_tub_maintenance_alert
+    alias: "[Schedule] Hot Tub Maintenance Alert"
+    description: "Weekly reminder notification for hot tub maintenance."
+    initial_state: 'on'
+
+    trigger:
+      # run at 10 am
+      - platform: time
+        at: '10:00'
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if schedule automation is enabled
+          - condition: state
+            entity_id: input_boolean.schedule_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run on Sundays
+          - condition: time
+            weekday:
+              - sun
+
+    action:
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: "Hot Tub Maintenance"
+          message: "Hot tub needs weekly maintenance."
+          target:
+            - jphone
+            - jlaptop
+          data:
+            tag: 'hottub_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: false
+            ttl: 43200
+            priority: high
+            requireInteraction: false
+            silent: true
+            url: '/lovelace/schedule'
+            icon: !secret HOTTUB_ICON
+            image: !secret HOTTUB_IMAGE
+            badge: !secret HOTTUB_BADGE
+
+
+###################################################################################################
+## Schedule - Hot Tub Maintenance Notification Closed
+###################################################################################################
+  - id: schedule_hot_tub_maintenance_notification_closed
+    alias: "[Schedule] Hot Tub Maintenance Notification Closed"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          action: 'hottub_alert'
+
+    action:
+      # dismiss push notifications for all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'hottub_alert'

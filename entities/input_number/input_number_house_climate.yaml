@@ -1,0 +1,110 @@
+##################################################################################################
+## Home Mode Heat Temp
+##################################################################################################
+  home_heat_temperature:
+    name: Home Heat
+    icon: mdi:thermometer
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## Home Mode Cool Temp
+##################################################################################################
+  home_cool_temperature:
+    name: Home Cool
+    icon: mdi:thermometer
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## Night Mode Heat Temp
+##################################################################################################
+  night_heat_temperature:
+    name: Night Heat
+    icon: mdi:thermometer
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## Night Mode Cool Temp
+##################################################################################################
+  night_cool_temperature:
+    name: Night Cool
+    icon: mdi:thermometer
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## Guest Mode Heat Temp
+##################################################################################################
+  guest_heat_temperature:
+    name: Guest Heat
+    icon: mdi:thermometer
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## Night Mode Cool Temp
+##################################################################################################
+  guest_cool_temperature:
+    name: Guest Cool
+    icon: mdi:thermometer
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## High Humidity Threshold
+##################################################################################################
+  high_humidity_threshold:
+    name: Humidity Thershold
+    icon: mdi:water-percent
+    unit_of_measurement: '%'
+    min: 0
+    max: 100
+    step: 1
+
+##################################################################################################
+## High Temperature Threshold
+##################################################################################################
+  high_temperature_threshold:
+    name: High Temperature Threshold
+    icon: mdi:thermometer-lines
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## Low Temperature Threshold
+##################################################################################################
+  low_temperature_threshold:
+    name: Low Temperature Threshold
+    icon: mdi:thermometer-lines
+    unit_of_measurement: '°F'
+    min: 40
+    max: 100
+    step: 1
+
+##################################################################################################
+## Mold Risk Threshold
+## used to set mold alert level
+##################################################################################################
+  mold_risk_threshold:
+    name: Mold Threshold
+    icon: mdi:mushroom
+    unit_of_measurement: '%'
+    min: 40
+    max: 100
+    step: 1

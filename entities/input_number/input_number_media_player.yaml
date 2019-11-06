@@ -1,0 +1,131 @@
+##################################################################################################
+## All Speakers Group Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  all_speakers_volume:
+    name: All Speakers Group
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Braodcast Speakers Group Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  broadcast_speakers_volume:
+    name: Broadcast Speakers Group
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Music Speakers Group Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  music_speakers_volume:
+    name: Music Speakers Group
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Dining Room Speaker Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  dining_room_speaker_volume:
+    name: Dining Room Speaker
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Bedroom Speaker Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  bedroom_speaker_volume:
+    name: Bedroom Speaker
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Livingroom TV Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  living_room_tv_volume:
+    name: Living Room TV
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Bedroom TV Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  bedroom_tv_volume:
+    name: Bedroom TV
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Deck TV Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  deck_tv_volume:
+    name: Deck TV
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Jason Laptop Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  jlaptop_volume:
+    name: Jason Laptop
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Jason Work Volume (float)
+## - used to store/restore media player volume
+##################################################################################################
+  jwork_volume:
+    name: Jason Work
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Jason Phone Chrome (float)
+## - used to store/restore media player volume
+##################################################################################################
+  jphone_volume:
+    name: Jason Phone
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01
+
+##################################################################################################
+## Sheri Phone Chrome (float)
+## - used to store/restore media player volume
+##################################################################################################
+  sphone_volume:
+    name: Sheri Phone
+    icon: mdi:volume-low
+    min: 0
+    max: 1
+    step: 0.01

@@ -1,0 +1,19 @@
+action: call-service
+service: browser_mod.popup
+service_data:
+  deviceID: this
+  title: Manual Alarm Clock
+  large: false
+  card:
+    type: entities
+    show_header_toggle: false
+    entities:
+      - entity: input_boolean.alarm_clock_manual
+      - entity: input_datetime.alarm_clock_manual_time
+      - entity: input_select.alarm_clock_sound_manual
+      - entity: input_select.alarm_clock_radio_station_manual
+      - entity: input_select.alarm_clock_media_player_manual
+      - entity: input_number.alarm_clock_volume_manual
+      - entity: input_number.alarm_clock_snooze_time
+      - entity: input_boolean.alarm_clock_active_manual
+        name: Play Manual Alarm

@@ -1,0 +1,194 @@
+##################################################################################################
+## WAN Connected
+## https://www.home-assistant.io/components/binary_sensor.ping/
+## - binary_sensor.wan_connected
+##################################################################################################
+  - platform: ping
+    name: WAN
+    host: 8.8.8.8
+    count: 2
+    scan_interval: 300
+
+##################################################################################################
+## Uptime Robot  https://uptimerobot.com/
+##################################################################################################
+  - platform: uptimerobot
+    api_key: !secret UPTIME_API
+
+##################################################################################################
+## Template Binary Sensors
+##################################################################################################
+  - platform: template
+    sensors:
+##################################################################################################
+## Hassio Connection Status - Uptimerobot
+## - if uptime robot component not connected binary_sensor.hassio is unknown
+##################################################################################################
+      hassio_connected:
+        friendly_name: Hassio Connected
+        icon_template: >
+          {% if is_state('binary_sensor.hassio_connected','on') %} mdi:server-network
+          {% else %} mdi:server-network-off
+          {% endif %}
+        device_class: connectivity
+        value_template: >-
+          {% if not states('binary_sensor.hassio') == 'unknown' %}
+            {% if is_state('binary_sensor.hassio','on') %} true {% endif %}
+          {% endif %}
+
+##################################################################################################
+## Device Connection
+## - used for fold entity header
+##################################################################################################
+      device_connection:
+        friendly_name: Device Connection
+        icon_template: >
+          {% if is_state('binary_sensor.device_connection','on') %} mdi:server-network
+          {% else %} mdi:server-network-off
+          {% endif %}
+        device_class: connectivity
+        value_template: >-
+          {% if not is_state('binary_sensor.dark_sky_connected','on') %} false
+          {% elif not is_state('binary_sensor.downstairs_protect_connected','on') %} false
+          {% elif not is_state('binary_sensor.envcan_connected','on') %} false
+          {% elif not is_state('binary_sensor.garage_door_connected','on') %} false
+          {% elif not is_state('binary_sensor.google_location_connected','on') %} false
+          {% elif not is_state('binary_sensor.hassio_connected','on') %} false
+          {% elif not is_state('binary_sensor.house_alarm_connected','on') %} false
+          {% elif not is_state('binary_sensor.household_calendar_connected','on') %} false
+          {% elif not is_state('binary_sensor.hyrdrawise_connected','on') %} false
+          {% elif not is_state('binary_sensor.lutron_connected','on') %} false
+          {% elif not is_state('binary_sensor.noaa_connected','on') %} false
+          {% elif not is_state('binary_sensor.openuv_connected','on') %} false
+          {% elif not is_state('binary_sensor.pollen_connected','on') %} false
+          {% elif not is_state('binary_sensor.traffic_sensor_connected','on') %} false
+          {% elif not is_state('binary_sensor.upstairs_protect_connected','on') %} false
+          {% elif not is_state('binary_sensor.upstairs_thermostat_connected','on') %} false
+          {% elif not is_state('binary_sensor.wan','on') %} false
+          {% elif not is_state('binary_sensor.waqi_connected','on') %} false
+          {% elif not is_state('binary_sensor.work_calendar_connected','on') %} false
+          {% elif not is_state('binary_sensor.zwave_status','on') %} false
+          {% else %} true
+          {% endif %}
+
+##################################################################################################
+## Device Connection Alert
+## - reverse device_connection for lovelace glance alert cards
+##################################################################################################
+      device_connection_alert:
+        friendly_name: Device Connection Alert
+        icon_template: >-
+          {% if is_state('binary_sensor.device_connection_alert','on') %} mdi:server-network
+          {% else %} mdi:server-network-off
+          {% endif %}
+        device_class: problem
+        value_template: "{{ not is_state('binary_sensor.device_connection','on') }}"
+
+##################################################################################################
+## Hydrawise Controller Connected
+## - sprinkler_status unknown when not conneted
+##################################################################################################
+      hyrdrawise_connected:
+        friendly_name: Hyrdawise
+        icon_template: >-
+          {% if is_state('binary_sensor.hyrdrawise_connected','on') %} mdi:server-network
+          {% else %} mdi:server-network-off
+          {% endif %}
+        device_class: connectivity
+        value_template: "{{ not states('binary_sensor.sprinklers_status') == 'unknown' }}"
+
+##################################################################################################
+## ZWave Network
+##################################################################################################
+      zwave_status:
+        friendly_name: ZWave Status
+        icon_template: mdi:z-wave
+        device_class: connectivity
+        value_template: >-
+          {% if not states('zwave.zwave_hub') == 'ready' %} false
+          {% elif not states('zwave.garage_thermostat') == 'unknown' %} false
+          {% elif not states('zwave.side_entrance_sensor') == 'ready' %} false
+          {% elif not states('zwave.upstairs_bathroom_sensor') == 'ready' %} false
+          {% elif not states('zwave.office_fan') == 'ready' %} false
+          {% elif not states('zwave.upstairs_bedroom_fan') == 'ready' %} false
+          {% else %} true
+          {% endif %}
+
+##################################################################################################
+## Battery Status
+## - Nest Protect (Ok, Replace)
+##################################################################################################
+      battery_status_alert:
+        friendly_name: Battery Status
+        icon_template: >-
+          {% if is_state('binary_sensor.battery_status_alert','on') %} mdi:battery-alert
+          {% else %} mdi:battery-90
+          {% endif %}
+        device_class: battery
+        value_template: >-
+          {%- set battery_alert_threshold = states('input_number.battery_alert_threshold') | int -%}
+          {% if not states('sensor.downstairs_nest_protect_battery_health') == 'Ok'
+             and not states('sensor.downstairs_nest_protect_battery_health')  == 'unknown' %}
+            true
+          {% elif not states('sensor.upstairs_nest_protect_battery_health') == 'Ok'
+             and not states('sensor.upstairs_nest_protect_battery_health') == 'unknown' %}
+            true
+          {% elif states('sensor.side_entrance_sensor_battery_level') | int < states('input_number.battery_alert_threshold') | int
+              and not states('sensor.side_entrance_sensor_battery_level') == 'unknown'
+              and not states('sensor.side_entrance_sensor_battery_level') == 'None' %}
+            true
+          {% elif states('sensor.upstairs_bathroom_sensor_battery_level')  | int < states('input_number.battery_alert_threshold') | int
+             and not states('sensor.upstairs_bathroom_sensor_battery_level') == 'unknown'
+             and not states('sensor.upstairs_bathroom_sensor_battery_level') == 'None' %}
+            true
+          {% elif states.zwave | selectattr('attributes.battery_level', 'defined') | selectattr('attributes.battery_level','<', battery_alert_threshold ) | list | length >= 1 %}
+            true
+          {% else %}
+            false
+          {% endif %}
+
+##################################################################################################
+## RPI Power Alert
+## - https://github.com/custom-components/sensor.rpi_power
+##################################################################################################
+      rpi_power_alert:
+        friendly_name: RPi Power
+        icon_template: mdi:raspberry-pi
+        device_class: problem
+        value_template: "{{ states.sensor.rpi_power_status.attributes.value | int > 0 }}"
+
+##################################################################################################
+## RPi Temperature Alert (°C)
+##################################################################################################
+      cpu_temperature_alert:
+        friendly_name: RPi Temp
+        icon_template: mdi:developer-board
+        device_class: heat
+        value_template: "{{ states('sensor.rpi_cpu_temperature') | int > 70 }}"
+
+##################################################################################################
+## Processor Use Alert (%)
+##################################################################################################
+      processor_use_alert:
+        friendly_name: Processor
+        icon_template: mdi:developer-board
+        device_class: problem
+        value_template: "{{ states('sensor.processor_use') | int > 60 }}"
+
+##################################################################################################
+## Memory Use Alert (%)
+##################################################################################################
+      memory_use_alert:
+        friendly_name: Memory
+        icon_template: mdi:developer-board
+        device_class: problem
+        value_template: "{{ states('sensor.memory_use_percent') | int > 60 }}"
+
+##################################################################################################
+## Disk Use Alert (%)
+##################################################################################################
+      disk_usage_alert:
+        friendly_name: Disk Usage
+        icon_template: mdi:harddisk
+        device_class: problem
+        value_template: "{{ states('sensor.disk_use_percent_home') | int > 60 }}"

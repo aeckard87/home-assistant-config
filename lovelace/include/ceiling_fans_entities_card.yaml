@@ -1,0 +1,23 @@
+type: entities
+#title: Ceiling Fans
+show_header_toggle: false
+entities:  - type: custom:fold-entity-row
+    head: binary_sensor.ceiling_fans
+    open: false
+    group_config:
+      secondary_info: last-changed
+    entities:
+      - type: custom:fan-control-entity-row
+        entity: fan.upstairs_bedroom_fan
+        name: Upstairs Bedroom
+        customTheme: false
+
+      - type: custom:fan-control-entity-row
+        entity: fan.office_fan
+        name: Office
+        customTheme: false
+
+      - type: custom:fan-control-entity-row
+        entity: fan.upstairs_bathroom_fan
+        name: Upstairs Bathroom
+        customTheme: false

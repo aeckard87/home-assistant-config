@@ -1,0 +1,37 @@
+###################################################################################################
+## Template Binary Sensors
+###################################################################################################
+  - platform: template
+    sensors:
+
+##################################################################################################
+## Ceiling Fans State
+## used for lovelace fold entity
+##################################################################################################
+      ceiling_fans:
+        friendly_name: Ceiling Fans
+        icon_template: mdi:fan
+        value_template: >-
+          {% set entities = state_attr('group.ceiling_fans', 'entity_id') %}
+          {% set active = states.fan | selectattr('entity_id', 'in', entities)
+                                        | selectattr('state','eq','on')
+                                        | map(attribute='entity_id')
+                                        | list
+                                        | length %}
+          {{ active >= 1 }}
+
+##################################################################################################
+## Ceiling Fan In Use State
+## used for lovelace fold entity
+##################################################################################################
+      ceiling_fan_in_use:
+        friendly_name: Ceiling Fan In Use
+        icon_template: mdi:light-switch
+        value_template: >-
+          {% set entities = state_attr('group.ceiling_fans_in_use', 'entity_id') %}
+          {% set active = states.input_boolean | selectattr('entity_id', 'in', entities)
+                                               | selectattr('state','eq','on')
+                                               | map(attribute='entity_id')
+                                               | list
+                                               | length %}
+          {{ active >= 1 }}

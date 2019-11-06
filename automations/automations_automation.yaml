@@ -1,0 +1,355 @@
+###################################################################################################
+## Automation - Hassio Startup
+###################################################################################################
+  - id: automation_hassio_startup
+    alias: "[Automation] Hassio Startup"
+    description: "Turn on delayed automations, send restart notification."
+    initial_state: 'on'
+
+    trigger:
+      # run when home assistant started
+      - platform: homeassistant
+        event: start
+
+    action:
+      # create delayed automations persistent notifcation
+      - service: persistent_notification.create
+        data:
+          title: "Automation Startup"
+          message: "Waiting for delayed automations to start."
+          notification_id: 'automation_delay'
+
+      # waits for zwave network to be complete
+      - wait_template: "{{ is_state('binary_sensor.zwave_status','on') }}"
+        timeout: '0:05:00'
+        continue_on_timeout: true
+
+      #IDEA this works but better to listen for a specific event to know everything has been loaded?
+
+      # additional delay to allow all components to finish loading
+      - delay: '00:00:30'
+
+      # turn on delayed automations on
+      - service: homeassistant.turn_on
+        entity_id: group.delayed_automations
+
+      # wait for all delayed automations to turn on
+      - wait_template: "{{ is_state('group.delayed_automations', 'on') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
+
+      # dismiss delayed automations notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'automation_delay'
+
+      # start manual mode (stop scripts, timers etc) if enabled
+      - service_template: >-
+          {% if is_state('input_boolean.manual_mode','on') %} automation.trigger
+          {% else %} script.null_script
+          {% endif %}
+        data:
+          entity_id: automation.automation_manual_mode_enabled
+
+      # create restart persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: &start_title "Hassio Restarted"
+          message: &start_message >
+            Hassio was restarted at {{now().strftime('%Y-%m-%d %H:%M %p')}}.
+            {%- if is_state('binary_sensor.device_connection_alert','on') -%}
+            {{'\n'}}The following devices did not connect:{{'\n'}}
+            {%- set entities = state_attr('group.device_connection_sensors', 'entity_id') -%}
+            {{ states.binary_sensor | selectattr('entity_id', 'in', entities)
+                                    | selectattr('state','eq','off')
+                                    | map(attribute='name')
+                                    | join('\n') }}
+            {% endif %}
+          notification_id: 'hassio_startup'
+
+      # send push notification
+      - service: notify.push
+        data_template:
+          title: *start_title
+          message: *start_message
+          target:
+            - jphone
+            - jlaptop
+          data:
+            tag: 'hassio_startup'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200
+            priority: high
+            requireInteraction: true
+            silent: false
+            url: '/lovelace/home'
+            icon: !secret HASSIO_ICON
+            badge: !secret HASSIO_BADGE
+
+##################################################################################################
+# Automation - Hassio Shutdown
+###################################################################################################
+  - id: automation_hassio_shtudown
+    alias: "[Automation] Hassio Shutdown"
+    description: "Turn off delayed automations that might fire at shutdown."
+    initial_state: 'on'
+
+    trigger:
+      # run when home assistant started
+      - platform: homeassistant
+        event: shutdown
+
+    action:
+      # turn off all media player offline automations
+      - service: homeassistant.turn_off
+        entity_id: group.delayed_automations
+
+######################################################################################################################
+## Automation - Manual Mode Enabled
+######################################################################################################################
+  - id: automation_manual_mode_enabled
+    alias: "[Automation] Manual Mode Enabled"
+    description: "Activate manual mode when boolean turns on."
+    initial_state: 'on'
+
+    trigger:
+      # run when manual mode is turned on
+      - platform: state
+        entity_id: input_boolean.manual_mode
+        to: 'on'
+
+    condition:
+      # only run if alarm is disarmed
+      - condition: state
+        entity_id: alarm_control_panel.house
+        state: 'disarmed'
+
+    action:
+      # set override mode for occupancy
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Override'
+
+      # disable work schedule
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.work_schedule
+
+      # turn off climate fan schedule boolean
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.climate_fan_schedule
+
+      # over ride presence states
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.override_presence
+
+      # stop all running scripts
+      - service: script.turn_off
+        entity_id: group.all_scripts
+
+      # cancel all timers
+      - service: timer.cancel
+        entity_id: all
+
+      # reset all user state booleans
+      - service: input_boolean.turn_off
+        entity_id: group.user_state_controls
+
+      # create persistent notification
+      - service: persistent_notification.create
+        data:
+          title: "Manual Mode"
+          message: '![image](/local/images/alert.png) Hassio is in Manual Mode.<br /> Only selected automations will run.'
+          notification_id: 'manual_mode'
+
+######################################################################################################################
+## Automation - Manual Mode Disabled
+## - user must restart climate fan schedule if required
+######################################################################################################################
+  - id: automation_manual_mode_disabled
+    alias: "[Automation] Manual Mode Disabled"
+    description: "Turn off manual mode when boolean turns off."
+    initial_state: 'on'
+
+    trigger:
+      # run when manual mode is turned off
+      - platform: state
+        entity_id: input_boolean.manual_mode
+        to: 'off'
+
+    condition:
+      # only run if alarm is disarmed
+      - condition: state
+        entity_id: alarm_control_panel.house
+        state: 'disarmed'
+
+    action:
+      # enable work schedule
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.work_schedule
+
+      # turn off presence override
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.override_presence
+
+      # put house into home mode
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.occupancy_mode
+          option: 'Home'
+
+      # dismiss notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'manual_mode'
+
+      # dismiss delayed automations notification
+      # required if manual mode was enabled on startup
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'automation_delay'
+
+##################################################################################################
+## Automation - Set Device User State
+## - group.delayed_automations
+##################################################################################################
+  - id: automation_set_device_user_state
+    alias: "[Automation] Set Device User State"
+    description: "Turn device in use boolean and timer on when device state changes."
+    initial_state: 'off'
+
+    trigger:
+      # run when fan changes state (occupant has adjusted fan)
+      - platform: state
+        entity_id:
+          # light entities
+          - light.living_room_pot_lights
+
+          # ceiling fan entities
+          - fan.upstairs_bedroom_fan
+          - fan.office_fan
+
+          # vent fan entities
+          - fan.upstairs_bathroom_fan
+
+    action:
+      # start the fan in use timer
+      - service: timer.start
+        data_template:
+          entity_id: "{% set device = trigger.entity_id.split('.')[1] %} timer.{{ device }}"
+
+      # turn fan in use boolean on
+      - service: input_boolean.turn_on
+        data_template:
+          entity_id:  "{% set device = trigger.entity_id.split('.')[1] %} input_boolean.{{ device }}"
+
+##################################################################################################
+## Automation - Reset Device User State
+## - each trigger entity needs an associated boolean in automation_device_user_state_off
+##################################################################################################
+  - id: automation_reset_device_user_state
+    alias: "[Automation] Reset Device User State"
+    description: "Turn device user state boolean off when device in use timer is finished."
+    initial_state: 'on'
+
+    trigger:
+      #ISSUE does't fire if structured like this
+      # - platform: event
+      #   event_type: timer.finished
+      #   event_data:
+      #     entity_id:
+      #       - timer.living_room_pot_lights
+      #       - timer.upstairs_bedroom_fan
+      #       - timer.office_fan
+      #       - timer.upstairs_bathroom_fan
+
+      # run when the entity in use timer has finished
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.upstairs_bathroom_fan
+
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.office_fan
+
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.upstairs_bedroom_fan
+
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.living_room_pot_lights
+
+    action:
+      # turn off light user state boolean
+      - service: input_boolean.turn_off
+        data_template:
+          entity_id: "{% set device = trigger.event.data.entity_id.split('.')[1] %} input_boolean.{{ device }}"
+
+##################################################################################################
+## Automation - Device User State Turned Off
+## - each trigger entity needs an associated timer in automation_reset_device_user_state
+##################################################################################################
+  - id: automation_device_user_state_turned_off
+    alias: "[Automation] Device User State Turned Off"
+    description: "Device user state boolean has been turned off, cancel in use timer."
+    initial_state: 'on'
+
+    trigger:
+      # run when the device in use boolean has been turned off
+      - platform: state
+        entity_id:
+          - input_boolean.living_room_pot_lights
+          - input_boolean.upstairs_bedroom_fan
+          - input_boolean.office_fan
+          - input_boolean.upstairs_bathroom_fan
+        to: 'off'
+
+    condition:
+      # only run if the device in use timer is active
+      - condition: template
+        value_template: >-
+          {% set device = trigger.entity_id.split('.')[1] %}
+          {{ states('timer.' + device) == 'active' }}
+
+    action:
+      # cancel the device in use timer
+      - service_template: >-
+          {% set device = trigger.entity_id.split('.')[1] %}
+          {% if is_state('input_boolean.' + device ,'off') %} timer.cancel
+          {% else %} script.null_script
+          {% endif %}
+        data_template:
+          entity_id: "{% set device = trigger.entity_id.split('.')[1] %} timer.{{ device }}"
+
+######################################################################################################################
+## Automation - Hassio Restart Notification Closed
+######################################################################################################################
+  - id: automation_hassio_restart_notification_closed
+    alias: "[Automation] Hassio Restart Notification Closed"
+    description: "Dismiss restart notification on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'hassio_startup'
+
+    action:
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'hassio_startup'
+
+      # dismiss push notifications on all devices
+      - service: notify.html5_dismiss
+        data:
+          data:
+            tag: 'hassio_startup'
+
