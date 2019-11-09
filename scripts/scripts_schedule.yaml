@@ -1,19 +1,18 @@
-##################################################################################################
+#######################################################################################################################
 ## Wake Up Routine
-##################################################################################################
+#######################################################################################################################
   wake_up_routine:
     sequence:
-      # if auto alarm clock enabled activate alarm
+      # if auto alarm clock is enabled and house not already in home/guest mode activate alarm
       - service_template: >
-          {% if is_state('input_boolean.alarm_clock_auto','on') %}
-            {% if is_state('binary_sensor.work_today', 'on') %}
+          {% if is_state('input_boolean.alarm_clock_auto','on')
+            and not is_state('input_select.occupancy_mode','Home')
+            and not is_state('input_select.occupancy_mode','Guest') %}
+            {% if is_state('binary_sensor.work_today', 'on')
+              or is_state('input_boolean.alarm_clock_auto_weekends', 'on') %}
               input_boolean.turn_on
             {% else %}
-              {% if is_state('input_boolean.alarm_clock_auto_weekends', 'on') %}
-                input_boolean.turn_on
-              {% else %}
-                script.null_script
-              {% endif %}
+              script.null_script
             {% endif %}
           {% else %}
             script.null_script
@@ -32,11 +31,14 @@
       # start morning lighting
       - service: script.morning_lights
 
-      # put the house into home mode
+      # put house into home mode if an owner home, guest mode if not
       - service: input_select.select_option
-        data:
+        data_template:
           entity_id: input_select.occupancy_mode
-          option: 'Home'
+          option: >-
+            {% if is_state('binary_sensor.owner_home','on') %} Home
+            {% else %} Guest
+            {% endif %}
 
       # disarm the house alarm
       - service: script.disarm_alarm_auto
@@ -60,9 +62,9 @@
       # play weather report
       - service: script.weather_report
 
-##################################################################################################
+#######################################################################################################################
 ## Bed Time Routine
-##################################################################################################
+#######################################################################################################################
   bed_time_routine:
     sequence:
       # don't run if already in night mode
@@ -97,10 +99,10 @@
       # turn on sleep radio
       - service: script.play_radio_night
 
-##################################################################################################
+#######################################################################################################################
 ## Morning Lights
 ## - gradually turn up morning lighting
-##################################################################################################
+#######################################################################################################################
   morning_lights:
     sequence:
       - condition: and
@@ -138,9 +140,9 @@
           light_name: 'living_room_pot_lights'
           brightness: 30
 
-##################################################################################################
+#######################################################################################################################
 ## Shift Override Alert
-##################################################################################################
+#######################################################################################################################
   shift_override_alert:
     sequence:
       # create persistent notification
@@ -171,11 +173,11 @@
             image: !secret WORK_IMAGE
             badge: !secret WORK_BADGE
 
-##################################################################################################
+#######################################################################################################################
 ## Garbage Day Notification
 ## pickup_type:
 ## - do not dismiss on all devices when closed - everyone must see it
-##################################################################################################
+#######################################################################################################################
   garbage_day_notification:
     sequence:
       # send push notification
@@ -198,3 +200,24 @@
             icon: !secret GARBAGE_ICON_TEMPLATE
             image: !secret GARBAGE_IMAGE_TEMPLATE
             badge: !secret GARBAGE_BADGE_TEMPLATE
+
+
+#######################################################################################################################
+## I Am Awake
+## - activated by Google Assistant to turn off current alarm clock and put house into home
+##   or guest mode to start wake up routine
+#######################################################################################################################
+  i_am_awake:
+    sequence:
+      # turn off current alarm clock
+      - service: script.alarm_clock_stop
+
+      # put house into home mode if an owner home, guest mode if not
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.occupancy_mode
+          option: >-
+            {% if is_state('binary_sensor.owner_home','on') %} Home
+            {% else %} Guest
+            {% endif %}
+

@@ -1,0 +1,17 @@
+type: 'custom:home-feed-card'
+title: Home Feed
+show_empty: false
+calendars:
+ - calendar.household
+#id_filter: ^home_feed_.*
+more_info_on_tap: true
+entities:
+  - sensor.alarm_clock_next_alarm
+  - entity: sensor.yardwaste_day
+    name: Next Yard Waste Day
+    more_info_on_tap: false
+  - entity: binary_sensor.side_entrance_motion
+  - entity: binary_sensor.upstairs_bathroom_motion
+  - entity: alarm_control_panel.house
+  - entity: sensor.occupancy_mode
+  - entity: binary_sensor.low_temperature_alert

@@ -1,7 +1,7 @@
-###################################################################################################
+#######################################################################################################################
 ## Update OpenUV Data
 ## - limit updates when not needed to avoid API charges
-###################################################################################################
+#######################################################################################################################
   - id: weather_update_openuv
     alias: "[Weather] Update OpenUV"
     description: "Update OpenUV sensors every hour during sunlight hours."
@@ -22,9 +22,9 @@
     action:
       service: openuv.update_data
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Local Storm Warning Alert
-###################################################################################################
+#######################################################################################################################
   - id: weather_local_storm_warning_alert
     alias: "[Weather] Local Storm Warning Alert"
     description: "Notification when storm approaching alert turns on."
@@ -107,9 +107,9 @@
             The current forcast is {{ states('sensor.dark_sky_minutely_summary') | replace('<',' less than ') | replace('>','greater than') }}
           quiet_play: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Storm Alert Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: weather_storm_notification_closed
     alias: "[Weather] Storm Alert Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -132,9 +132,9 @@
       # turn off storm alerts so it doesn't fire again for a bit
       - service: script.turn_off_storm_alerts
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Storm Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: weather_storm_alert_cancelled
     alias: "[Weather] Storm Alert Cancelled"
     description: "Dismiss notifications when local storm alert turns off."
@@ -156,9 +156,9 @@
       # turn off storm alerts so it doesn't fire again for a bit
       - service: script.turn_off_storm_alerts
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - High Temperature Alert
-###################################################################################################
+#######################################################################################################################
   - id: weather_high_temperature_alert
     alias: "[Weather] High Temperature Alert"
     description: "Send notification when outdoor high temperature alert turns on."
@@ -220,9 +220,9 @@
           play_message: "Attention! It is hot as balls out there today folks. The current outdoor humidex is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
           quiet_play: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - High Temperature Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: weather_high_temperature_notification_closed
     alias: "[Weather] High Temperature Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -242,9 +242,9 @@
           data:
             tag: 'outdoor_high_temp_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - High Temperature Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: weather_high_temperature_alert_cancelled
     alias: "[Weather] High Temperature Alert Cancelled"
     description: "Dismiss notifications when outdoor high temperature alert turns off."
@@ -263,9 +263,9 @@
           data:
             tag: 'outdoor_high_temp_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - High Temperature Alert Pause
-###################################################################################################
+#######################################################################################################################
   - id: weather_high_temperature_alert_pause
     alias: "[Weather] High Temperature Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -298,9 +298,9 @@
       - service: automation.turn_on
         entity_id: automation.weather_high_temperature_alert
 
-###################################################################################################
+#######################################################################################################################
 ## Low Temperature Alert
-###################################################################################################
+#######################################################################################################################
   - id: weather_low_temperature_alert
     alias: "[Weather] Low Temperature Alert"
     description: "Send notification when low outdoor temperature alert turns on."
@@ -362,9 +362,9 @@
           play_message: "Attention! Yah shes colder den duh witches titties out dare for shore! The current outdoor apparent temperature is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
           quiet_play: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Low Temperature Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: weather_low_temperature_notification_closed
     alias: "[Weather] Low Temperature Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -384,9 +384,9 @@
           data:
             tag: 'outdoor_low_temp_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Low Temperature Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: weather_low_temperature_alert_cancelled
     alias: "[Weather] Low Temperature Alert Cancelled"
     description: "Dismiss notifications when low outdoor temperature alert turns off."
@@ -405,9 +405,9 @@
           data:
             tag: 'outdoor_low_temp_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Low Temperature Alert Pause
-###################################################################################################
+#######################################################################################################################
   - id: weather_low_temperature_alert_pause
     alias: "[Weather] Low Temperature Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -440,9 +440,9 @@
       - service: automation.turn_on
         entity_id: automation.weather_low_temperature_alert
 
-###################################################################################################
+#######################################################################################################################
 ## High UV Index Alert
-###################################################################################################
+#######################################################################################################################
   - id: weather_uv_index_alert
     alias: "[Weather] UV Index Alert"
     description: "Send notification when UV index alert turns on."
@@ -504,9 +504,9 @@
           play_message: "Attention! The UV Index warning is active. Today's UV risk level is {{ states('sensor.uv_max_level')}}"
           quiet_play: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - UV Index Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: weather_uv_index_notification_closed
     alias: "[Weather] UV Index Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -526,9 +526,9 @@
           data:
             tag: 'uv_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - UV Index Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: weather_uv_index_alert_cancelled
     alias: "[Weather] UV Index Alert Cancelled"
     description: "Dismiss notifications when UV index alert turns off."
@@ -547,9 +547,9 @@
           data:
             tag: 'uv_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Action - UV Index Alert Pause
-###################################################################################################
+#######################################################################################################################
   - id: weather_uv_index_alert_pause
     alias: "[Weather] UV Index Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -582,9 +582,9 @@
       - service: automation.turn_on
         entity_id: automation.weather_uv_index_alert
 
-###################################################################################################
+#######################################################################################################################
 ## Air Quality Alert
-###################################################################################################
+#######################################################################################################################
   - id: weather_air_quality_alert
     alias: "[Weather] Air Quality Alert"
     description: "Send notification when air quality alert turns on."
@@ -646,9 +646,9 @@
           play_message: "Attention! The Air Quality Alert is active. The current local air quality index is {{ states('sensor.aqi_risk_level')}}"
           quiet_play: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - AQI Index Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: weather_aqi_index_notification_closed
     alias: "[Weather] AQI Index Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -668,9 +668,9 @@
           data:
             tag: 'aqi_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - AQI Index Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: weather_aqi_index_alert_cancelled
     alias: "[Weather] AQI Index Alert Cancelled"
     description: "Dismiss notifications when air quality alert turns off."
@@ -689,9 +689,9 @@
           data:
             tag: 'aqi_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Action - Air Quality Alert Pause
-###################################################################################################
+#######################################################################################################################
   - id: weather_air_quality_alert_pause
     alias: "[Weather] Air Quality Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -724,9 +724,9 @@
       - service: automation.turn_on
         entity_id: automation.weather_air_quality_alert
 
-###################################################################################################
+#######################################################################################################################
 ## Allergy Alert (High Pollen Count)
-###################################################################################################
+#######################################################################################################################
   - id: weather_allergy_risk_alert
     alias: "[Weather] Allergy Risk Alert"
     description: "Send notification when allergy risk alert turns on."
@@ -788,9 +788,9 @@
           play_message: "Attention! The allergen level alert is active. Today's allergy risk level is {{ states('sensor.allergy_risk_today') }} and {{ states('sensor.allergy_risk_tomorrow') }} for tomorrow."
           quiet_play: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Allergy Index Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: weather_allergy_index_notification_closed
     alias: "[Weather] Allergy Index Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -810,9 +810,9 @@
           data:
             tag: 'allergy_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Allergy Index Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: weather_allergy_index_alert_cancelled
     alias: "[Weather] Allergy Index Alert Cancelled"
     description: "Dismiss notifications when allergy risk alert turns off."
@@ -831,9 +831,9 @@
           data:
             tag: 'allergy_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Action - Allegy Alert Pause
-###################################################################################################
+#######################################################################################################################
   - id: weather_allergy_alert_pause
     alias: "[Weather] Allergy Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -866,9 +866,9 @@
       - service: automation.turn_on
         entity_id: automation.weather_allergy_risk_alert
 
-###################################################################################################
+#######################################################################################################################
 # Asthma Alert
-###################################################################################################
+#######################################################################################################################
   - id: weather_asthma_risk_alert
     alias: "[Weather] Asthma Risk Alert"
     description: "Send notification when asthma risk alert turns on."
@@ -930,9 +930,9 @@
           play_message: "Attention! The asthma risk alert is active. Today's asthma risk level is {{ states('sensor.asthma_risk_today') }}, and tomorrows asthma risk level is {{ states('sensor.asthma_risk_tomorrow') }} Remember to bring your puffer with you."
           quiet_play: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Asthma Index Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: weather_asthma_index_notification_closed
     alias: "[Weather] Asthma Index Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -952,9 +952,9 @@
           data:
             tag: 'asthma_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Weather - Asthma Index Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: weather_asthma_index_alert_cancelled
     alias: "[Weather] Asthma Index Alert Cancelled"
     description: "Dismiss notifications when asthma risk alert turns off."
@@ -973,9 +973,9 @@
           data:
             tag: 'asthma_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## Action - Asthma Alert Pause
-###################################################################################################
+#######################################################################################################################
   - id: weather_asthma_alert_pause
     alias: "[Weather] Asthma Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -1008,14 +1008,14 @@
       - service: automation.turn_on
         entity_id: automation.weather_asthma_risk_alert
 
-###################################################################################################
+#######################################################################################################################
 ## NOAA Alert
 ## attr: event_type, event_severity, urgency, headline, description, instruction
 ## event_severity values: Extreme, Severe, Moderate, Minor, Unknown
 ## urgency values: Immediate, Expected, Future, Past, Unknown
 ## - fires when sensor changes resends if additional alert is added, wont send when alert cancelled ( 0 value)
 ## - not disabled in silent mode
-###################################################################################################
+#######################################################################################################################
   - id: weather_alert_noaa_alert
     alias: "[Weather Alert] NOAA Alert"
     description: "Display weather alert on UI and send notification when NOAA weather alert is active."
@@ -1083,7 +1083,7 @@
             icon: !secret STORM_ICON
             badge: !secret STORM_BADGE
 
-##################################################################################################
+#######################################################################################################################
 ## Environment Canada Weather Alert
 ## - states are empty strings '' not null values
 ## - this will fire any time an envcan sensor state changes so a notification is sent if the
@@ -1091,7 +1091,7 @@
 ##   the alert time has also changed.
 ## - only the highest priority alert notification will send at any time
 ## - not disabled in silent mode
-##################################################################################################
+#######################################################################################################################
   - id: weather_alert_envcan_alert
     alias: "[Weather Alert] EnvCan Alert"
     description: "Display weather alert on UI and send notification when EnvCan weather alert is active."
@@ -1239,10 +1239,10 @@
             icon: !secret STORM_ICON
             badge: !secret STORM_BADGE
 
-##################################################################################################
+#######################################################################################################################
 ## Weather Alert - Turn Display Alert On
 ## - when alert sensor state changes turn display alerts back on
-##################################################################################################
+#######################################################################################################################
   - id: weather_alert_display_alert_on
     alias: "[Weather Alert] Display Alert On"
     description: "Turn the display weather alert boolean back on if weather alert has changed."
@@ -1278,9 +1278,9 @@
       - service: input_boolean.turn_on
         entity_id: input_boolean.display_weather_alert
 
-##################################################################################################
+#######################################################################################################################
 ## Weather Alert - Active Environment Canada Alert Off
-##################################################################################################
+#######################################################################################################################
   - id: weather_alert_active_envcan_alert_pause
     alias: "[Weather Alert] Active EnvCan Alert Off"
     description: "Dismiss all notifications when EnvCan weather alert turns off."
@@ -1320,9 +1320,9 @@
           data:
             tag: 'envcan_alert'
 
-##################################################################################################
+#######################################################################################################################
 ## Weather Alert - Active NOAA Alert Off
-##################################################################################################
+#######################################################################################################################
   - id: weather_alert_active_noaa_alert_pause
     alias: "[Weather Alert] Active NOAA Alert Off"
     description: "Dismiss all notifications when NOAA weather alert turns off."
@@ -1341,9 +1341,9 @@
           data:
             tag: 'noaa_alert'
 
-##################################################################################################
+#######################################################################################################################
 ## Weather Alert - All Alerts Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: weather_alert_all_alerts_cancelled
     alias: "[Weather Alert] All Alerts Cancelled"
     description: "Play announcement when all weather alerts have been cancelled."

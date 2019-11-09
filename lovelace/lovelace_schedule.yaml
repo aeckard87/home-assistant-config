@@ -115,6 +115,8 @@ cards:
           - type: section
             label: Alarms and Reminders
 
+          - entity: sensor.alarm_clock_next_alarm
+          
           - type: custom:fold-entity-row
             head: input_boolean.alarm_clock_auto
             entities:

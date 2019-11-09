@@ -1,7 +1,7 @@
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Automation On Check
 ## - slows down user disabling alarm if alarm is not disarmed
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_automation_on_check
     alias: "[House Alarm] Automation On Check"
     description: "Turn entity back off if alarm not disarmed."
@@ -63,9 +63,9 @@
       - service: automation.turn_on
         entity_id: automation.house_alarm_automation_off_check
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Automation Off Check
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_automation_off_check
     alias: "[House Alarm] Automation Off Check"
     description: "Turn entity back on if alarm not alarm not disarmed."
@@ -101,11 +101,11 @@
       - service: automation.turn_on
         entity_id: automation.house_alarm_automation_on_check
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Active Alert
 ## - this runs every minute after first notification
 ## - initial state set to off or alarm sounds!
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_active_alert
     alias: "[House Alarm] Active Alert"
     description: "Sound alarm and send repeating notifications when alarm is triggered."
@@ -153,9 +153,9 @@
             icon: !secret ALARM_ICON
             badge: !secret ALARM_BADGE
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Alert Check
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_alert_check
     alias: "[House Alarm] Alert Check"
     description: "Check state of alarm and adjust alert automation state accordingly."
@@ -188,10 +188,10 @@
       - service: automation.turn_on
         entity_id: automation.house_alarm_alert_check
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Disabled Alert
 ## - turn off all alarm automations, control booleans
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_disabled_alert
     alias: "[House Alarm] Disabled Alert"
     description: "Send notification when house alarm is disabled."
@@ -204,7 +204,7 @@
         to: 'off'
 
     condition:
-      # do not run in silent mode
+      # only run if silent mode is off
       - condition: state
         entity_id: input_boolean.silent_mode
         state: 'off'
@@ -249,9 +249,9 @@
           quiet_play: 'true'
           override_away: 'true'
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Re-enable Alarm
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_reenable_alarm
     alias: "[House Alarm] Reenable Alarm"
     description: "Reenable alarm from push notification."
@@ -274,20 +274,54 @@
       - service: input_boolean.turn_on
         entity_id: input_boolean.house_alarm_enabled
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm Occupancy Mode Control
-## armed_night, auto disarming disabled
+## armed_night and auto disarming are disabled
+## - delay to prevent alarm from arming/disarming when flipping occupancy modes quickly
+## - every trigger separate due to to/for
 ## - group.delayed_automations
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_occupancy_mode_control
     alias: "[House Alarm] Occupancy Mode Control"
     description: "Arm house alarm when occupancy mode changes."
     initial_state: 'off'
 
     trigger:
-      # run when occupancy mode changes
+      # run when occupancy mode changes to Home
       - platform: state
         entity_id: input_select.occupancy_mode
+        to: 'Home'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Night
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Night'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Guest
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Guest'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Away
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Away'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Vacation
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Vacation'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Override
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Override'
+        for: '00:00:05'
 
     condition:
       - condition: and
@@ -296,6 +330,11 @@
           - condition: state
             entity_id: input_boolean.house_alarm_enabled
             state: 'on'
+
+          # only run if manual mode is off
+          - condition: state
+            entity_id: input_boolean.manual_mode
+            state: 'off'
 
           # only run if automatic arming is enabled
           - condition: state
@@ -317,10 +356,10 @@
           {% else %} script.null_script
           {% endif %}
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Away Mode
 ## - group.house_alarm_delayed_automations
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_armed_away_mode
     alias: "[House Alarm] Armed Away Mode"
     description: "Activate away occupancy mode and play announcement when alarm armed in armed_away."
@@ -351,7 +390,8 @@
 
       # put the house into away mode mode if not set (or already in vacation mode)
       - service_template: >-
-          {% if ( not is_state('input_select.occupancy_mode','Away') or not is_state('input_select.occupancy_mode','Vacation') ) and is_state('input_boolean.house_alarm_auto_arming','on') %}
+          {% if ( not is_state('input_select.occupancy_mode','Away') and not is_state('input_select.occupancy_mode','Vacation') )
+              and is_state('input_boolean.house_alarm_auto_arming','on') %}
             input_select.select_option
           {% else %}
             script.null_script
@@ -365,21 +405,22 @@
         entity_id: automation.house_alarm_occupancy_mode_control
 
       # wait for any other announcments to finish, avoid skipping play if script already running
+      # do not continue after timeout, either long gone or alarm may have already been disaremd so out of sync
       - wait_template: "{{ is_state('script.play_announcement', 'off') }} }}"
         timeout: '00:01:00'
-        continue_on_timeout: true
+        continue_on_timeout: false
 
-      # play announcement - only plays if someone home!
+      # play announcement, override away mode
       - service: script.play_announcement
         data_template:
           play_message: "The alarm is now armed in Away Mode."
           override_away: 'true'
           quiet_play: 'true'
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Night Mode
 ## this should never fire, armed_night disabled
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_armed_night_mode
     alias: "[House Alarm] Armed Night Mode"
     description: "Activate night occupancy mode and play announcement when alarm armed in armed_home."
@@ -418,9 +459,10 @@
         entity_id: automation.house_alarm_occupancy_mode_control
 
       # wait for any other announcments to finish, avoid skipping play because script already running
+      # do not continue after timeout, either long gone or alarm may have already been disaremd so out of sync
       - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
-        timeout: '00:00:30'
-        continue_on_timeout: true
+        timeout: '00:00:45'
+        continue_on_timeout: false
 
       # play announcement except during quiet hours
       - service: script.play_announcement
@@ -429,10 +471,10 @@
           override_away: 'true'
           quiet_play: 'true'
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Home Mode
 ## - using alarm armed_home for night time due to android app incompatibility
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_armed_home_mode
     alias: "[House Alarm] Armed Home Mode"
     description: "Activate home occupancy mode and play announcement when alarm armed in armed_home."
@@ -473,7 +515,7 @@
 
       # wait for any other announcments to finish, avoid skipping play because script already running
       - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
-        timeout: '00:01:00'
+        timeout: '00:00:45'
         continue_on_timeout: true
 
       # play announcement except during quiet hours
@@ -483,9 +525,9 @@
           override_away: 'true'
           quiet_play: 'true'
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Pending
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_pending
     alias: "[House Alarm] Pending"
     description: "Turn on entrance lights and play announcement when alarm is pending."
@@ -544,9 +586,9 @@
         data:
           store_name: 'alarm_pending_store'
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Disarmed
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_disarmed
     alias: "[House Alarm] Disarmed"
     description: "Play announcement and activate home mode when alarm disarmed."
@@ -590,21 +632,20 @@
         entity_id: input_boolean.house_alarm_auto_arming
         state: 'on'
 
-      # occupancy mode home if someone home, else guest mode
-      # if occupancy mode is already home via presence automation nothing happens
+      # occupancy mode is home if owner home, else guest mode
+      # if occupancy mode might be already home via presence automation
       #IDEA - set occupancy mode by alarm PIN
-
       - service: input_select.select_option
         data_template:
           entity_id: input_select.occupancy_mode
           option: >-
-            {% if is_state('binary_sensor.someone_home','on') %} Home
+            {% if is_state('binary_sensor.owner_home','on') %} Home
             {% else %} Guest
             {% endif %}
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Triggered
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_triggered
     alias: "[House Alarm] Triggered"
     description: "Sound alarm and send notifications when alarm is triggered"
@@ -628,9 +669,9 @@
         data_template:
           play_message: "{{ states[states.alarm_control_panel.house.attributes.changed_by.split('.')[0]][ states.alarm_control_panel.house.attributes.changed_by.split('.')[1]].name }} at {{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}."
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Warning Mode
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_warning
     alias: "[House Alarm] Warning"
     description: "Turn on lights and play announcement if alarm warning state is triggered."
@@ -683,10 +724,10 @@
         data:
           store_name: 'alarm_warning_store'
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Panic Mode
 #ISSUE alarm app doesn's support panic mode!
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_panic_mode
     alias: "[House Alarm] Panic Mode"
     description: "Activate panic mode when panic code entered into alarm keypad."
@@ -706,10 +747,10 @@
       - service: light.turn_on
         entity_id: all
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Garage Motion
 ## - this fires even if garage motion didn't trigger the active alarm!
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_garage_motion
     alias: "[House Alarm] Garage Motion"
     description: "Send notifications w/snapshots when garage motion dectected and alarm triggered."
@@ -780,9 +821,9 @@
             ![image](/local/capture/back_house_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg)
             ![image](/local/capture/garage_inside_{{ now ().year }}_{{ now ().month }}_{{ now ().day }}_{{ now ().hour }}_{{ now ().minute }}.jpg)
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Offline Alert
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_offline_alert
     alias: "[House Alarm] Offline Alert"
     description: "Send notification when house alarm goes offline."
@@ -833,9 +874,9 @@
             image: !secret ALARM_IMAGE
             badge: !secret ALARM_BADGE
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Offline Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_offline_alert_cancelled
     alias: "[House Alarm] Offline Alert Cancelled"
     description: "Dismiss notifications when house alarm is back online."
@@ -859,9 +900,9 @@
           data:
             tag: house_alarm_offline
 
-###################################################################################################
+#######################################################################################################################
 ## House Alarm - Offline Alert Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_alarm_offline_alert_closed
     alias: "[House Alarm] Offline Alert Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -886,9 +927,9 @@
           data:
             tag: house_alarm_offline
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Offline Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_offline_alert_pause
     alias: "[House Alarm] Offline Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -926,9 +967,9 @@
       - service: automation.turn_on
         entity_id: automation.house_alarm_offline_alert
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Disarmed Nobody Home
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_disarmed_nobody_home_alert
     alias: "[House Alarm] Disarmed Nobody Home Alert"
     description: "Send notification if no one is home and the alarm isn't armed"
@@ -1008,9 +1049,9 @@
             image: !secret ALARM_IMAGE
             badge: !secret ALARM_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## House Alarm - Disarmed Alert Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_alarm_disarmed_alert_closed
     alias: "[House Alarm] Disarmed Alert Closed"
     initial_state: 'on'
@@ -1029,9 +1070,9 @@
           data:
             tag: alarm_disarmed
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Disarmed Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_disarmed_alert_cancelled
     alias: "[House Alarm] Disarmed Alert Cancelled"
     description: "Dismiss notifications when alarm is armed or someone comes home."
@@ -1055,9 +1096,9 @@
           data:
             tag: alarm_disarmed
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Disarmed Alarm Away
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_disarmed_arm_away
     alias: "[House Alarm] Disarmed Arm Away"
     description: "Arm alarm in away mode when notification button clicked."
@@ -1079,9 +1120,9 @@
     action:
       - service: script.arm_alarm_away
 
-##################################################################################################
+#######################################################################################################################
 ## House Alarm - Disarmed Alert Off
-##################################################################################################
+#######################################################################################################################
   - id: house_alarm_disarmed_alert_pause
     alias: "[House Alarm] Disarmed Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."

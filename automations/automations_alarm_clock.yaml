@@ -1,7 +1,7 @@
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Hassio Startup
 ## - resets timers to original values - best we can do
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_hassio_startup
     alias: "[Alarm Clock] Hassio Startup"
     description: "Restart alarm clock on startup."
@@ -69,10 +69,10 @@
             {% elif is_state('input_boolean.alarm_clock_active_nap','on') %} nap
             {% endif %}
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Sensors Update
 ## - enabled when updating sensors for templates etc.
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_sensors_update
     alias: "[Alarm Clock] Sensors Update"
     description: "Update alarm clock media player sensors."
@@ -87,9 +87,9 @@
       - service: homeassistant.update_entity
         entity_id: sensor.alarm_clock_media_player_state
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Turn Off Alarm Notification
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_turn_off_notification
     alias: "[Alarm Clock] Turn Off Notification"
     description: "Turn off master active alarm clock boolean when turned off from push notification."
@@ -107,9 +107,9 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.alarm_clock_active
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Snooze Alarm Notification
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_snooze_notification
     alias: "[Alarm Clock] Snooze Notification"
     description: "Turn on snooze boolean when snooze turned on from push notification."
@@ -133,9 +133,9 @@
           data:
             tag: 'alarm_clock'
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_notification_closed
     alias: "[Alarm Clock] Notification Closed"
     description: "Dismiss all notifications on all devices when closed on one."
@@ -155,10 +155,10 @@
           data:
             tag: 'alarm_clock'
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Activate Alarm Occupancy Check
 ## - allow manual/auto alarms to be set but they won't run if not in home/night when triggered
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_occupancy_check
     alias: "[Alarm Clock] Occupancy Check"
     description: "Turn specified alarm booleans back off if in away or vacation mode."
@@ -202,11 +202,11 @@
       - service: automation.turn_on
         entity_id: *occupancy_check_automations
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Detect Off
 ## - small delay so state changes between snooze/loops don't shut alarm off
 ## - turns on in script.alarm_clock_play, off in script.alarm_clock_stop
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_detect_alarm_off
     alias: "[Alarm Clock] Detect Alarm Off"
     description: "Detect alarm media player turned off and turn off active alarm boolean."
@@ -254,11 +254,11 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.alarm_clock_active
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Detect Snooze
 ## - turns on in script.alarm_clock_play, off in script.alarm_clock_stop
 ## - we aren't using sensor.alarm_clock_media_player because it might not updated here.
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_detect_snooze
     alias: "[Alarm Clock] Detect Snooze"
     description: "Detect alarm snooze (media player pause) and turn on snooze boolean."
@@ -292,10 +292,10 @@
       - service: input_boolean.turn_on
         entity_id: input_boolean.alarm_clock_snooze
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Auto Resume
 ## - group.alarm_clock_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_auto_resume
     alias: "[Alarm Clock] Auto Resume"
     description: "Resume alarm clock play when announcement finished."
@@ -320,10 +320,10 @@
           alarm_type: *alarm_type
           first_run: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Restart Timer Finished
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_restart_timer_finished
     alias: "[Alarm Clock] Restart Timer Finished"
     description: "Restart alarm when restart timer finished (for alarm sounds only, not radio)"
@@ -355,10 +355,10 @@
           first_run: 'false'
           alarm_type: *alarm_type
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Alarm Activate Check
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_alarm_activate_check
     alias: "[Alarm Clock] Alarm Activate Check"
     description: "Turn master active alarm boolean back off if no alarm is active."
@@ -385,10 +385,10 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.alarm_clock_active
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Active Off
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_active_off
     alias: "[Alarm Clock] Active Off"
     description: "Stop alarm clock when master active alarm boolean turns off."
@@ -404,10 +404,10 @@
       # turn off alarm clock
       - service: script.alarm_clock_stop
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Nap Alarm On
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_nap_on
     alias: "[Alarm Clock] Nap On"
     description: "Start nap timer when nap alarm boolean turned on."
@@ -451,11 +451,11 @@
           entity_id: timer.alarm_clock_nap
           duration: "00:{{ states.input_number.alarm_clock_nap_time.state | int }}"
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Nap Alarm On Check
 ## - only for nap alarms because it is active immediately, manual/auto can be turned on
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_nap_on_check
     alias: "[Alarm Clock] Nap On Check"
     description: "Turn nap boolean back off if another alarm is active."
@@ -486,10 +486,10 @@
       - service: automation.turn_on
         entity_id: automation.alarm_clock_nap_off
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Nap Alarm Off
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_nap_off
     alias: "[Alarm Clock] Nap Off"
     description: "Cancel nap timer when nap alarm boolean turns off."
@@ -505,10 +505,10 @@
       # stop alarm
       - service: script.alarm_clock_stop
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Nap Timer Finished
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_nap_timer_finished
     alias: "[Alarm Clock] Nap Timer Finished"
     description: "Turn on active nap alarm boolean when nap timer finished."
@@ -532,10 +532,10 @@
       - service: input_boolean.turn_on
         entity_id: input_boolean.alarm_clock_active_nap
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Activate Nap Alarm
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_nap_active_on
     alias: "[Alarm Clock] Nap Active On"
     description: "Play alarm clock when active nap alarm boolean turns on."
@@ -590,10 +590,10 @@
       # send notiication if alarm didn't play
       - service: script.alarm_clock_failed_notification
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Activate Nap Alarm Check
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_nap_active_on_check
     alias: "[Alarm Clock] Nap Active On Check"
     description: "Turn nap active alarm boolean back of if another alarm is active."
@@ -624,10 +624,10 @@
       - service: automation.turn_on
         entity_id: automation.alarm_clock_nap_active_off
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Nap Alarm Turned Off
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_nap_active_off
     alias: "[Alarm Clock] Nap Active Off"
     description: "Turn off master active alarm clock boolean when nap active alarm boolean turns off."
@@ -644,10 +644,10 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.alarm_clock_active
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Manual Alarm Off
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_manual_off
     alias: "[Alarm Clock] Manual Off"
     description: "Turn off alarm clock when manual alarm clock boolean turns off."
@@ -669,9 +669,9 @@
       # stop alarm
       - service: script.alarm_clock_stop
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Manual Alarm Triggered
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_manual_alarm_triggered
     alias: "[Alarm Clock] Manual Alarm Triggered"
     description: "Play alarm clock when manual alarm clock set time is current time."
@@ -699,10 +699,10 @@
       - service: input_boolean.turn_on
         entity_id: input_boolean.alarm_clock_active_manual
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Manual Active On
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_manual_active_on
     alias: "[Alarm Clock] Manual Active On"
     description: "Play alarm clock when manual active boolean turns on."
@@ -753,10 +753,10 @@
       # send notiication if alarm didn't play
       - service: script.alarm_clock_failed_notification
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Manual Active On Check
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_manual_active_on_check
     alias: "[Alarm Clock] Manual Active On Check"
     description: "Turn manual active boolean back off if another alarm is active."
@@ -787,10 +787,10 @@
       - service: automation.turn_on
         entity_id: automation.alarm_clock_manual_active_off
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Manual Active Off
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_manual_active_off
     alias: "[Alarm Clock] Manual Active Off"
     description: "Turn off master active boolean when manual active boolean turns off."
@@ -806,10 +806,10 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.alarm_clock_active
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Auto Off
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_auto_off
     alias: "[Alarm Clock] Auto Off"
     description: "Stop alarm clock when auto active boolean turns off."
@@ -831,10 +831,10 @@
       # stop alarm
       - service: script.alarm_clock_stop
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Auto Active On
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_auto_active_on
     alias: "[Alarm Clock] Auto Active On"
     description: "Play alarm clock when auto active boolean turns on."
@@ -881,10 +881,10 @@
       # send notiication if alarm didn't play
       - service: script.alarm_clock_failed_notification
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock -  Auto Activate On Check
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_auto_active_on_check
     alias: "[Alarm Clock] Auto Active On Check"
     description: "Turn off auto active boolean back off if another alarm already active."
@@ -915,10 +915,10 @@
       - service: automation.turn_on
         entity_id: automation.alarm_clock_auto_active_off
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Auto Alarm Deactivated
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_auto_active_off
     alias: "[Alarm Clock] Auto Active Off"
     description: "Turn off master active boolean when auto active boolean turns off."
@@ -934,10 +934,10 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.alarm_clock_active
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Snooze On
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_snooze_on
     alias: "[Alarm Clock] Snooze On"
     description: "Pause media player and start snooze timer when snooze turned on."
@@ -992,10 +992,10 @@
       - service: automation.turn_on
         entity_id: automation.alarm_clock_detect_snooze
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Snooze Check
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_snooze_check
     alias: "[Alarm Clock] Snooze Check"
     description: "Turn snooze boolean back off if alarm isn't active."
@@ -1026,10 +1026,10 @@
       - service: automation.turn_on
         entity_id: automation.alarm_clock_detect_snooze
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Snooze Turned Off
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_snooze_turned_off
     alias: "[Alarm Clock] Snooze Turned Off"
     description: "Turn off alarm clock when snooze turned off."
@@ -1052,10 +1052,10 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.alarm_clock_active
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Snooze Timer Finished
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_snooze_timer_finished
     alias: "[Alarm Clock] Snooze Timer Finished"
     description: "Turn off snooze and restart alarm when snooze timer finished."
@@ -1094,10 +1094,10 @@
           first_run: 'false'
           alarm_type: *alarm_type
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Volume Change
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_volume_change
     alias: "[Alarm Clock] Volume Change"
     description: "Change media player volume when alarm clock volume control changed."
@@ -1162,11 +1162,11 @@
       - service: automation.turn_on
         entity_id: *alarm_clock_volume_automations
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Media Player Volume Change
 ## - media player is decimal value, input_number is percent
 ## - group.alarm_clock_media_player_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_media_player_volume_change
     alias: "[Alarm Clock] Media Player Volume Change"
     description: "Change volume on alarm clock control when volume on media player changed."
@@ -1245,10 +1245,10 @@
       - service: automation.turn_on
         entity_id: automation.alarm_clock_volume_change
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Volume Timer Finished
 ## - group.alarm_clock_hassio_changed_automations
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_volume_timer_finished
     alias: "[Alarm Clock] Volume Timer Finished"
     description: "Turn up alarm clock volume when timer finished."
@@ -1298,10 +1298,10 @@
       - service: automation.turn_on
         entity_id: automation.media_player_volume_change
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Sound Changed
 ## - group.alarm_clock_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_sound_changed
     alias: "[Alarm Clock] Sound Changed"
     description: "Restart alarm clock when alarm sound is changed."
@@ -1330,10 +1330,10 @@
           alarm_type: *alarm_type
           first_run: 'false'
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Radio Station Changed
 ## - group.alarm_clock_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_radio_station_changed
     alias: "[Alarm Clock] Radio Station Changed"
     description: "Restart alarm clock when radio station is changed."
@@ -1362,10 +1362,10 @@
           alarm_type: *alarm_type
           first_run: 'false'
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Media Player Changed
 ## - group.alarm_clock_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_media_player_changed
     alias: "[Alarm Clock] Media Player Changed"
     description: "Restart alarm clock when media player is changed."
@@ -1430,11 +1430,11 @@
       - service: automation.turn_on
         entity_id: *alarm_detect_automations
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Player Offline
 ## - don't check browser speakers, they are unavailable if browser not open
 ## - group.delayed_automations
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_player_offline
     alias: "[Alarm Clock] Player Offline"
     description: "Send notification when alarm clock media player goes offline."
@@ -1517,10 +1517,10 @@
             icon: !secret OFFLINE_ICON
             badge: !secret OFFLINE_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Player Offline Notification Closed
 ## - do not close persistent notification
-###################################################################################################
+#######################################################################################################################
   - id: alarm_clock_player_offline_notification_closed
     alias: "[Alarm Clock] Player Offline Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -1540,10 +1540,10 @@
           data:
             tag: 'alarm_clock_player_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Player Offline Alert Cancelled
 ## - don't check browser speakers, they are unavailable if browser not open
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_player_offline_alert_cancelled
     alias: "[Alarm Clock] Player Offline Alert Cancelled"
     description: "Dismiss notifications when media player back online."
@@ -1584,10 +1584,10 @@
           data:
             tag: 'alarm_clock_player_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Alarm Clock - Player Offline Alert Pause
 ## - do not close persistent notification
-##################################################################################################
+#######################################################################################################################
   - id: alarm_clock_player_offline_alert_pause
     alias: "[Alarm Clock] Player Offline Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."

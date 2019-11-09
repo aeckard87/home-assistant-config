@@ -1,10 +1,11 @@
-##################################################################################################
+#######################################################################################################################
 ## Turn Light On Light Automation
 ## light_id - light name
 ## ignore_user_state - true/false (override user state control), default false
+## ignore_daylight - ignore state of auto_light_on sensor
 ## brightness - light brightness (%) optional, default 100
 ## fade_time - transition in seconds optional, default 10
-##################################################################################################
+#######################################################################################################################
   turn_light_on:
     sequence:
       # only run if light automation is enabled
@@ -18,7 +19,7 @@
 
       # only run if auto light switch is on (sun has set)
       - condition: template
-        value_template: "{{ is_state('binary_sensor.auto_light_on','on') }}"
+        value_template: "{{ ignore_daylight == 'true' or is_state('binary_sensor.auto_light_on','on') }}"
 
       # turn off light user state automation
       - service: automation.turn_off
@@ -46,12 +47,12 @@
         data_template:
           entity_id: automation.automation_set_device_user_state
 
-##################################################################################################
+#######################################################################################################################
 ## Light Automation Off
 ## light_name - light entity name
 ## ignore_user_state - true/false (override user state control), default false
 ## fade_time - transition in seconds optional, default 10 seconds
-##################################################################################################
+#######################################################################################################################
   turn_light_off:
     sequence:
       # only run if light automation is enabled
@@ -86,11 +87,11 @@
         data_template:
           entity_id: automation.automation_set_device_user_state
 
-##################################################################################################
+#######################################################################################################################
 ## Save light settings
 ## store_name: name to store light settings under
 ## entity_ids: entity id list
-##################################################################################################
+#######################################################################################################################
   save_lights:
     sequence:
       # only run if light automation is enabled
@@ -104,10 +105,10 @@
           store_name: "{{ store_name }}"
           entity_id: "{{ entity_ids }}"
 
-##################################################################################################
+#######################################################################################################################
 ## Restore light settings
 ## store_name: saved settings store to restore
-##################################################################################################
+#######################################################################################################################
   restore_lights:
     sequence:
       # only run if light automation is enabled

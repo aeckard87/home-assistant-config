@@ -7,12 +7,12 @@
 
 default: info
 logs:
-  #homeassistant.components.automation: info
-  #homeassistant.components.command_line.sensor: warn
-  #homeassistant.components.generic.camera: debug
-  homeassistant.components.proximity: warn
+  homeassistant.components.proximity: warn # constant updates
   homeassistant.components.shell_command: debug
+  homeassistant.components.generic.camera: critical # cams spamming log with errors
+  #homeassistant.components.command_line.sensor: warn
   #homeassistant.components.websocket_api.http: warn
+  #homeassistant.components.automation: info
   #homeassistant.helpers.script: info
-  googleapiclient.discovery: warn
+  googleapiclient.discovery: warn # google calendar, updates every 15 min
   #pyupdate: warn

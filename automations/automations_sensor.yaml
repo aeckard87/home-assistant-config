@@ -1,9 +1,9 @@
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Smoke Detected
 ## - not disabled in silent mode
 #IDEA if alarm and nobody home send additional alerts, sms to neighbours, family
 #IDEA extended alert - phone dialer to call phones or 911?
-##################################################################################################
+#######################################################################################################################
   - id: sensor_smoke_detected
     alias: "[Sensor] Smoke Detected"
     description: "Turn on all lights, pause media players, send notification when smoke alarm turns on."
@@ -75,11 +75,11 @@
         data:
           store_name: 'smoke_alarm_store'
 
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Active Smoke Alert
 ## - this runs every minute after first notification
 ## - initial state set to off, turned on/off by smoke detected automation
-##################################################################################################
+#######################################################################################################################
   - id: sensor_active_smoke_alert
     alias: "[Sensor] Active Smoke Alert"
     description: "Send a push notification every minute while a smoke alert is active."
@@ -100,11 +100,11 @@
       # send push notification
       - !include /config/include/smoke_alert_notification.yaml
 
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Upstairs Protect Offline Alert
 ## - stagger for time with other nest products so push notifications don't exceed allowed messages
 ## - group.sensor_alert_automations
-##################################################################################################
+#######################################################################################################################
   - id: sensor_upstairs_protect_offline_alert
     alias: "[Sensor] Upstairs Protect Offline Alert"
     description: "Send notification when device goes offline."
@@ -163,9 +163,9 @@
             image: !secret OFFLINE_IMAGE
             badge: !secret OFFLINE_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Sensor - Upstairs Protect Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: sensor_upstairs_protect_notification_closed
     alias: "[Sensor] Upstairs Protect Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -185,9 +185,9 @@
           data:
             tag: 'upstairs_protect_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Upstairs Protect Offline Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: sensor_upstairs_protect_offline_alert_cancelled
     alias: "[Sensor] Upstairs Protect Offline Alert Cancelled"
     description: "Dismiss notifications when device is back online."
@@ -206,9 +206,9 @@
           data:
             tag: 'upstairs_protect_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Upstairs Protect Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: sensor_upstairs_protect_alert_pause
     alias: "[Sensor] Upstairs Protect Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -241,11 +241,11 @@
       - service: automation.turn_on
         entity_id: automation.sensor_upstairs_protect_offline_alert
 
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Downstairs Protect Offline Alert
 ## - stagger for time with other nest products so push notifications don't exceed allowed messages
 ## - group.sensor_alert_automations
-##################################################################################################
+#######################################################################################################################
   - id: sensor_downstairs_protect_offline_alert
     alias: "[Sensor] Downstairs Protect Offline Alert"
     description: "Send notification when device goes offline."
@@ -304,9 +304,9 @@
             image: !secret OFFLINE_IMAGE
             badge: !secret OFFLINE_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Sensor - Downstairs Protect Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: sensor_downstairs_protect_notification_closed
     alias: "[Sensor] Downstairs Protect Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -326,9 +326,9 @@
           data:
             tag: 'downstairs_protect_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Downstairs Protect Offline Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: sensor_downstairs_protect_offline_alert_cancelled
     alias: "[Sensor] Downstairs Protect Offline Alert Cancelled"
     description: "Dismiss notifications when device is back online."
@@ -347,9 +347,9 @@
           data:
             tag: 'downstairs_protect_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Sensor - Downstairs Protect Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: sensor_downstairs_protect_alert_pause
     alias: "[Sensor] Downstairs Protect Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."

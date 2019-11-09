@@ -1,8 +1,8 @@
-###################################################################################################
+#######################################################################################################################
 ## Radio Hassio Startup
 ## - play_radio turns off media player and restarts to reestablish connection with media player
 ## - resets timers to original values - best we can do
-###################################################################################################
+#######################################################################################################################
   - id: radio_hassio_startup
     alias: "[Radio] Hassio Startup"
     description: "Restart radio on startup if turned on."
@@ -32,9 +32,9 @@
           {% else %} script.play_radio
           {% endif %}
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Sensors Update
-##################################################################################################
+#######################################################################################################################
   - id: radio_sensors_update
     alias: "[Radio] Sensors Update"
     description: "Update radio media player sensors."
@@ -52,10 +52,10 @@
           - sensor.radio_media_player
           - sensor.radio_media_player_state
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Turned On
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_turned_on
     alias: "[Radio] Turned On"
     description: "Play radio with current settings when radio on boolean turned on."
@@ -85,10 +85,10 @@
         data_template:
           entity_id: input_boolean.radio_on
 
-##################################################################################################
+#######################################################################################################################
 ## Auto Radio Off
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_auto_off
     alias: "[Radio] Auto Off"
     description: "Automatically turn off radio when conditions are met."
@@ -138,10 +138,10 @@
       # turn off radio
       - service: script.radio_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Turned Off Hassio
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_hassio_turned_off
     alias: "[Radio] Hassio Turned Off"
     description: "Turn off radio when radio on boolean turns off."
@@ -157,11 +157,11 @@
       # turn off radio
       - service: script.radio_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Turned Off Media Player
 ## - delay powering off to ignore state switches between radio/announcement
 ## - group.radio_media_player_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_media_player_turned_off
     alias: "[Radio] Media Player Turned Off"
     description: "Turn radio off when radio media player turns off."
@@ -218,10 +218,10 @@
       # turn off radio
       - service: script.radio_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Paused In Hassio
 ## group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_hassio_paused
     alias: "[Radio] Hassio Paused"
     description: "Pause radio when radio paused boolean turns on."
@@ -243,10 +243,10 @@
       # pause radio
       - service: script.pause_radio
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Paused By Media Player
 ## group.radio_media_player_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_media_player_paused
     alias: "[Radio] Media Player Paused"
     description: "Turn radio pause boolean on when radio media player is paused."
@@ -293,9 +293,9 @@
       - service: automation.turn_on
         entity_id: automation.radio_hassio_paused
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Paused Hassio Radio Off
-##################################################################################################
+#######################################################################################################################
   - id: radio_paused_hassio_off
     alias: "[Radio] Paused Hassio Off"
     description: "Turn pause boolean back off if radio not on."
@@ -318,10 +318,10 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.radio_paused
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Auto Resume
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_auto_resume
     alias: "[Radio] Auto Resume"
     description: "Turn radio back on when announcement done playing."
@@ -346,10 +346,10 @@
           {% else %} script.null_script
           {% endif %}
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Resumed Media Player
 ## - group.radio_media_player_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_media_player_resumed
     alias: "[Radio] Media Player Resumed"
     description: "Turn radio pause boolean off when radio media player play resumed."
@@ -396,10 +396,10 @@
       - service: automation.turn_on
         entity_id: automation.radio_hassio_resumed
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Resumed Hassio
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_hassio_resumed
     alias: "[Radio] Hassio Resumed"
     description: "Resume radio when radio pause boolean turned off."
@@ -415,12 +415,12 @@
       # resume radio
       - service: script.resume_radio
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Volume
 ## - media player expects decimal float value, input_number is percent (/100)
 ## - if night mode then default to night announcement volume, else use set volume
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_hassio_volume_changed
     alias: "[Radio] Hassio Volume Changed"
     description: "Change media player volume when radio volume control changed."
@@ -476,11 +476,11 @@
       - service: automation.turn_on
         entity_id: automation.radio_media_player_volume_changed
 
-##################################################################################################
+#######################################################################################################################
 ## Media Player Volume Change
 ## - media player is decimal, input_number is percent
 ## - group.radio_media_player_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_media_player_volume_changed
     alias: "[Radio] Media Player Volume Changed"
     description: "Change radio volume control when radio media player volume changes."
@@ -561,10 +561,10 @@
       - service: automation.turn_on
         entity_id: automation.radio_hassio_volume_changed
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Station Changed
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_station_changed
     alias: "[Radio] Station Changed"
     description: "Restart radio when radio station is changed."
@@ -585,10 +585,10 @@
       # restart radio with new settings
       - service: script.play_radio
 
-##################################################################################################
+#######################################################################################################################
 ## Radio - Media Player Changed
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_media_player_changed
     alias: "[Radio] Media Player Changed"
     description: "Restart radio when radio media player changed."
@@ -615,10 +615,10 @@
       # restart radio with new settings
       - service: script.play_radio
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Morning Turned Off
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_morning_turned_off
     alias: "[Radio] Morning Turned Off"
     description: "Turn off radio when morning preset boolean turns off."
@@ -634,10 +634,10 @@
       # turn radio off
       - service: script.radio_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Night Turned Off
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_night_turned_off
     alias: "[Radio] Night Turned Off"
     description: "Turn off radio when night preset boolean turns off."
@@ -653,10 +653,10 @@
       # turn radio off
       - service: script.radio_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Morning Timer Finished
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_morning_volume_timer_finished
     alias: "[Radio] Morning Volume Timer Finished"
     description: "Adjust radio volume when volume timer finished."
@@ -693,11 +693,11 @@
       - service: automation.turn_on
         entity_id: automation.radio_morning_turned_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Morning Timer Cancelled
 ## - turns off boolean but leaves radio playing
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_morning_volume_timer_cancelled
     alias: "[Radio] Morning Volume Timer Cancelled"
     description: "Turn off morning radio preset when volume timer cancelled."
@@ -723,10 +723,10 @@
       - service: automation.turn_on
         entity_id: automation.radio_morning_turned_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Sleep Timer Finished or Cancelled
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_sleep_timer_finished
     alias: "[Radio] Sleep Timer Finished"
     description: "Turn radio off when sleep timer finished or cancelled."
@@ -749,10 +749,10 @@
       # turn radio off
       - service: script.radio_off
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Sleep Timer Changed
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_sleep_timer_changed
     alias: "[Radio] Sleep Timer Changed"
     description: "Restart sleep timer when sleep time control changed."
@@ -776,11 +776,11 @@
           entity_id: timer.radio_sleep
           duration: '00:{{ states.input_number.radio_sleep_time.state | int }}'
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Morning Preset On
 ## - do not turn off preset boolean here, turns off when volume timer done
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_morning_preset_on
     alias: "[Radio] Morning Preset On"
     description: "Play morning radio preset when morning radio boolean turns on."
@@ -797,11 +797,11 @@
       # play radio preset
       - service: script.play_radio_morning
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Night Preset On
 ## - do not turn off preset boolean here, turns off when sleep timer done
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_night_preset_on
     alias: "[Radio] Night Preset On"
     description: "Play night radio preset when night radio boolean turns on."
@@ -818,10 +818,10 @@
       # play radio preset
       - service: script.play_radio_night
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Jason Preset On
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_jason_preset_on
     alias: "[Radio] Jason Preset On"
     description: "Play Jason's radio preset when jason radio boolean turns on."
@@ -844,10 +844,10 @@
         data:
           preset: 'Jason'
 
-##################################################################################################
+#######################################################################################################################
 ## Radio Sheri Preset On
 ## - group.radio_hassio_changed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_sheri_preset_on
     alias: "[Radio] Sheri Preset On"
     description: "Play Sheri's radio preset when jason radio boolean turns on."
@@ -870,11 +870,11 @@
         data:
           preset: 'Sheri'
 
-##################################################################################################
+#######################################################################################################################
 ## Radio - Player Offline
 ## - don't use browser speakers, they are unavailable if browser is closed
 ## - group.delayed_automations
-##################################################################################################
+#######################################################################################################################
   - id: radio_player_offline
     alias: "[Radio] Player Offline"
     initial_state: 'off'
@@ -950,10 +950,10 @@
             icon: !secret OFFLINE_ICON
             badge: !secret OFFLINE_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Radio - Player Offline Notification Closed
 ## - do not close persistent notification
-###################################################################################################
+#######################################################################################################################
   - id: radio_player_offline_notification_closed
     alias: "[Radio] Player Offline Notification Closed"
     initial_state: 'on'
@@ -972,10 +972,10 @@
           data:
             tag: 'radio_player_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Radio - Player Offline Alert Cancelled
 ## - don't use browser speakers, they are unavailable if browser is closed
-##################################################################################################
+#######################################################################################################################
   - id: radio_player_offline_alert_cancelled
     alias: "[Radio] Player Offline Alert Cancelled"
     initial_state: 'on'
@@ -1019,11 +1019,11 @@
           data:
             tag: 'radio_player_offline'
             
-##################################################################################################
+#######################################################################################################################
 ## Radio - Player Offline Alert Pause
 ## - temporarily turn off alert automation to stop notifications, resets after timeout
 ## - do not close persistent notification
-##################################################################################################
+#######################################################################################################################
   - id: radio_player_offline_alert_pause
     alias: "[Radio] Player Offline Alert Pause"
     initial_state: 'on'

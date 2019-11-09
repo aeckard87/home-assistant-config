@@ -290,7 +290,7 @@ cards:
             - entity: binary_sensor.upstairs_bathroom_temperature_alert
 
             - type: custom:fold-entity-row
-              head: sensor.climate_thresholds #TEMP
+              head: sensor.climate_thresholds
               entities:
                 - entity: input_number.bathroom_humidity_fan_threshold
                   name: Humidity

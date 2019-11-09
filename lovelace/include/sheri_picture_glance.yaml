@@ -1,0 +1,57 @@
+type: vertical-stack
+cards:
+
+  - type: picture-glance
+    title: Sheri
+    entity: binary_sensor.sheri_home
+    image: /local/images/sheri_head.png
+    tap_action:
+      action: navigate
+      navigation_path: /lovelace/presence
+    hold_action:
+      action: call-service
+      service: script.play_radio
+      data:
+        preset: Sheri
+      navigation_path: /lovelace/presence
+    entities:
+      - entity: sensor.sheri_location
+        tap_action:
+          action: call-service
+          service: browser_mod.popup
+          service_data:
+            deviceID: this
+            title: Sheri's Location
+            large: false
+            card:
+              type: picture-entity
+              entity: camera.sheri_location
+              camera_image: camera.sheri_location
+              show_name: false
+              show_state: false
+
+      - entity: sensor.work_traffic
+        tap_action: !include /config/lovelace/include/popup_traffic.yaml
+
+      - entity: input_boolean.sheri_home
+
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.work_commute_active
+        state: 'on'
+    card:
+
+      type: horizontal-stack #BUGFIX - hs to make gauge size/render correctly
+      cards:
+
+        - !include /config/lovelace/include/sheri_time_work_gauge.yaml
+
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.sheri_home
+        state_not: 'on'
+    card:
+      #BUGFIX - hs to make gauge size/render correctly
+      type: horizontal-stack
+      cards:
+        - !include /config/lovelace/include/sheri_time_home_gauge.yaml

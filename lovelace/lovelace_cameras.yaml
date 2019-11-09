@@ -42,29 +42,29 @@ cards:
     tap_action:
       action: more-info
 
-  #DISABLED - type: picture-entity
-  #   entity: camera.side_gate_front
-  #   aspect_ratio: 16x9
-  #   show_name: true
-  #   show_state: false
-  #   tap_action:
-  #     action: more-info
+  - type: picture-entity
+    entity: camera.side_gate_front
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
 
-  #DISABLED - type: picture-entity
-  #   entity: camera.side_gate_back
-  #   aspect_ratio: 16x9
-  #   show_name: true
-  #   show_state: false
-  #   tap_action:
-  #     action: more-info
+  - type: picture-entity
+    entity: camera.side_gate_back
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
 
-  #DISABLED - type: picture-entity
-  #   entity: camera.back_yard
-  #   aspect_ratio: 16x9
-  #   show_name: true
-  #   show_state: false
-  #   tap_action:
-  #     action: more-info
+  - type: picture-entity
+    entity: camera.back_yard
+    aspect_ratio: 16x9
+    show_name: true
+    show_state: false
+    tap_action:
+      action: more-info
 
   - type: picture-entity
     entity: camera.back_door

@@ -8,7 +8,7 @@ cards:
 
       - type: entities
         title: Household Presence
-        icon: mdi:home-account #ISSUE doesn't work
+        icon: mdi:account #ISSUE doesn't work
         show_header_toggle: false
         entities:
           - entity: binary_sensor.google_location_connected
@@ -47,6 +47,7 @@ cards:
                   items:
                     - entity: input_boolean.jason_home
                     - entity: input_boolean.sheri_home
+                    - entity: input_boolean.guest_home
 
                 - entity: input_boolean.occupancy_mode_alerts
 
@@ -108,10 +109,10 @@ cards:
               - entity: sensor.jphone_last_update
               - entity: binary_sensor.jason_phone_ping
 
+          - !include /config/lovelace/include/jason_radio_settings_entity.yaml
+
           - entity: camera.jason_location
           - entity: proximity.jhome
-
-          - !include /config/lovelace/include/jason_radio_settings_entity.yaml
 
       - type: horizontal-stack
         cards:

@@ -61,6 +61,14 @@ entities:
     tap_action:
       action: navigate
       navigation_path: /lovelace/presence
+      
+  - entity: input_boolean.guest_home
+    name: Guest
+    hold_action:
+      action: call-service
+      service: input_boolean.turn_off
+      service_data:
+        entity_id: input_boolean.guest_home   
 
   # schedule alerts
   - entity: binary_sensor.work_schedule_disabled

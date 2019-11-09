@@ -55,279 +55,265 @@ cards:
   - type: vertical-stack
     cards:
 
-    - type: horizontal-stack
-      cards:
+    - type: picture-glance
+      title: Back Garden Center
+      entity: binary_sensor.back_garden_center_watering
+      image: /local/images/sprinkler/back_garden_center.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_garden_center_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_garden_center_automatic_watering
+      entities:
+        - entity: sensor.back_garden_center_watering_time
+        - entity: sensor.back_garden_center_next_cycle
+        - entity: binary_sensor.back_garden_center_watering
+        - entity: switch.back_garden_center_manual_watering
+        - entity: switch.back_garden_center_automatic_watering
 
-      - type: picture-glance
-        title: Back Garden Center
-        entity: binary_sensor.back_garden_center_watering
-        image: /local/images/sprinkler/back_garden_center.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_garden_center_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_garden_center_automatic_watering
-        entities:
-          - entity: sensor.back_garden_center_watering_time
-          - entity: sensor.back_garden_center_next_cycle
-          - entity: binary_sensor.back_garden_center_watering
-          - entity: switch.back_garden_center_manual_watering
-          - entity: switch.back_garden_center_automatic_watering
+    - type: picture-glance
+      #title: Back Garden Left #TEST to make room for icons
+      entity: binary_sensor.back_garden_left_watering
+      image: /local/images/sprinkler/back_garden_left.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_garden_left_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_garden_left_automatic_watering
+      entities:
+        - entity: sensor.back_garden_left_watering_time
+        - entity: sensor.back_garden_left_next_cycle
+        - entity: binary_sensor.back_garden_left_watering
+        - entity: switch.back_garden_left_manual_watering
+        - entity: switch.back_garden_left_automatic_watering
+      style: |
+        ha-card {
+          font-size: 10px;
+        }
 
-      - type: picture-glance
-        #title: Back Garden Left #TEST to make room for icons
-        entity: binary_sensor.back_garden_left_watering
-        image: /local/images/sprinkler/back_garden_left.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_garden_left_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_garden_left_automatic_watering
-        entities:
-          - entity: sensor.back_garden_left_watering_time
-          - entity: sensor.back_garden_left_next_cycle
-          - entity: binary_sensor.back_garden_left_watering
-          - entity: switch.back_garden_left_manual_watering
-          - entity: switch.back_garden_left_automatic_watering
-        style: |
-          ha-card {
-            font-size: 10px;
-          }
 
-    - type: horizontal-stack
-      cards:
+    - type: picture-glance
+      title: Back Garden Right
+      entity: binary_sensor.back_garden_right_watering
+      image: /local/images/sprinkler/back_garden_right.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_garden_right_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_garden_right_automatic_watering
+      entities:
+        - entity: sensor.back_garden_right_watering_time
+        - entity: sensor.back_garden_right_next_cycle
+        - entity: binary_sensor.back_garden_right_watering
+        - entity: switch.back_garden_right_manual_watering
+        - entity: switch.back_garden_right_automatic_watering
 
-      - type: picture-glance
-        title: Back Garden Right
-        entity: binary_sensor.back_garden_right_watering
-        image: /local/images/sprinkler/back_garden_right.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_garden_right_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_garden_right_automatic_watering
-        entities:
-          - entity: sensor.back_garden_right_watering_time
-          - entity: sensor.back_garden_right_next_cycle
-          - entity: binary_sensor.back_garden_right_watering
-          - entity: switch.back_garden_right_manual_watering
-          - entity: switch.back_garden_right_automatic_watering
-
-      - type: picture-glance
-        title: Back Grass Center
-        entity: binary_sensor.back_grass_center_watering
-        image: /local/images/sprinkler/front_garden.png #back_grass_center.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_grass_center_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.back_grass_center_automatic_watering
-        entities:
-          - entity: sensor.back_grass_center_watering_time
-          - entity: sensor.back_grass_center_next_cycle
-          - entity: binary_sensor.back_grass_center_watering
-          - entity: switch.back_grass_center_manual_watering
-          - entity: switch.back_grass_center_automatic_watering
-
-    - type: horizontal-stack
-      cards:
-
-        - type: picture-glance
-          title: Back Grass Left
-          entity: binary_sensor.back_grass_left_watering
-          image: /local/images/sprinkler/front_garden.png #back_grass_left.png
-          tap_action:
-            action: call-service
-            service: switch.toggle
-            service_data:
-              entity_id: switch.back_grass_left_manual_watering
-          hold_action:
-            action: call-service
-            service: switch.toggle
-            service_data:
-              entity_id: switch.back_grass_left_automatic_watering
-          entities:
-            - entity: sensor.back_grass_left_watering_time
-            - entity: sensor.back_grass_left_next_cycle
-            - entity: binary_sensor.back_grass_left_watering
-            - entity: switch.back_grass_left_manual_watering
-            - entity: switch.back_grass_left_automatic_watering
-
-        - type: picture-glance
-          title: Back Grass Right
-          entity: binary_sensor.back_grass_right_watering
-          image: /local/images/sprinkler/back_grass_right.png
-          tap_action:
-            action: call-service
-            service: switch.toggle
-            service_data:
-              entity_id: switch.back_grass_right_manual_watering
-          hold_action:
-            action: call-service
-            service: switch.toggle
-            service_data:
-              entity_id: switch.back_grass_right_automatic_watering
-          entities:
-            - entity: sensor.back_grass_right_watering_time
-            - entity: sensor.back_grass_right_next_cycle
-            - entity: binary_sensor.back_grass_right_watering
-            - entity: switch.back_grass_right_manual_watering
-            - entity: switch.back_grass_right_automatic_watering
+    - type: picture-glance
+      title: Back Grass Center
+      entity: binary_sensor.back_grass_center_watering
+      image: /local/images/sprinkler/front_garden.png #back_grass_center.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_grass_center_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_grass_center_automatic_watering
+      entities:
+        - entity: sensor.back_grass_center_watering_time
+        - entity: sensor.back_grass_center_next_cycle
+        - entity: binary_sensor.back_grass_center_watering
+        - entity: switch.back_grass_center_manual_watering
+        - entity: switch.back_grass_center_automatic_watering
 
   - type: vertical-stack
     cards:
 
-    - type: horizontal-stack
-      cards:
+    - type: picture-glance
+      title: Back Grass Left
+      entity: binary_sensor.back_grass_left_watering
+      image: /local/images/sprinkler/front_garden.png #back_grass_left.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_grass_left_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_grass_left_automatic_watering
+      entities:
+        - entity: sensor.back_grass_left_watering_time
+        - entity: sensor.back_grass_left_next_cycle
+        - entity: binary_sensor.back_grass_left_watering
+        - entity: switch.back_grass_left_manual_watering
+        - entity: switch.back_grass_left_automatic_watering
 
-      - type: picture-glance
-        title: Front Boulevard
-        entity: binary_sensor.front_boulevard_watering
-        image: /local/images/sprinkler/front_garden.png #front_boulevard.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_boulevard_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_boulevard_automatic_watering
-        entities:
-          - entity: sensor.front_boulevard_watering_time
-          - entity: sensor.front_boulevard_next_cycle
-          - entity: binary_sensor.front_boulevard_watering
-          - entity: switch.front_boulevard_manual_watering
-          - entity: switch.front_boulevard_automatic_watering
+    - type: picture-glance
+      title: Back Grass Right
+      entity: binary_sensor.back_grass_right_watering
+      image: /local/images/sprinkler/back_grass_right.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_grass_right_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.back_grass_right_automatic_watering
+      entities:
+        - entity: sensor.back_grass_right_watering_time
+        - entity: sensor.back_grass_right_next_cycle
+        - entity: binary_sensor.back_grass_right_watering
+        - entity: switch.back_grass_right_manual_watering
+        - entity: switch.back_grass_right_automatic_watering
 
-      - type: picture-glance
-        title: Front Garden
-        entity: binary_sensor.front_garden_watering
-        image: /local/images/sprinkler/front_garden.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_garden_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_garden_automatic_watering
-        entities:
-          - entity: sensor.front_garden_watering_time
-          - entity: sensor.front_garden_next_cycle
-          - entity: binary_sensor.front_garden_watering
-          - entity: switch.front_garden_manual_watering
-          - entity: switch.front_garden_automatic_watering
+    - type: picture-glance
+      title: Front Boulevard
+      entity: binary_sensor.front_boulevard_watering
+      image: /local/images/sprinkler/front_garden.png #front_boulevard.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_boulevard_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_boulevard_automatic_watering
+      entities:
+        - entity: sensor.front_boulevard_watering_time
+        - entity: sensor.front_boulevard_next_cycle
+        - entity: binary_sensor.front_boulevard_watering
+        - entity: switch.front_boulevard_manual_watering
+        - entity: switch.front_boulevard_automatic_watering
 
-    - type: horizontal-stack
-      cards:
+    - type: picture-glance
+      title: Front Garden
+      entity: binary_sensor.front_garden_watering
+      image: /local/images/sprinkler/front_garden.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_garden_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_garden_automatic_watering
+      entities:
+        - entity: sensor.front_garden_watering_time
+        - entity: sensor.front_garden_next_cycle
+        - entity: binary_sensor.front_garden_watering
+        - entity: switch.front_garden_manual_watering
+        - entity: switch.front_garden_automatic_watering
 
-      - type: picture-glance
-        title: Front Sidewalk
-        entity: binary_sensor.front_sidewalk_watering
-        image: /local/images/sprinkler/front_garden.png #front_sidewalk.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_sidewalk_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_sidewalk_automatic_watering
-        entities:
-          - entity: sensor.front_sidewalk_watering_time
-          - entity: sensor.front_sidewalk_next_cycle
-          - entity: binary_sensor.front_sidewalk_watering
-          - entity: switch.front_sidewalk_manual_watering
-          - entity: switch.front_sidewalk_automatic_watering
+  - type: vertical-stack
+    cards:
 
-      - type: picture-glance
-        title: Front House
-        entity: binary_sensor.front_house_watering
-        image: /local/images/sprinkler/front_house.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_house_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.front_house_automatic_watering
-        entities:
-          - entity: sensor.front_house_watering_time
-          - entity: sensor.front_house_next_cycle
-          - entity: binary_sensor.front_house_watering
-          - entity: switch.front_house_manual_watering
-          - entity: switch.front_house_automatic_watering
+    - type: picture-glance
+      title: Front Sidewalk
+      entity: binary_sensor.front_sidewalk_watering
+      image: /local/images/sprinkler/front_garden.png #front_sidewalk.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_sidewalk_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_sidewalk_automatic_watering
+      entities:
+        - entity: sensor.front_sidewalk_watering_time
+        - entity: sensor.front_sidewalk_next_cycle
+        - entity: binary_sensor.front_sidewalk_watering
+        - entity: switch.front_sidewalk_manual_watering
+        - entity: switch.front_sidewalk_automatic_watering
 
-    - type: horizontal-stack
-      cards:
+    - type: picture-glance
+      title: Front House
+      entity: binary_sensor.front_house_watering
+      image: /local/images/sprinkler/front_house.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_house_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.front_house_automatic_watering
+      entities:
+        - entity: sensor.front_house_watering_time
+        - entity: sensor.front_house_next_cycle
+        - entity: binary_sensor.front_house_watering
+        - entity: switch.front_house_manual_watering
+        - entity: switch.front_house_automatic_watering
 
-      - type: picture-glance
-        title: Side Grass & Garden Mister
-        entity: binary_sensor.side_grass_garden_mister_watering
-        image: /local/images/sprinkler/front_garden.png #side_grass_garden_mister.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.side_grass_garden_mister_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.side_grass_garden_mister_automatic_watering
-        entities:
-          - entity: sensor.side_grass_garden_mister_watering_time
-          - entity: sensor.side_grass_garden_mister_next_cycle
-          - entity: binary_sensor.side_grass_garden_mister_watering
-          - entity: switch.side_grass_garden_mister_manual_watering
-          - entity: switch.side_grass_garden_mister_automatic_watering
+    - type: picture-glance
+      title: Side Grass & Garden Mister
+      entity: binary_sensor.side_grass_garden_mister_watering
+      image: /local/images/sprinkler/front_garden.png #side_grass_garden_mister.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.side_grass_garden_mister_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.side_grass_garden_mister_automatic_watering
+      entities:
+        - entity: sensor.side_grass_garden_mister_watering_time
+        - entity: sensor.side_grass_garden_mister_next_cycle
+        - entity: binary_sensor.side_grass_garden_mister_watering
+        - entity: switch.side_grass_garden_mister_manual_watering
+        - entity: switch.side_grass_garden_mister_automatic_watering
 
-      - type: picture-glance
-        title: Side Grass Mister
-        entity: binary_sensor.side_grass_mister_watering
-        image: /local/images/sprinkler/side_grass_mister.png
-        tap_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.side_grass_mister_manual_watering
-        hold_action:
-          action: call-service
-          service: switch.toggle
-          service_data:
-            entity_id: switch.side_grass_mister_automatic_watering
-        entities:
-          - entity: sensor.side_grass_mister_watering_time
-          - entity: sensor.side_grass_mister_next_cycle
-          - entity: binary_sensor.side_grass_mister_watering
-          - entity: switch.side_grass_mister_manual_watering
-          - entity: switch.side_grass_mister_automatic_watering
+    - type: picture-glance
+      title: Side Grass Mister
+      entity: binary_sensor.side_grass_mister_watering
+      image: /local/images/sprinkler/side_grass_mister.png
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.side_grass_mister_manual_watering
+      hold_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.side_grass_mister_automatic_watering
+      entities:
+        - entity: sensor.side_grass_mister_watering_time
+        - entity: sensor.side_grass_mister_next_cycle
+        - entity: binary_sensor.side_grass_mister_watering
+        - entity: switch.side_grass_mister_manual_watering
+        - entity: switch.side_grass_mister_automatic_watering

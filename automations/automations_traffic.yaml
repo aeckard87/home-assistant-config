@@ -1,7 +1,7 @@
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Update Jason Time To Work
 ## - limit updates when not needed to avoid API charges
-###################################################################################################
+#######################################################################################################################
   - id: traffic_update_jason_time_to_work
     alias: "[Traffic] Update Jason Time To Work"
     description: "Increase update interval of sensor during commute times."
@@ -52,10 +52,10 @@
         data:
           entity_id: sensor.jason_time_to_work
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Update Jason Time To Home
 ## - limit updates when not needed to avoid API charges
-###################################################################################################
+#######################################################################################################################
   - id: traffic_update_jason_time_to_home
     alias: "[Traffic] Update Jason Time To Home"
     description: "Increase update interval of sensor during commute times."
@@ -106,10 +106,10 @@
         data:
           entity_id: sensor.jason_time_to_home
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Update Jason Time To Home Not Home
 ## - limit updates when not needed to avoid API charges
-###################################################################################################
+#######################################################################################################################
   - id: traffic_update_jason_time_to_home_not_home
     alias: "[Traffic] Update Jason Time To Home Not Home"
     description: "Increase update interval of sensor when not home during non commute times."
@@ -164,10 +164,10 @@
         data:
           entity_id: sensor.jason_time_to_home
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Update Sheri Time To Work
 ## - limit updates when not needed to avoid API charges
-###################################################################################################
+#######################################################################################################################
   - id: traffic_update_sheri_time_to_work
     alias: "[Traffic] Update Sheri Time To Work"
     description: "Increase update interval of sensor during commute times."
@@ -218,10 +218,10 @@
         data:
           entity_id: sensor.sheri_time_to_work
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Update Sheri Time To Home
 ## - limit updates when not needed to avoid API charges
-###################################################################################################
+#######################################################################################################################
   - id: traffic_update_sheri_time_to_home
     alias: "[Traffic] Update Sheri Time To Home"
     description: "Increase update interval of sensor during commute times."
@@ -272,10 +272,10 @@
         data:
           entity_id: sensor.sheri_time_to_home
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Update Sheri Time To Home Not Home
 ## - limit updates when not needed to avoid API charges
-###################################################################################################
+#######################################################################################################################
   - id: traffic_update_sheri_time_to_home_not_home
     alias: "[Traffic] Update Sheri Time To Home Not Home"
     description: "Increase update interval of sensor when not home during non commute times."
@@ -330,9 +330,9 @@
         data:
           entity_id: sensor.sheri_time_to_home
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Jason Work Commute Alert
-###################################################################################################
+#######################################################################################################################
   - id: traffic_jason_work_commute_alert
     alias: "[Traffic] Jason Work Commute Alert"
     description: "Send notification, play announcement when commute time alert turns on."
@@ -402,9 +402,9 @@
             image: !secret TRAFFIC_IMAGE
             badge: !secret TRAFFIC_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Sheri Work Commute Alert
-###################################################################################################
+#######################################################################################################################
   - id: traffic_sheri_work_commute_alert
     alias: "[Traffic] Sheri Work Commute Alert"
     description: "Send notification when commute time alert turns on."
@@ -463,9 +463,9 @@
             image: !secret TRAFFIC_IMAGE
             badge: !secret TRAFFIC_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Jason Commute Alert Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: traffic_jason_commute_alert_notification_closed
     alias: "[Traffic] Jason Commute Alert Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -485,9 +485,9 @@
           data:
             tag: 'traffic_alert_jason'
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Sheri Commute Alert Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: traffic_sheri_commute_alert_notification_closed
     alias: "[Traffic] Sheri Commute Alert Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -507,9 +507,9 @@
           data:
             tag: 'traffic_alert_sheri'
 
-##################################################################################################
+#######################################################################################################################
 ## Traffic - Jason Commute Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: traffic_jason_commute_alert_cancelled
     alias: "[Traffic] Jason Commute Alert Cancelled"
     description: "Dismiss notifications when commute time alert turns off."
@@ -528,9 +528,9 @@
           data:
             tag: 'traffic_alert_jason'
 
-##################################################################################################
+#######################################################################################################################
 ## Traffic - Sheri Commute Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: traffic_sheri_commute_alert_cancelled
     alias: "[Traffic] Sheri Commute Alert Cancelled"
     description: "Dismiss notifications when commute time alert turns off."
@@ -549,9 +549,9 @@
           data:
             tag: 'traffic_alert_sheri'
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Jason Commute Alert Off
-###################################################################################################
+#######################################################################################################################
   - id: traffic_jason_commute_alert_pause
     alias: "[Traffic] Jason Commute Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -589,9 +589,9 @@
       - service: automation.turn_on
         entity_id: automation.traffic_jason_work_commute_alert
 
-###################################################################################################
+#######################################################################################################################
 ## Traffic - Sheri Commute Alert Off
-###################################################################################################
+#######################################################################################################################
   - id: traffic_sheri_commute_alert_pause
     alias: "[Traffic] Sheri Commute Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."

@@ -1,8 +1,8 @@
-###################################################################################################
+#######################################################################################################################
 ## Play Alarm Clock
 ## alarm_type: auto, manual, nap
 ## first_run: true, false
-###################################################################################################
+#######################################################################################################################
   alarm_clock_play:
     sequence:
       # cancel alarm clock restart timer, we might have switched to a radio station
@@ -246,12 +246,12 @@
       - service: homeassistant.turn_on
         entity_id: group.alarm_clock_automations
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock Stop
 ## - turn off alarm/snooze booleans
 ## - cancel snooze/restart timers
 ## - turn off alarm clock media player
-###################################################################################################
+#######################################################################################################################
   alarm_clock_stop:
     sequence:
       # stop play alarm clock script it might still be running
@@ -312,14 +312,14 @@
       - service: homeassistant.turn_on
         entity_id: group.alarm_clock_automations
 
-##################################################################################################
+#######################################################################################################################
 ## Active Alarm Clock Media Player Off
 ## - turn current active media player off
 ## - browser media players, chromcasts won't turn off so pause first
 ## - input_text.active_alarm_clock_media_player was populated during alarm_clock_play and is
 ##   necesary for closing current media player before starting new media player because alarm
 ##   media player sensor will have already changed to new value.
-##################################################################################################
+#######################################################################################################################
   active_alarm_clock_media_player_off:
     sequence:
       - condition: and
@@ -349,9 +349,9 @@
         data_template:
           entity_id: "{{ states('input_text.active_alarm_clock_media_player') }}"
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock Notification
-###################################################################################################
+#######################################################################################################################
   alarm_clock_notification:
     sequence:
       # send push notification
@@ -382,10 +382,10 @@
             image: !secret ALARM_CLOCK_IMAGE
             badge: !secret ALARM_CLOCK_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Alarm Clock Failed Notification
 ## - check to see if media player begins playing, turn it off if not
-###################################################################################################
+#######################################################################################################################
   alarm_clock_failed_notification:
     sequence:
       # turn on sensor update automation
@@ -401,7 +401,7 @@
       # turn off sensor update automation
       - service: automation.turn_off
         entity_id: automation.alarm_clock_sensors_update
-        
+
       # only continue if alarm clock is on and not snoozed, but not playing (something went wrong!)
       - condition: template
         value_template: >-
@@ -438,25 +438,3 @@
             icon: !secret ALERT_ICON
             image: !secret ALARM_CLOCK_IMAGE
             badge: !secret ALERT_BADGE
-
-###################################################################################################
-## I Am Awake
-## - used by Google Assistant to turn off current alarm clock
-###################################################################################################
-  i_am_awake:
-    sequence:
-      # turn off current alarm clock
-      - service: script.alarm_clock_stop
-
-      # put house into home mode if not already there
-      # if a guest does this mode will automatically switch to guest if nobody else is home
-      - service: input_select.select_option
-        data:
-          entity_id: input_select.occupancy_mode
-          option: 'Home'
-
-      # disarm the house alarm
-      - service: script.disarm_alarm_auto
-
-      # start morning lighting
-      - service: script.morning_lights

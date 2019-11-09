@@ -1,6 +1,6 @@
-##################################################################################################
+#######################################################################################################################
 ## Vent Fan - Auto Off
-##################################################################################################
+#######################################################################################################################
   - id: vent_fan_auto_off
     alias: "[Vent Fan] Auto Off"
     description: "Turn fan off when in use timer finished."
@@ -38,12 +38,12 @@
           fan_name: "{%- set device = trigger.event.data.entity_id.split('.')[1] -%}{{ device }}"
           ignore_user_state: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## Vent Fan - Upstairs Bathroom Humidity Fan
 ## - runs for at least 15 minutes
 ## - this will turn speed to high if fan already on
 ## - runs until humidity is below threshold or for 1 hour
-###################################################################################################
+#######################################################################################################################
   - id: vent_fan_upstairs_bathroom_humidity_fan
     alias: "[Vent Fan] Upstairs Bathroom Humidity Fan"
     description: "Turn fan on when bathroom humidity alert turns on."
@@ -98,11 +98,11 @@
           fan_name: 'upstairs_bathroom_fan'
           ignore_user_state: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Vent Fan - Upstairs Bathroom Mold Prevention Fan
 ## - runs for at least 15 minutes
 ## - runs until mold sensor is below threshold or for 1 hour
-###################################################################################################
+#######################################################################################################################
   - id: vent_fan_upstairs_bathroom_mold_prevention_fan
     alias: "[Vent Fan] Upstairs Bathroom Mold Prevention Fan"
     description: "Turn fan on when bathroom mold risk indicator alert turns on."
@@ -162,11 +162,11 @@
           fan_name: 'upstairs_bathroom_fan'
           ignore_user_state: 'false'
 
-###################################################################################################
+#######################################################################################################################
 ## Vent Fan - Upstairs Bathroom Temperature Fan
 ## - runs for at least 5 minutes
 ## - runs until temperature is below threshold or for 30 minutes
-###################################################################################################
+#######################################################################################################################
   - id: vent_fan_upstairs_bathroom_temperature_fan
     alias: "[Vent Fan] Upstairs Bathroom Temperature Fan"
     description: "Turn fan on when bathroom temperature alert turns on."

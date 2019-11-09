@@ -1,6 +1,6 @@
-###################################################################################################
+#######################################################################################################################
 ## Automation - Hassio Startup
-###################################################################################################
+#######################################################################################################################
   - id: automation_hassio_startup
     alias: "[Automation] Hassio Startup"
     description: "Turn on delayed automations, send restart notification."
@@ -87,9 +87,9 @@
             icon: !secret HASSIO_ICON
             badge: !secret HASSIO_BADGE
 
-##################################################################################################
+#######################################################################################################################
 # Automation - Hassio Shutdown
-###################################################################################################
+#######################################################################################################################
   - id: automation_hassio_shtudown
     alias: "[Automation] Hassio Shutdown"
     description: "Turn off delayed automations that might fire at shutdown."
@@ -105,9 +105,9 @@
       - service: homeassistant.turn_off
         entity_id: group.delayed_automations
 
-######################################################################################################################
+#######################################################################################################################
 ## Automation - Manual Mode Enabled
-######################################################################################################################
+#######################################################################################################################
   - id: automation_manual_mode_enabled
     alias: "[Automation] Manual Mode Enabled"
     description: "Activate manual mode when boolean turns on."
@@ -163,10 +163,10 @@
           message: '![image](/local/images/alert.png) Hassio is in Manual Mode.<br /> Only selected automations will run.'
           notification_id: 'manual_mode'
 
-######################################################################################################################
+#######################################################################################################################
 ## Automation - Manual Mode Disabled
 ## - user must restart climate fan schedule if required
-######################################################################################################################
+#######################################################################################################################
   - id: automation_manual_mode_disabled
     alias: "[Automation] Manual Mode Disabled"
     description: "Turn off manual mode when boolean turns off."
@@ -210,10 +210,10 @@
         data:
           notification_id: 'automation_delay'
 
-##################################################################################################
+#######################################################################################################################
 ## Automation - Set Device User State
 ## - group.delayed_automations
-##################################################################################################
+#######################################################################################################################
   - id: automation_set_device_user_state
     alias: "[Automation] Set Device User State"
     description: "Turn device in use boolean and timer on when device state changes."
@@ -244,10 +244,10 @@
         data_template:
           entity_id:  "{% set device = trigger.entity_id.split('.')[1] %} input_boolean.{{ device }}"
 
-##################################################################################################
+#######################################################################################################################
 ## Automation - Reset Device User State
 ## - each trigger entity needs an associated boolean in automation_device_user_state_off
-##################################################################################################
+#######################################################################################################################
   - id: automation_reset_device_user_state
     alias: "[Automation] Reset Device User State"
     description: "Turn device user state boolean off when device in use timer is finished."
@@ -291,10 +291,10 @@
         data_template:
           entity_id: "{% set device = trigger.event.data.entity_id.split('.')[1] %} input_boolean.{{ device }}"
 
-##################################################################################################
+#######################################################################################################################
 ## Automation - Device User State Turned Off
 ## - each trigger entity needs an associated timer in automation_reset_device_user_state
-##################################################################################################
+#######################################################################################################################
   - id: automation_device_user_state_turned_off
     alias: "[Automation] Device User State Turned Off"
     description: "Device user state boolean has been turned off, cancel in use timer."
@@ -327,9 +327,9 @@
         data_template:
           entity_id: "{% set device = trigger.entity_id.split('.')[1] %} timer.{{ device }}"
 
-######################################################################################################################
+#######################################################################################################################
 ## Automation - Hassio Restart Notification Closed
-######################################################################################################################
+#######################################################################################################################
   - id: automation_hassio_restart_notification_closed
     alias: "[Automation] Hassio Restart Notification Closed"
     description: "Dismiss restart notification on all devices when closed on one."

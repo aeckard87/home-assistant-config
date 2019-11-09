@@ -1,0 +1,116 @@
+  - platform: combined
+    name: My Cameras
+    base_address: !secret BASE_URL
+    entities:
+      - camera.side_drive
+      - camera.side_door
+      - camera.front_door
+      - camera.garage_inside
+
+  - platform: generic
+    name: SIDE DRIVE
+    still_image_url: !secret CAM1_IP_GENERIC_URL
+    stream_source: !secret CAM1_STREAM_IP_GENERIC_URL
+    username: !secret IP_GENERIC_CAM_USER
+    password: !secret IP_GENERIC_CAM_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: SIDE DOOR
+    still_image_url: !secret CAM2_URL
+    # stream_source: !secret CAM2_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: FRONT DRIVE
+    still_image_url: !secret CAM3_URL
+    # stream_source: !secret CAM3_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: FRONT DOOR
+    still_image_url: !secret CAM4_URL
+    # stream_source: !secret CAM4_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: FRONT YARD
+    still_image_url: !secret CAM5_URL
+    # stream_source: !secret CAM5_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: SIDE GATE FRONT
+    still_image_url: !secret CAM6_URL
+    # stream_source: !secret CAM6_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: SIDE GATE BACK
+    still_image_url: !secret CAM7_URL
+    # stream_source: !secret CAM7_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: BACK YARD
+    still_image_url: !secret CAM8_URL
+    # stream_source: !secret CAM8_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: BACK DOOR
+    still_image_url: !secret CAM9_URL
+    # stream_source: !secret CAM9_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: PATIO DOOR
+    still_image_url: !secret CAM10_URL
+    # stream_source: !secret CAM10_STREAM_URL
+    username: !secret IP_GERNERIC_NVR_USER
+    password: !secret IP_GERNERIC_NVR_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: BACK HOUSE
+    still_image_url: !secret CAM11_IP_GENERIC_URL
+    stream_source: !secret CAM11_STREAM_IP_GENERIC_URL
+    username: !secret IP_GENERIC_CAM_USER
+    password: !secret IP_GENERIC_CAM_PSWD
+    authentication: digest
+    verify_ssl: false
+
+  - platform: generic
+    name: GARAGE INSIDE
+    still_image_url: !secret CAM12_IP_GENERIC_URL
+    stream_source: !secret CAM12_STREAM_IP_GENERIC_URL
+    username: !secret IP_GENERIC_CAM_USER
+    password: !secret IP_GENERIC_CAM_PSWD
+    authentication: digest
+    verify_ssl: false

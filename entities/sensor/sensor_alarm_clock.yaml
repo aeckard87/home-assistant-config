@@ -1,13 +1,13 @@
-###################################################################################################
+#######################################################################################################################
 ## Template Sensors
-###################################################################################################
+#######################################################################################################################
   - platform: template
     sensors:
 
-###################################################################################################
+#######################################################################################################################
 ## Auto Alarm Clock Status
 ## - sensor to show alarm status in glance alerts, alarm settings popup
-###################################################################################################
+#######################################################################################################################
       alarm_clock_status_auto:
         friendly_name: Alarm
         icon_template: >-
@@ -35,10 +35,10 @@
           {% else %} Off
           {% endif %}
 
-###################################################################################################
+#######################################################################################################################
 ## Manual Alarm Clock Status
 ## - sensor to show alarm status in glance alerts, alarm settings popup
-###################################################################################################
+#######################################################################################################################
       alarm_clock_status_manual:
         friendly_name: Manual Alarm
         icon_template: >-
@@ -54,10 +54,10 @@
           {% else %} Off
           {% endif %}
 
-###################################################################################################
+#######################################################################################################################
 ## Nap Alarm Clock Status
 ## - sensor to show alarm status in glance alerts, alarm settings popup
-###################################################################################################
+#######################################################################################################################
       alarm_clock_status_nap:
         friendly_name: Nap Alarm
         icon_template: >-
@@ -73,9 +73,9 @@
           {% else %} Off
           {% endif %}
 
-##################################################################################################
+#######################################################################################################################
 # Alarm Clock Media Player
-##################################################################################################
+#######################################################################################################################
       alarm_clock_media_player:
         friendly_name: Alarm Clock Media Player
         icon_template: mdi:animation-play
@@ -92,11 +92,92 @@
               unavailable
             {% endif %}
 
-##################################################################################################
+#######################################################################################################################
 # Alarm Clock Media Player State
-##################################################################################################
+#######################################################################################################################
       alarm_clock_media_player_state:
         friendly_name: Alarm Clock Media Player State
         icon_template: mdi:animation-play
         value_template: "{{ states(states('sensor.alarm_clock_media_player')) }}"
 
+
+#######################################################################################################################
+## Next Auto Alarm
+## - sensor to show next auto alarm time
+#ISSUE what happens on shift change weekends - when does shift change?
+#######################################################################################################################
+      alarm_clock_next_auto_alarm:
+        friendly_name: Next Auto Alarm
+        icon_template: mdi:clock
+        value_template: >-
+          {% if is_state('input_boolean.alarm_clock_auto','on') %}
+            {% if is_state('binary_sensor.work_today','off') %}
+              {% set todays_alarm = states('input_datetime.weekend_waketime') %}
+            {% elif is_state('sensor.current_shift','Days') %}
+              {% set todays_alarm = states('input_datetime.days_waketime') %}
+            {% else %}
+              {% set todays_alarm = states('input_datetime.afternoons_waketime') %}
+            {% endif %}
+            {% if states('sensor.time') > states('input_datetime.weekend_waketime')[0:5] %}
+              {% if is_state('binary_sensor.work_today','off') %}
+                {% set tomorrows_alarm = states('input_datetime.weekend_waketime') %}
+              {% elif is_state('sensor.current_shift','Days') %}
+                {% set tomorrows_alarm = states('input_datetime.days_waketime') %}
+              {% else %}
+                {% set tomorrows_alarm = states('input_datetime.afternoons_waketime') %}
+              {% endif %}
+              {% set next_alarm = tomorrows_alarm[0:5] %}
+            {% else %}
+              {% set next_alarm = todays_alarm[0:5] %}
+            {% endif %}
+          {% else %}
+            {% set next_alarm = 'Not Set' %}
+          {% endif %}
+          {{ next_alarm }}
+
+#######################################################################################################################
+## Next Manual Alarm
+## - sensor to show next manual alarm time
+#######################################################################################################################
+      alarm_clock_next_manual_alarm:
+        friendly_name: Next Manual Alarm
+        icon_template: mdi:clock
+        value_template: >-
+          {% if is_state('input_boolean.alarm_clock_manual','on') %}
+            {% set next_alarm = states('input_datetime.alarm_clock_manual_time')[0:5] %}
+          {% else %}
+            {% set next_alarm = 'Not Set' %}
+          {% endif %}
+          {{ next_alarm }}
+
+#######################################################################################################################
+## Next Alarm
+## - sensor to show next alarm time
+#######################################################################################################################
+      alarm_clock_next_alarm:
+        friendly_name: Next Alarm
+        icon_template: mdi:clock
+        value_template: >-
+          {% if not states('sensor.alarm_clock_next_auto_alarm') == 'Not Set' %}
+            {% if not states('sensor.alarm_clock_next_manual_alarm') == 'Not Set' %}
+              {% if states('sensor.alarm_clock_next_auto_alarm') > states('sensor.alarm_clock_next_manual_alarm') %}
+                {% if states('sensor.time') < states('sensor.alarm_clock_next_auto_alarm') %}
+                  {{ states('sensor.alarm_clock_next_auto_alarm')[0:5] }}
+                {% else %}
+                  {{ states('sensor.alarm_clock_next_manual_alarm')[0:5] }}
+                {% endif %}
+              {% else %}
+                {% if states('sensor.time') < states('sensor.alarm_clock_next_auto_alarm') %}
+                  {{ states('sensor.alarm_clock_next_auto_alarm')[0:5] }}
+                {% else %}
+                  {{ states('sensor.alarm_clock_next_manual_alarm')[0:5] }}
+                {% endif %}
+              {% endif %}
+            {% else %}
+              {{ states('sensor.alarm_clock_next_auto_alarm')[0:5] }}
+            {% endif %}
+          {% elif not states('sensor.alarm_clock_next_manual_alarm') == 'Not Set' %}
+            {{ states('sensor.alarm_clock_next_manual_alarm') }}
+          {% else %}
+            Not Set
+          {% endif %}

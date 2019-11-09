@@ -1,15 +1,26 @@
-##################################################################################################
+#######################################################################################################################
 ## Light Automation
-##################################################################################################
+#######################################################################################################################
   light_automation:
     name: Light Automation
     icon: mdi:lightbulb-on-outline
 
-##################################################################################################
+#######################################################################################################################
 ## Living Room Pot Lights In Use
-## - initial off reset timer of on restart
-##################################################################################################
+## - initial off because reset timer is off on restart
+#######################################################################################################################
   living_room_pot_lights:
     name: Living Room Pot Lights
     icon: mdi:light-switch
     initial: 'off'
+
+#######################################################################################################################
+## Living Room Pot Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until bedroom light swtiches are installed
+## - turned on, leave it on so we're not turning living room lights on (temp assigned to bedroom lights)
+## - other group lights we're just ignoring user state for now
+#######################################################################################################################
+  bedroom_lights:
+    name: Bedroom Lights
+    icon: mdi:light-switch
+    initial: 'on'

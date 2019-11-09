@@ -1,28 +1,26 @@
-##################################################################################################
+#######################################################################################################################
 ## Someone arrives home
 ## person: name of person who arrived
-##################################################################################################
+#######################################################################################################################
   someone_arrives_home:
     sequence:
-      # set occpancy mode to home if not a guest arriving
-      # guest mode was already set by disarming alarm, or manually set on UI
-      - service_template: >-
-          {% if not person == 'Guest' and not is_state('sensor.occupancy_mode', 'Home') and not is_state('sensor.occupancy_mode', 'Night') %}
-            input_select.select_option
-          {% else %}
-            script.null_script
-          {% endif %}
-        data:
+      # set occupancy mode - either leave in Night mode or select Home / Guest
+      - service: input_select.select_option
+        data_template:
           entity_id: input_select.occupancy_mode
-          option: 'Home'
+          option: >-
+            {% if is_state('sensor.occupancy_mode', 'Night') %} Night
+            {% elif person == 'Guest' %} Guest
+            {% else %} Home
+            {% endif %}
 
-      # turn on arrive home lighting
+      # turn on arrive home entrance lighting
       - service: script.turn_light_on
         data:
           light_name: 'arrive_home_lights'
           new_state: 'on'
           brightness: 15
-          ignore_user_state: 'false'
+          ignore_user_state: 'true'
 
       # don't continue if house is in night mode
       - condition: template
@@ -45,7 +43,7 @@
           quiet_play: 'true'
 
       # only continue if the radio is off, if person is Jason/Sheri, and no one else is home (or they came home in the last 5 minutes)
-      # accounts for more than one person arriving at same time or radio won't play because both home sensors are on.
+      # accounts for more than one person arriving at same time or radio won't play because both home sensors are now on.
       - condition: and
         conditions:
           - condition: state
@@ -89,14 +87,30 @@
         data_template:
           preset: "{{ person }}"
 
-##################################################################################################
+#######################################################################################################################
 ## Someone Leaves Home
 ## person: name of person who left
-##################################################################################################
+#######################################################################################################################
   someone_leaves_home:
     sequence:
+      # turn off presence_home_mode_owner_away - it will kill our presence automations!
+      - service: automation.turn_off
+        entity_id: automation.presence_home_mode_owner_away
+
+      # select guest mode if no owner left at home
+      - service: input_select.select_option
+        data_template:
+          entity_id: input_select.occupancy_mode
+          option: >-
+            {% if is_state('binary_sensor.owner_home','off') and is_state('input_boolean.guest_home','on') %} Guest
+            {% else %} {{ states('input_select.occupancy_mode') }}
+            {% endif %}
+
+      # turn presence_home_mode_owner_away back on
+      - service: automation.turn_on
+        entity_id: automation.presence_home_mode_owner_away
+
       # only continue if no one is left at home
-      # if guests still in house, activate guest mode before leaving
       - condition: state
         entity_id: binary_sensor.someone_home
         state: 'off'
@@ -124,11 +138,11 @@
           entity_id: input_select.occupancy_mode
           option: 'Away'
 
-##################################################################################################
+#######################################################################################################################
 ## Night State
 ## - lights, media players will turn off when goodnight timer is finished
 #IDEA lock doors, check if windows closed
-##################################################################################################
+#######################################################################################################################
   night_state:
     sequence:
       # alarm automatically armed by occupancy mode if enabled
@@ -172,15 +186,15 @@
           fan_name: 'upstairs_bedroom_fan'
           ignore_user_state: 'false'
 
-##################################################################################################
+#######################################################################################################################
 ## Away State
 ## - turn off lights, fans, media players
 #IDEA lock doors, check if windows closed
-##################################################################################################
+#######################################################################################################################
   away_state:
     sequence:
       # delay to allow alarm to enter pending state before wait template
-      - delay: '0:00:15'
+      - delay: '0:00:05'
 
       # wait for alarm pending to finish
       - wait_template: "{{ not is_state('alarm_control_panel.house', 'pending') }}"
@@ -189,11 +203,10 @@
 
       # wait for any announcments playing to finish here before killing media players
       - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
-        timeout: '00:01:00'
+        timeout: '00:00:30'
         continue_on_timeout: true
 
-      #BUGFIX pause all media players if media player automation enabled
-      # because browser players don't turn off
+      #BUGFIX pause all media players if media player automation enabled because browser players don't turn off
       #ISSUE chromcast does not turn off
       - service_template: >-
           {% if is_state('input_boolean.media_player_automation','on') %} script.pause_media_players
@@ -223,17 +236,17 @@
           {% endif %}
         entity_id: group.ceiling_fans
 
-      # delay to allow state changes to register (fans take a couple seconds)
+      # delay to allow state changes to register (fans sometimes take a couple seconds)
       - delay: '00:00:05'
 
       # reset all device user state booleans because nobody is home
       - service: input_boolean.turn_off
         entity_id: group.user_state_controls
 
-##################################################################################################
+#######################################################################################################################
 ## Occupancy Mode Activation Scripts
 ## - used by occupancy mode buttons, Google Assistant
-##################################################################################################
+#######################################################################################################################
   home_mode:
     sequence:
       # only run if presence automation is enabled

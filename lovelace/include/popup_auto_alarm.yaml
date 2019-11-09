@@ -17,3 +17,5 @@ service_data:
       - entity: input_number.alarm_clock_snooze_time
       - entity: input_boolean.alarm_clock_active_auto
         name: Play Auto Alarm
+
+      - entity: sensor.alarm_clock_next_auto_alarm

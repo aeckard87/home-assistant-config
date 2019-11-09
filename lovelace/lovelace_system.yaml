@@ -306,30 +306,6 @@ cards:
         name: IPV6
 
   - type: entities
-    title: Network Monitor #TODO - work on this
-    show_header_toggle: false
-    entities:
-      - entity: binary_sensor.wan
-      - entity: sensor.myip
-      - entity: sensor.ssl_certificate_expiry
-
-      - type: custom:auto-entities
-        card:
-          type: custom:fold-entity-row
-          head: sensor.online_devices
-        filter:
-          include:
-            - group: group.all_devices
-              options:
-                secondary_info: last-changed
-          exclude:
-            #- state: Away
-            #- state: unknown
-            #- state: not_home
-            #- domain: person
-            - name: "Bluetooth *"
-
-  - type: entities
     title: Device Monitor
     show_header_toggle: false
     entities:
@@ -413,3 +389,31 @@ cards:
         name: CPU Temp
       - entity: binary_sensor.battery_status_alert
         name: Battery
+
+  - type: entities
+    title: Network Monitor
+    show_header_toggle: false
+    entities:
+      - entity: binary_sensor.wan
+      - entity: sensor.myip
+      - entity: sensor.ssl_certificate_expiry
+
+      - type: custom:auto-entities
+        card:
+          type: custom:fold-entity-row
+          head: sensor.online_devices
+        filter:
+          include:
+            - group: group.all_devices
+              options:
+                secondary_info: last-changed
+          exclude:
+            #- state: Away
+            #- state: unknown
+            #- state: not_home
+            - domain: person
+            - name: "*Bluetooth*"
+            - entity_id: device_tracker.google_maps_101131226839468750203
+            - entity_id: device_tracker.google_maps_115097751563829374630
+            - entity_id: device_tracker.jason_tracker
+            - entity_id: device_tracker.sheri_tracker

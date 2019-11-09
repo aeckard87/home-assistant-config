@@ -1,6 +1,7 @@
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Auto Off
-##################################################################################################
+## - delay to prevent automation from firing when flipping occupancy modes quickly
+#######################################################################################################################
   - id: garage_climate_auto_off
     alias: "[Garage Climate] Auto Off"
     description: "Turn garage furnace off when conditions are met."
@@ -10,14 +11,17 @@
       - platform: state
         entity_id: input_select.occupancy_mode
         to: 'Night'
+        for: '00:00:05'        
 
       - platform: state
         entity_id: input_select.occupancy_mode
         to: 'Away'
+        for: '00:00:05'        
 
       - platform: state
         entity_id: input_select.occupancy_mode
         to: 'Vacation'
+        for: '00:00:05'        
 
     condition:
       - condition: and
@@ -37,11 +41,11 @@
       - service: input_boolean.turn_off
         entity_id: input_boolean.garage_heat
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Door Open Heat On
 ## - delay to allow door open scripts to run and allow delay
 ## - don't run if door closed after delay
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_door_open_heat_on
     alias: "[Garage Climate] Door Open Heat On"
     initial_state: 'on'
@@ -133,9 +137,9 @@
           play_message: "The garage heat has been turned back on. The thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees. The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature')}} degrees."
           quiet_play: 'false'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Heat On Door Open
-##################################################################################################
+#######################################################################################################################
   - id:  garage_climate_heat_on_door_open
     alias: "[Garage Climate] Heat On Door Open"
     description: "Turn garage heat back off until garage door closed."
@@ -184,9 +188,9 @@
       # turn the garage heat on
       - service: script.garage_climate_on
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Freeze Protection Changed
-##################################################################################################
+#######################################################################################################################
   - id: garage_freeze_protection_chanaged
     alias: "[Garage Climate] Freeze Protection Changed"
     description: "Update thermostat, play announcement."
@@ -283,9 +287,9 @@
             {% endif %}
           quiet_play: 'false'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Heat Changed
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_heat_changed
     alias: "[Garage Climate] Heat Changed"
     description: "Garage heat turned on or off.  Update thermostat, play announcement."
@@ -386,9 +390,9 @@
             {% endif %}
           quiet_play: 'false'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Thermostat Adjusted
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_thermostat_adjusted
     alias: "[Garage Climate] Thermostat Adjusted"
     description: "Garage thermostat turned on or off, update hassio."
@@ -423,9 +427,9 @@
       - service: automation.turn_on
         entity_id: automation.garage_climate_heat_changed
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Heat Temp Adjusted
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_heat_temp_adjusted
     alias: "[Garage Climate] Heat Temp Adjusted"
     description: "Heat temperature adjusted, update thermostat and play announcement."
@@ -474,9 +478,9 @@
           quiet_play: 'false'
 
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Freeze Temp Adjusted (Hassio)
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_freeze_temp_adjusted
     alias: "[Garage Climate] Freeze Temp Adjusted"
     description: "Freeze temperature adjusted, update thermostat and play announcement."
@@ -533,9 +537,9 @@
               The current garage temperature is {{ state_attr('climate.garage_thermostat', 'current_temperature') }} degrees.
           quiet_play: 'false'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Extended Heat Alert
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_extended_heat_alert
     alias: "[Garage Climate] Extended Heat Alert"
     description: "Send notification if garage heat on for extended period."
@@ -597,9 +601,9 @@
           play_message: "Attention! The garage heat has been on for a while. The current garage temperature is  {{ states('sensor.garage_thermostat_temperature') }} degrees."
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## Garage Climate - Extended Heat Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: garage_climate_extended_heat_notification_closed
     alias: "[Garage Climate] Extended Heat Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -619,9 +623,9 @@
           data:
             tag: 'garage_extended_heat'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Extended Heat Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_extended_heat_alert_cancelled
     alias: "[Garage Climate] Extended Heat Alert Cancelled"
     description: "Dismiss notifications when garage heat turns off."
@@ -640,9 +644,9 @@
           data:
             tag: 'garage_extended_heat'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Turn Off Heat Extended Heat
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_turn_off_heat
     alias: "[Garage Climate] Turn Off Heat"
     description: "Turn garage heat off and dismiss alerts when button clicked in notification."
@@ -672,9 +676,9 @@
           data:
             tag: 'garage_high_temp'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Extended Heat Alert Off
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_extended_heat_alert_pause
     alias: "[Garage Climate] Extended Heat Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -707,11 +711,11 @@
       - service: automation.turn_on
         entity_id: automation.garage_climate_extended_heat_alert
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - High Temperature Alert
 ## - allow 5 minutes for temperature fluxuation
 ## - turn off the garage climate (freeze protection should stay on but temp should reset)
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_high_temperature_alert
     alias: "[Garage Climate] High Temperature Alert"
     description: "Send notification when garage high temperature turns on."
@@ -781,9 +785,9 @@
             and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees.
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## Garage Climate - High Temperature Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: garage_climate_high_temperature_notification_closed
     alias: "[Garage Climate] High Temperature Notification Closed"
     description: Dismiss notifications on all devices when closed on one.
@@ -803,9 +807,9 @@
           data:
             tag: 'garage_high_temp'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - High Temperature Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_high_temperature_alert_cancelled
     alias: "[Garage Climate] High Temperature Alert Cancelled"
     description: "Dismiss notifications when garage high temperature alert turns off."
@@ -825,9 +829,9 @@
           data:
             tag: 'garage_high_temp'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - High Temperature Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_high_temperature_alert_pause
     alias: "[Garage Climate] High Temperature Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -860,10 +864,10 @@
       - service: automation.turn_on
         entity_id: automation.garage_climate_high_temperature_alert
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Low Temperature Alert
 ## - allow 30 minutes for garage to warm up when heat turned on
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_low_temperature_alert
     alias: "[Garage Climate] Low Temperature Alert"
     description: "Send notification when garage low temperature alert turns on."
@@ -922,9 +926,9 @@
             and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees.
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## Garage Climate - Low Temperature Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: garage_climate_low_temperature_notification_closed
     alias: "[Garage Climate] Low Temperature Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -944,9 +948,9 @@
           data:
             tag: garage_low_temp
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Low Temperature Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_low_temperature_alert_cancelled
     alias: "[Garage Climate] Low Temperature Alert Cancelled"
     description: "Dismiss notifications when garage low temperature alert turns off."
@@ -966,9 +970,9 @@
           data:
             tag: 'garage_low_temp'
 
-##################################################################################################
+#######################################################################################################################
 ## Garage Climate - Low Temperature Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: garage_climate_low_temperature_alert_pause
     alias: "[Garage Climate] Low Temperature Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."

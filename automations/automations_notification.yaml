@@ -1,6 +1,6 @@
-##################################################################################################
+#######################################################################################################################
 ## Notification - Sensors Update
-##################################################################################################
+#######################################################################################################################
   - id: notification_sensors_update
     alias: "[Notification] Sensors Update"
     description: "Update announcement media player sensors for wait templates etc."
@@ -18,10 +18,10 @@
           - sensor.announcement_media_player
           - sensor.announcement_media_player_state
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Announcement Volume Check
 ## - ensure night <= quiet <= announcement volume so we don' get unexpected volume jumps
-##################################################################################################
+#######################################################################################################################
   - id: notification_announcement_volume_check
     alias: "[Notification] Announcement Volume Check"
     description: "Keep announcement volume settings stay in sync."
@@ -67,10 +67,10 @@
           - automation.notification_night_announcement_volume_check
           - automation.notification_quiet_hours_volume_check
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Quiet Hours Volume Check
 ## - ensure night <= quiet <= announcement volume so we don' get unexpected volume jumps
-##################################################################################################
+#######################################################################################################################
   - id: notification_quiet_hours_volume_check
     alias: "[Notification] Quiet Hours Volume Check"
     description: "Keep quiet hours volume settings stay in sync."
@@ -116,10 +116,10 @@
           - automation.notification_announcement_volume_check
           - automation.notification_night_announcement_volume_check
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Night Announcement Volume Check
 ## - ensure night <= quiet <= announcement volume so we don' get unexpected volume jumps
-##################################################################################################
+#######################################################################################################################
   - id: notification_night_announcement_volume_check
     alias: "[Notification] Night Announcement Volume Check"
     description: "Keep night announcement volume settings stay in sync."
@@ -165,11 +165,11 @@
           - automation.notification_quiet_hours_volume_check
           - automation.notification_announcement_volume_check
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Announcement Playing Boolean Off
 ## - req when play_announcement/alert craps out before end of script to turn off update automation
 ## - runs when announcement playing boolean manually turned off or at specified trigger time
-##################################################################################################
+#######################################################################################################################
   - id: notification_announcement_boolean_off
     alias: "[Notification] Announcement Boolean Off"
     description: "Turn off announcement script and sensor update automation if left running."
@@ -197,9 +197,9 @@
       - service: script.turn_off
         entity_id: script.play_announcement
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Announcement Media Player Changed
-##################################################################################################
+#######################################################################################################################
   - id: notification_announcement_media_player_changed
     alias: "[Notification] Announcement Media Player Changed"
     description: "Update media player sensor when media player changed."
@@ -217,11 +217,11 @@
           - sensor.announcement_media_player
           - sensor.announcement_media_player_state
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Announcement Player Offline
 ## - don't use browser speakers, they go unavailable
 ## - group.delayed_automations
-##################################################################################################
+#######################################################################################################################
   - id: notification_announcement_player_offline
     alias: "[Notification] Announcement Player Offline"
     description: "Send notification when announcement media player goes offline."
@@ -299,9 +299,9 @@
             icon: !secret OFFLINE_ICON
             badge: !secret OFFLINE_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## Notification - Announcement Player Offline Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: notification_announcement_player_offline_notification_closed
     alias: "[Notification] Announcement Player Offline Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -321,10 +321,10 @@
           data:
             tag: 'announcement_player_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Announcement Player Offline Alert Cancelled
 ## - don't use browser speakers, they go unavailable
-##################################################################################################
+#######################################################################################################################
   - id: notification_announcement_player_offline_alert_cancelled
     alias: "[Notification] Announcement Player Offline Alert Cancelled"
     description: "Dismiss notifications when announcement media player back online."
@@ -369,9 +369,9 @@
           data:
             tag: 'announcement_player_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## Notification - Announcement Player Offline Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: notification_announcement_player_offline_alert_pause
     alias: "[Notification] Announcement Player Offline Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."

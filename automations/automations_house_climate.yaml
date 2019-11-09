@@ -1,6 +1,6 @@
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Update Thermostat
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_update_thermostat
     alias: "[House Climate] Update Thermostat"
     description: "Update climate controls/thermostat when temps changed in Hassio."
@@ -87,18 +87,51 @@
         data:
           entity_id: automation.house_climate_update_thermostat
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Occupancy Mode Control
-##################################################################################################
+## delay to prevent HVAC from changing modes if occupancy mode changed quickly
+#######################################################################################################################
   - id: house_climate_occupancy_mode_control
     alias: "[House Climate] Occupancy Mode Control"
     description: "Set climate modes according to occupancy mode."
     initial_state: 'on'
 
     trigger:
-      # run when occupancy mode changes
+      # run when occupancy mode changes to Home
       - platform: state
         entity_id: input_select.occupancy_mode
+        to: 'Home'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Night
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Night'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Guest
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Guest'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Away
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Away'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Vacation
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Vacation'
+        for: '00:00:05'
+
+      # run when occupancy mode changes to Override
+      - platform: state
+        entity_id: input_select.occupancy_mode
+        to: 'Override'
+        for: '00:00:05'
 
     condition:
       - condition: and
@@ -122,10 +155,10 @@
       # set climate controls
       - service: script.set_climate_temperature
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Mode Changed
 ## - must be disabled in script.climate_set_temperature or we get recursive call
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_mode_changed
     alias: "[House Climate] Mode Changed"
     description: "Reset temperatures to preset values when HVAC mode has changed."
@@ -162,9 +195,9 @@
       # run set climate temperature script to reset temperatures to set values
       - service: script.set_climate_temperature
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - HVAC Fan On (template fan)
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_hvac_fan_on
     alias: "[House Climate] HVAC Fan On"
     description: "Turn HVAC fan on when boolean turns on."
@@ -181,9 +214,9 @@
         data:
           fan_mode: 'on'
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - HVAC Fan Off (template fan)
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_hvac_fan_off
     alias: "[House Climate] HVAC Fan Off"
     description: "Turn HVAC fan off when boolean turns off."
@@ -200,9 +233,9 @@
         data:
           fan_mode: 'auto'
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Low Temperature Alert
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_low_temperature_alert
     alias: "[House Climate] Low Temperature Alert"
     description: "Send notification when low temperature alert turns on."
@@ -264,9 +297,9 @@
           play_message: "Attention! The indoor low temperature alert is active. The current indoor temperature is {{ states('sensor.upstairs_thermostat_temperature') }} degrees."
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## House Cliamte - Low Temperature Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_low_temperature_notification_closed
     alias: "[House Cliamte] Low Temperature Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -286,9 +319,9 @@
           data:
             tag: 'climate_low_temperature_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - Low Temperature Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_low_temperature_alert_cancelled
     alias: "[House Climate] Low Temperature Alert Cancelled"
     description: "Dismiss notifications when low temperature alert turns off."
@@ -307,9 +340,9 @@
           data:
             tag: 'climate_low_temperature_alert'
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Low Temperature Alert Off
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_low_temperature_alert_pause
     alias: "[House Climate] Low Temperature Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -342,9 +375,9 @@
       - service: automation.turn_on
         entity_id: automation.house_climate_low_temperature_alert
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - High Temperature Alert
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_high_temperature_alert
     alias: "[House Climate] High Temperature Alert"
     description: "Send notification when high temperature alert turns on."
@@ -413,9 +446,9 @@
           play_message: "Attention! The indoor high temperature alert is active. The current indoor temperature is {{ states('sensor.upstairs_thermostat_temperature') }} degrees."
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## House Cliamte - High Temperature Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_high_temperature_notification_closed
     alias: "[House Cliamte] High Temperature Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -435,9 +468,9 @@
           data:
             tag: 'climate_high_temperature_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - High Temperature Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_high_temperature_alert_cancelled
     alias: "[House Climate] High Temperature Alert Cancelled"
     description: "Dismiss notifications when high temperature alert turns off."
@@ -456,9 +489,9 @@
           data:
             tag: 'climate_high_temperature_alert'
 
-##################################################################################################
+#######################################################################################################################
 ## Action - Climate High Temp Alert Off
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_high_temperature_alert_pause
     alias: "[House Climate] High Temperature Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -491,9 +524,9 @@
       - service: automation.turn_on
         entity_id: automation.house_climate_high_temperature_alert
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - High Humidity Alert
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_high_humidity_alert
     alias: "[House Climate] High Humidity Alert"
     description: "Send notification when high humidity alert turns on."
@@ -555,9 +588,9 @@
           play_message: "Attention! The indoor high humidity alert is active. The current indoor humidity is {{ states('sensor.upstairs_thermostat_humidity') }}%"
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - High Humidity Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_high_humidity_notification_closed
     alias: "[House Climate] High Humidity Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -577,9 +610,9 @@
           data:
             tag: 'humidity_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - High Humidity Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_high_humidity_alert_cancelled
     alias: "[House Climate] High Humidity Alert Cancelled"
     description: "Dismiss notifications when high humidity alert turns off."
@@ -599,9 +632,9 @@
           data:
             tag: 'humidity_alert'
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - High Humidity Alert Off
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_high_humidity_alert_pause
     alias: "[House Climate] High Humidity Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -634,9 +667,9 @@
       - service: automation.turn_on
         entity_id: automation.house_climate_high_humidity_alert
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Mold Risk Alert
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_mold_risk_alert
     alias: "[House Climate] Mold Risk Alert"
     description: "Send notification when mold risk alert is turned on for an hour."
@@ -698,9 +731,9 @@
           play_message: "The mold risk alert has been active for an hour."
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - Mold Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_mold_notification_closed
     alias: "[House Climate] Mold Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -720,9 +753,9 @@
           data:
             tag: 'mold_alert'
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - Mold Risk Alert Cancelled
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_mold_risk_alert_cancelled
     alias: "[House Climate] Mold Risk Alert Cancelled"
     description: "Dismiss notifications when mold risk alert turns off."
@@ -741,9 +774,9 @@
           data:
             tag: 'mold_alert'
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Mold Risk Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_mold_risk_alert_pause
     alias: "[House Climate] Mold Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -776,7 +809,7 @@
       - service: automation.turn_on
         entity_id: automation.house_climate_mold_risk_alert
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Emergency Heat Alert
 ## - do not dismiss emergency heat notification automatically, we need to know something was wrong
 ## - no conditions, always allow
@@ -835,9 +868,9 @@
           play_message: "The furnace emergency heat has been activated."
           quiet_play: 'true'
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - Emergency Heat Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_emergency_heat_notification_closed
     alias: "[House Climate] Emergency Heat Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -857,10 +890,10 @@
           data:
             tag: thermostat_emergency_heat
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Emergency Heat Alert Off
 ## - do not dismiss persistent notification
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_emergency_heat_alert_pause
     alias: "[House Climate] Emergency Heat Alert Off"
     description: "Dismiss notifications and temporarily turn off alert automation."
@@ -893,10 +926,10 @@
       - service: automation.turn_on
         entity_id: automation.house_climate_emergency_heat_alert
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Upstairs Thermostat Offline Alert
 ## - stagger for time with other nest products so push notifications don't exceed allowed messages
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_upstairs_thermostat_offline_alert
     alias: "[House Climate] Upstairs Thermostat Offline Alert"
     description: "Send notification when thermostat goes offline."
@@ -955,9 +988,9 @@
             image: !secret OFFLINE_IMAGE
             badge: !secret OFFLINE_BADGE
 
-###################################################################################################
+#######################################################################################################################
 ## House Climate - Thermostat Offline Notification Closed
-###################################################################################################
+#######################################################################################################################
   - id: house_climate_thermostat_offline_notification_closed
     alias: "[House Climate] Thermostat Offline Notification Closed"
     description: "Dismiss notifications on all devices when closed on one."
@@ -977,9 +1010,9 @@
           data:
             tag: 'upstairs_thermostat_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Thermostat Offline Alert Cancelled
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_thermostat_offline_alert_cancelled
     alias: "[House Climate] Thermostat Offline Alert Cancelled"
     description: "Dismiss notifications when thermostat goes back online."
@@ -998,9 +1031,9 @@
           data:
             tag: 'upstairs_thermostat_offline'
 
-##################################################################################################
+#######################################################################################################################
 ## House Climate - Thermostat Offline Alert Pause
-##################################################################################################
+#######################################################################################################################
   - id: house_climate_thermostat_offline_alert_pause
     alias: "[House Climate] Thermostat Offline Alert Pause"
     description: "Dismiss notifications and temporarily turn off alert automation."

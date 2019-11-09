@@ -1,11 +1,11 @@
-##################################################################################################
+#######################################################################################################################
 ## Play TTS Announcement
 ## play_message: message to play (no double quotes - malfomred SSML)
 ## quiet_play: true/false
 ## override_away: true/false
 ## volume: override volume level in %
 #IDEA override media player annoucement on a specific player all the time (eg garage)
-##################################################################################################
+#######################################################################################################################
   play_announcement:
     sequence:
       # update media player sensors
@@ -122,14 +122,14 @@
       - service: automation.turn_on
         entity_id: automation.notification_announcement_boolean_off
 
-##################################################################################################
+#######################################################################################################################
 ## Play Alert
 ## - runs in silent mode
 ## - pauses all media players
 ## - full volume, current volumes stored then reset after alert
 ## - radio should have auto turned off
 ## - all media players paused - do not resume them automatically
-##################################################################################################
+#######################################################################################################################
   play_alert:
     sequence:
       # stop any announcement playing, alert has priority

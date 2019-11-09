@@ -470,7 +470,7 @@ cards:
             - entity: binary_sensor.envcan_connected
 
             - type: custom:fold-entity-row
-              head: sensor.climate_thresholds #TEMP
+              head: sensor.climate_thresholds
               entities:
                 - entity: input_number.weather_low_temperature_threshold
                 - entity: input_number.weather_high_temperature_threshold
