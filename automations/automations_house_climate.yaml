@@ -262,13 +262,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Low Temperature Alert"
           message: "The indoor temperature is {{ states('sensor.upstairs_thermostat_temperature') }} degrees."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'climate_low_temperature_alert_pause'
@@ -411,13 +408,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "High Temperature Alert"
           message: "The indoor temperature is {{ states('sensor.upstairs_thermostat_temperature') }} degrees."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'climate_high_temperature_alert_pause'
@@ -553,13 +547,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "High Humidity Alert"
           message: "The indoor humidity is {{ states('sensor.upstairs_thermostat_humidity') }}%."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'humidity_alert_pause'
@@ -696,13 +687,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Mold Risk Alert"
           message: "Mold risk alert is active.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'mold_alert_pause'
@@ -834,13 +822,10 @@
           notification_id: 'thermostat_emergency_heat'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *emerg_heat_title
           message: *emerg_heat_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'thermostat_emergency_heat_off'
@@ -964,13 +949,10 @@
           notification_id: 'upstairs_thermostat_offline'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *thermostat_offline_title
           message: *thermostat_offline_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'upstairs_thermostat_offline_off'

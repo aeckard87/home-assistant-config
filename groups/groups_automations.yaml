@@ -7,21 +7,23 @@
     control: hidden
     all: true
     entities:
-      - group.alarm_clock_delayed_automations
-      - group.radio_delayed_automations
-      - automation.alarm_clock_player_offline
-      - automation.radio_player_offline
-      - automation.notification_announcement_player_offline
-      - automation.automation_set_device_user_state
-      - automation.house_alarm_occupancy_mode_control
-      - automation.garage_door_lights
-      - automation.light_sun_is_up
-      - automation.light_sun_is_down
-      - automation.media_player_volume_change
-      - automation.presence_someone_arrives_home
-      - automation.presence_someone_leaves_home
-      - automation.schedule_auto_shift_select
+#      - group.alarm_clock_delayed_automations # we're controlling alarm clock state at restart manually
+#      - group.radio_delayed_automations # we're controlling radio state at restart manually
+#      - automation.alarm_clock_player_offline # media players need to come online
+#      - automation.radio_player_offline # media players need to come online
+#      - automation.notification_announcement_player_offline # media players need to come online
+      - automation.automation_set_device_user_state # user state bools turn on when devices come online
+      - automation.house_alarm_occupancy_mode_control #TEST - alarm disarming on restart
+      - automation.garage_door_lights # needs garage door to be online
+      - automation.light_sun_is_up # sun will trigger when it updates
+      - automation.light_sun_is_down # sun will trigger when it updates
+      - automation.media_player_volume_change # media players trigger when they come online
+      - automation.presence_someone_arrives_home # triggers when at home sensors come online
+      - automation.presence_someone_leaves_home # triggers when at home sensors come online
+      - automation.schedule_auto_shift_select # needs calendar to be online
+      - automation.system_sensor_unavailable_alert # needs zwave devices to be started or false triggers
 
+#TODO can we remove some by increasing trigger for times?
 #######################################################################################################################
 ## User State Contols
 ## - used to reset user state controls (away_state, manual mode)

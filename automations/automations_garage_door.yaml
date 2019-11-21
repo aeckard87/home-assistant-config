@@ -36,7 +36,7 @@
       # turn on the garage lights
       - service: script.turn_light_on
         data_template:
-          light_id: 'garage_lights'
+          light_name: 'garage_lights'
           brightness: 30
           ignore_user_state: 'true'
 
@@ -185,13 +185,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: Garage Door Open
           message: "The garage door has been open for a while.\n{{now().strftime('%h:%M %p %Y-%m-%d')}}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'garage_door_close_door'
@@ -364,13 +361,10 @@
           notification_id: 'garage_door_offline'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *garage_door_title
           message: *garage_door_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'garage_offline_alert_pause'

@@ -3,7 +3,6 @@
 #######################################################################################################################
   - platform: template
     sensors:
-
 #######################################################################################################################
 ## Garage Door Connected
 #######################################################################################################################
@@ -14,12 +13,7 @@
          {% else %} mdi:server-network-off
          {% endif %}
         device_class: connectivity
-        value_template: >
-          {% if states('cover.garage_door_opener') | lower == 'unknown' %}
-            false
-          {% else %}
-            true
-          {% endif %}
+        value_template: "{{ not states('cover.garage_door_opener') == 'unknown' }}"
 
 #######################################################################################################################
 ## Garage Door Open
@@ -33,8 +27,6 @@
          {% endif %}
         device_class: garage_door
         value_template: >
-          {% if is_state('cover.garage_door_opener', 'opening') %} true
-          {% elif is_state('cover.garage_door_opener', 'open') %} true
-          {% elif is_state('cover.garage_door_opener', 'closing') %} true
-          {% else %} false
-          {% endif %}
+           {{ is_state('cover.garage_door_opener', 'opening')
+              or is_state('cover.garage_door_opener', 'open')
+              or is_state('cover.garage_door_opener', 'closing') }}

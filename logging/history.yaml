@@ -4,4 +4,10 @@
 #######################################################################################################################
 include:
   entities:
-  - sensor.occupancy_mode
+    - sensor.memory_use_percent
+    - sensor.swap_use_percent
+    - sensor.processor_use
+    - sensor.load_1m
+    - sensor.load_5m
+    - sensor.load_15m
+    - sensor.rpi_cpu_temperature

@@ -101,6 +101,11 @@
     initial_state: 'on'
 
     trigger:
+      # run if buster medication is active
+      - platform: state
+        entity_id: input_boolean.buster_medication_active
+        to: 'on'
+
       # run every 15 minutes
       - platform: time_pattern
         minutes: '/15'
@@ -129,30 +134,30 @@
             state: 'on'
 
     action:
-      # send push notification
-      - service: notify.push
-        data_template:
-          title: "Buster Medication"
-          message: "Give Buster his pill!\n {{ now().strftime('%H:%M  %Y-%m-%d') }}."
-          target:
-            - jphone
-            - jlaptop
-          data:
-            actions:
-              - action: 'buster_medication_done'
-                title: "Medication Done"
-                icon: !secret CHECK_BUTTON
-            tag: buster_medication
-            timestamp: "{{ as_timestamp(now()) }}"
-            renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
-            silent: false
-            url: /lovelace/schedule
-            icon: !secret BUSTER_ICON
-            image: !secret BUSTER_IMAGE
-            badge: !secret BUSTER_BADGE
+      # # send push notification
+      # - service_template: >
+      #     {% if is_state('binary_sensor.jason_home','on') %} notify.jason
+      #     {% else %} notify.jason_away
+      #     {% endif %}
+      #   data_template:
+      #     title: "Buster Medication"
+      #     message: "Give Buster his pill!\n {{ now().strftime('%H:%M  %Y-%m-%d') }}."
+      #     data:
+      #       actions:
+      #         - action: 'buster_medication_done'
+      #           title: "Medication Done"
+      #           icon: !secret CHECK_BUTTON
+      #       tag: buster_medication
+      #       timestamp: "{{ as_timestamp(now()) }}"
+      #       renotify: true
+      #       ttl: 43200
+      #       priority: high
+      #       requireInteraction: true
+      #       silent: false
+      #       url: /lovelace/schedule
+      #       icon: !secret BUSTER_ICON
+      #       image: !secret BUSTER_IMAGE
+      #       badge: !secret BUSTER_BADGE
 
       # play announcement
       - service: script.play_announcement

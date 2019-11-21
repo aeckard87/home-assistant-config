@@ -53,13 +53,10 @@
           message: "**{{ play_message | striptags | title | replace('_',' ') }}**\n{{now().strftime('%H:%M  %Y-%m-%d')}}"
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "House Alarm Triggered"
           message: "{{ play_message | striptags | title | replace('_',' ') }}"
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'alarm_triggered_alert'
             timestamp: "{{ as_timestamp(now()) }}"

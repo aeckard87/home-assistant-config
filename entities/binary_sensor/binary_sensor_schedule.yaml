@@ -4,7 +4,7 @@
 ## - remove holiday - work scheduled on some holidays, use google cal holidays instead
 #######################################################################################################################
   - platform: workday
-    name: 'Workday'
+    name: Workday
     country: CA
     province: 'ON'
     workdays: [mon, tue, wed, thu, fri]
@@ -15,10 +15,10 @@
 #######################################################################################################################
 ## Workday Tomorrow (hidden)
 ## - internal workday sensor w/offset (work tomorrow)
-## - remove location details - work scheduled on some holidays, use google cal holidays instead
+## - remove holiday - work scheduled on some holidays, use google cal holidays instead
 #######################################################################################################################
   - platform: workday
-    name: 'Workday Tomorrow'
+    name: Workday Tomorrow
     country: CA
     province: 'ON'
     workdays: [mon, tue, wed, thu, fri]
@@ -27,10 +27,13 @@
     days_offset: 1
 
 #######################################################################################################################
-## Work Schedule Disabled
+## Template Binary Sensors
 #######################################################################################################################
   - platform: template
     sensors:
+#######################################################################################################################
+## Work Schedule Disabled
+#######################################################################################################################
       work_schedule_disabled:
         friendly_name: Work Schedule Disabled
         icon_template: mdi:beach
@@ -46,12 +49,10 @@
          {% else %} mdi:server-network-off
          {% endif %}
         device_class: connectivity
-        value_template: >-
-          {% if states('calendar.days') | lower == 'unknown' %} false
-          {% elif states('calendar.afternoons') | lower == 'unknown' %} false
-          {% elif states('calendar.work_holiday') | lower == 'unknown' %} false
-          {% else %} true
-          {% endif %}
+        value_template: >
+          {{ not states('calendar.days') | lower == 'unknown'
+             and not states('calendar.afternoons') | lower == 'unknown'
+             and not states('calendar.work_holiday') | lower == 'unknown' }}
 
 #######################################################################################################################
 ## Household Calendar Connected
@@ -63,80 +64,63 @@
          {% else %} mdi:server-network-off
          {% endif %}
         device_class: connectivity
-        value_template: >-
-          {% if states('calendar.garbage') | lower == 'unknown' %} false
-          {% elif states('calendar.recycle') | lower == 'unknown' %} false
-          {% elif states('calendar.yardwaste') | lower == 'unknown' %} false
-          {% else %} true
-          {% endif %}
+        value_template: >
+          {{ not states('calendar.garbage') | lower == 'unknown'
+             and not states('calendar.recycle') | lower == 'unknown'
+             and not states('calendar.yardwaste') | lower == 'unknown' }}
 
 #######################################################################################################################
 ## Garbage Day Tomorrow Sensor
-## - turn sensor on the day before garbage day
 #######################################################################################################################
       garbage_tomorrow:
         friendly_name: Garbage Tomorrow
         icon_template: mdi:trash-can
         value_template: >
-          {% if not states('calendar.garbage') == 'unknown' %}
-            {% if ( as_timestamp(states.calendar.garbage.attributes.start_time ) | float - as_timestamp( strptime(states.sensor.date_time.state, "%Y-%m-%d, %H:%M" )) | float < 86400 )
-               and ( as_timestamp(states.calendar.garbage.attributes.start_time ) | float - as_timestamp( strptime(states.sensor.date_time.state, "%Y-%m-%d, %H:%M" )) | float > 0 ) %}
-              true
-            {% endif %}
-          {% endif %}
+          {{ not states('calendar.garbage') == 'unknown'
+             and ( as_timestamp( state_attr('calendar.garbage','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float ) < 86400
+             and ( as_timestamp( state_attr('calendar.garbage','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float ) > 0 }}
 
 #######################################################################################################################
 ## Recycle Day Tomorrow Sensor
-## - turn sensor on the day before recycle day
 #######################################################################################################################
       recycle_tomorrow:
         friendly_name: Recycle Tomorrow
         icon_template: mdi:recycle
         value_template: >
-          {% if not states('calendar.recycle') == 'unknown' %}
-            {% if ( as_timestamp(states.calendar.recycle.attributes.start_time ) | float - as_timestamp( strptime(states.sensor.date_time.state, "%Y-%m-%d, %H:%M" )) | float < 86400 )
-               and ( as_timestamp(states.calendar.recycle.attributes.start_time ) | float - as_timestamp( strptime(states.sensor.date_time.state, "%Y-%m-%d, %H:%M" )) | float > 0 ) %}
-              true
-            {% endif %}
-          {% endif %}
+          {{ not states('calendar.recycle') == 'unknown'
+             and ( as_timestamp( state_attr('calendar.recycle','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float ) < 86400
+             and ( as_timestamp( state_attr('calendar.recycle','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float ) > 0 }}
 
 #######################################################################################################################
 ## Yard Waste Day Tomorrow Sensor
-## - turn sensor on the day before yard waste day
 #######################################################################################################################
       yardwaste_tomorrow:
         friendly_name: Yardwaste Tomorrow
         icon_template: mdi:pine-tree
         value_template: >
-          {% if not states('calendar.yardwaste') == 'unknown' %}
-            {% if ( as_timestamp(states.calendar.yardwaste.attributes.start_time ) | float - as_timestamp( strptime(states.sensor.date_time.state, "%Y-%m-%d, %H:%M" )) | float < 86400 )
-               and ( as_timestamp(states.calendar.yardwaste.attributes.start_time ) | float - as_timestamp( strptime(states.sensor.date_time.state, "%Y-%m-%d, %H:%M" )) | float > 0 ) %}
-              true
-            {% endif %}
-          {% endif %}
+          {{ not states('calendar.yardwaste') == 'unknown'
+             and ( as_timestamp( state_attr('calendar.yardwaste','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float ) < 86400
+             and ( as_timestamp( state_attr('calendar.yardwaste','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float ) > 0 }}
 
 #######################################################################################################################
 ## Work Holiday Tomorrow
-## - sensor to determine if tomorrow is a work hoiday based on google calendar event
+## - sensor to determine if tomorrow is a work hoiday based on google calendar events
 ## - will not trigger if today is holiday and tomorrow is also holiday using a separate event
-## - consecutive day holidays must be entered as one event
-
+## - consecutive day holidays MUST BE ENTERED AS ONE EVENT in the google calendar
 ## - more than 24 hours until start time then tomorrow is NOT a holiday
-## - else less than 24 hours until start time but start time has not past (>0) then tomorrow IS a holiday
-## - else start time has passed, but more than 24 hours until end time - tomorrow IS STILL a holiday
+## - less than 24 hours until start time but start time has not past (>0) then tomorrow IS a holiday
+## - start time has passed, but more than 24 hours until end time - tomorrow IS STILL a holiday
 #######################################################################################################################
       holiday_tomorrow:
         friendly_name: Holiday Tomorrow
         icon_template: mdi:calendar-remove
         value_template: >-
-          {% if is_state('calendar.work_holiday', 'on') %}
-            {% if as_timestamp(states.calendar.work_holiday.attributes.start_time) | float - as_timestamp( strptime(states.sensor.date_time.state, '%Y-%m-%d, %H:%M' ) | float) | float > 86400  %}
+          {% if as_timestamp( state_attr('calendar.work_holiday','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), '%Y-%m-%d, %H:%M' )) | float > 86400 %}
             false
-            {% elif as_timestamp(states.calendar.work_holiday.attributes.start_time) | float - as_timestamp( strptime(states.sensor.date_time.state, '%Y-%m-%d, %H:%M' ) | float) | float > 0  %}
+          {% elif as_timestamp( state_attr('calendar.work_holiday','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), '%Y-%m-%d, %H:%M' )) | float > 0  %}
             true
-            {% elif as_timestamp(states.calendar.work_holiday.attributes.end_time) | float - as_timestamp( strptime(states.sensor.date_time.state, '%Y-%m-%d, %H:%M' ) | float ) | float > 86400  %}
+          {% elif as_timestamp( state_attr('calendar.work_holiday','start_time')) | float - as_timestamp( strptime( states('sensor.date_time'), '%Y-%m-%d, %H:%M' )) | float > 86400 %}
             true
-            {% endif %}
           {% endif %}
 
 #######################################################################################################################
@@ -159,6 +143,7 @@
 
 #######################################################################################################################
 ## Work Tomorrow
+## now().weekday() == 4 is Friday
 #######################################################################################################################
       work_tomorrow:
         friendly_name: Work Tomorrow

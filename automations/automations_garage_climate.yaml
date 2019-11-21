@@ -561,13 +561,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Garage Heat On"
           message: "The garage heat has been on for a while. The current garage temperature is {{ states('sensor.garage_thermostat_temperature') }} degrees."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'garage_heat_off'
@@ -740,13 +737,10 @@
       #DISABLED no thermostat - service: script.garage_climate_off
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Garage High Temperature"
           message: "The temperature is {{ states('sensor.garage_thermostat_temperature')}} degrees, and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               # heat should turn off automatically but give option here
@@ -888,13 +882,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Garage Low Temperature"
           message: "The temperature is {{ states('sensor.garage_thermostat_temperature')}} degrees, and the thermostat is set to {{ state_attr('climate.garage_thermostat', 'temperature') }} degrees."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'garage_low_temp_alert_pause'

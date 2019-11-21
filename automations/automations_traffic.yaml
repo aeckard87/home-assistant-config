@@ -374,7 +374,7 @@
               {%- endif -%}
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Jason Delayed Work Commute"
           message: >-
@@ -382,9 +382,6 @@
             {%- if not states('sensor.jason_time_to_work') == 'unknown' -%}{{ ' ' + states.sensor.jason_time_to_work.attributes.duration_in_traffic }}
             {%- else %} expected to be longer than usual.
             {%- endif -%}
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'traffic_alert_jason_off'
@@ -436,7 +433,7 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service: notify.sheri
         data_template:
           title: "Sheri Delayed Work Commute"
           message: >-
@@ -444,8 +441,6 @@
             {%- if not states('sensor.sheri_time_to_work') == 'unknown' -%}{{ ' ' + states.sensor.sheri_time_to_work.attributes.duration_in_traffic }}
             {%- else %} expected to be longer than usual.
             {%- endif -%}
-          target:
-            - sphone
           data:
             actions:
               - action: 'traffic_alert_sheri_off'

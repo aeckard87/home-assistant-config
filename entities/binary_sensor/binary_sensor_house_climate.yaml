@@ -3,16 +3,15 @@
 #######################################################################################################################
   - platform: template
     sensors:
-
 #######################################################################################################################
 ## Upstairs Thermostat Connected
-## - redefine built in Nest Thermostat online sensor because if the nest platform doesn't load
-##   the built in nest sensor entity is not available.
+## - overload built in Nest Thermostat online sensor because if the nest platform doesn't load
+##   the built in nest sensor entity is not available to lovelace
 #######################################################################################################################
       upstairs_thermostat_connected:
         friendly_name: Upstairs Thermostat
         icon_template: >
-          {% if is_state('binary_sensor.house_alarm_connected','on') %} mdi:server-network
+          {% if is_state('binary_sensor.upstairs_thermostat_connected','on') %} mdi:server-network
           {% else %} mdi:server-network-off
           {% endif %}
         device_class: connectivity
@@ -25,7 +24,7 @@
       upstairs_thermostat_offline:
         friendly_name: Upstairs Thermostat Offline
         icon_template: >
-          {% if not is_state('binary_sensor.house_alarm_connected','on') %} mdi:server-network-off
+          {% if not is_state('binary_sensor.upstairs_thermostat_offline','on') %} mdi:server-network-off
           {% else %} mdi:server-network
           {% endif %}
         device_class: connectivity

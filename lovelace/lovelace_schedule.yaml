@@ -31,6 +31,7 @@ cards:
           - entity: binary_sensor.days_home_commute
           - entity: binary_sensor.afternoons_home_commute
           - entity: binary_sensor.work_commute_alert_jason
+          - entity: binary_sensor.holiday_tomorrow
             tap_action:
               action: call-service
               service: browser_mod.popup
@@ -100,6 +101,21 @@ cards:
               service_data:
                 entity_id: input_boolean.alarm_clock_active
 
+      - type: entity-filter
+        show_empty: false
+        state_filter:
+          - 'on'
+        card:
+          title: Active Schedule Alerts
+          type: entities
+          show_header_toggle: false
+          style: |
+            ha-card {
+              font-size: 12px;
+            }
+        entities:
+          - entity: alert.buster_medication
+
       - type: entities
         title: House Schedule
         show_header_toggle: false
@@ -116,7 +132,7 @@ cards:
             label: Alarms and Reminders
 
           - entity: sensor.alarm_clock_next_alarm
-          
+
           - type: custom:fold-entity-row
             head: input_boolean.alarm_clock_auto
             entities:

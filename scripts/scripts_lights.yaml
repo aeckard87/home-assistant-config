@@ -1,6 +1,6 @@
 #######################################################################################################################
 ## Turn Light On Light Automation
-## light_id - light name
+## light_name - light name
 ## ignore_user_state - true/false (override user state control), default false
 ## ignore_daylight - ignore state of auto_light_on sensor
 ## brightness - light brightness (%) optional, default 100
@@ -88,6 +88,22 @@
           entity_id: automation.automation_set_device_user_state
 
 #######################################################################################################################
+## Light Fade In
+## light_name - light entity name
+## ignore_user_state - true/false (override user state control), default false
+## fade_time - transition in seconds optional, default 10 seconds
+#######################################################################################################################
+  light_fade_in:
+    sequence:
+      - service: python_script.fade_in_light
+        data:
+          entity_id: light.living_room_pot_lights
+          delay_in_sec: 5
+          start_level_pct: 1
+          end_level_pct: 25
+          step_in_level_pct: 1
+
+#######################################################################################################################
 ## Save light settings
 ## store_name: name to store light settings under
 ## entity_ids: entity id list
@@ -137,3 +153,27 @@
       # turn user control automations back on
       - service: automation.turn_on
         entity_id: automation.automation_set_device_user_state
+
+#######################################################################################################################
+## Test Flash #TEST
+## store_name: saved settings store to restore
+#######################################################################################################################
+  test_flash:
+    sequence:
+      - service: light.turn_on
+        data:
+          entity_id: light.living_room_pot_lights
+          brightness_pct: 10
+          flash: short
+
+#######################################################################################################################
+## Test Transition #TEST
+## store_name: saved settings store to restore
+#######################################################################################################################
+  test_transition:
+    sequence:
+      - service: light.turn_on
+        data:
+          entity_id: light.living_room_pot_lights
+          brightness_pct: 10
+          transition: 60

@@ -1,8 +1,12 @@
 ###################################################################################################
 ## lovelace_resources.yaml
-###################################################################################################
+# ###################################################################################################
 
 - url: /local/custom-lovelace/compact-custom-header/compact-custom-header.js
+  type: module
+
+# used for deviceID
+- url: /community_plugin/lovelace-card-tools/card-tools.js
   type: module
 
 - url: /community_plugin/entity-attributes-card/entity-attributes-card.js
@@ -29,8 +33,8 @@
 - url: /community_plugin/lovelace-dummy-entity-row/dummy-entity-row.js
   type: module
 
-- url: /community_plugin/surveillance-card/surveillance-card.js
-  type: module
+# DISABLED - url: /community_plugin/surveillance-card/surveillance-card.js
+#   type: module
 
 - url: /community_plugin/button-entity-row/button-entity-row.js
   type: module
@@ -47,8 +51,8 @@
 - url: /community_plugin/light-entity-row/light-entity-row.js
   type: js
 
-- url: /community_plugin/weather-card/weather-card.js
-  type: module
+#DISABLED - url: /community_plugin/weather-card/weather-card.js
+#   type: module
 
 - url: /community_plugin/state-attribute-element/state-attribute-element.js
   type: js
@@ -59,9 +63,6 @@
 - url: /community_plugin/config-template-card/config-template-card.js
   type: module
 
-- url: /community_plugin/spotify-card/spotify-card.js
-  type: module
-
 - url: /community_plugin/swipe-card/swipe-card.js
   type: module
 
@@ -69,17 +70,13 @@
   type: js
 
 - url: /community_plugin/lovelace-auto-entities/auto-entities.js
-  type: js
-
-# used for deviceID
-- url: /community_plugin/lovelace-card-tools/card-tools.js
   type: module
 
 - url: /community_plugin/lovelace-home-feed-card/lovelace-home-feed-card.js
   type: js
 
-- url: /local/custom_ui/dark-sky-weather-card.js
+- url: /local/custom-lovelace/dark-sky-weather-card.js
   type: module
 
-- url: /local/custom_ui/alarm_control_panel-card.js
-  type: js
+#DISABLED - url: /community_plugin/spotify-card/spotify-card.js
+#   type: module

@@ -6,10 +6,15 @@ cards:
   - type: vertical-stack
     cards:
 
-      - card:
+      - type: entity-filter
+        state_filter:
+          - 'on'
+        show_empty: false
+        card:
           type: glance
           columns: 3
         entities:
+
           - entity: binary_sensor.weather_low_temperature_alert
             icon: 'mdi:snowflake'
             name: Outdoor Low Temp
@@ -62,13 +67,6 @@ cards:
               service: input_boolean.turn_off
               service_data:
                 entity_id: input_boolean.display_weather_alert
-        state_filter:
-          - 'on'
-        show_empty: false
-        type: entity-filter
-
-      - !include /config/lovelace/include/envcan_alert.yaml
-      - !include /config/lovelace/include/noaa_alert.yaml
 
       - type: custom:swipe-card
         init: true
@@ -80,6 +78,7 @@ cards:
           - !include /config/lovelace/include/darksky_card.yaml
           #IDEA - env can weather card w/sensors
           - !include /config/lovelace/include/darksky_forecast.yaml
+          - !include /config/lovelace/include/darksky_hourly_forecast.yaml
 
       - type: custom:swipe-card
         init: true
@@ -89,9 +88,11 @@ cards:
         effect: fade # slide, fade, cube, coverflow, flip
         cards:
           - type: entities
-            #title: Current Weather Summary
+            #TODO title: Current Weather Summary
             show_header_toggle: false
             entities:
+              - sensor.dark_sky_alerts
+              - sensor.temperature
               - entity: sensor.dark_sky_minutely_summary
                 name: Current
               - entity: sensor.dark_sky_hourly_summary
@@ -506,3 +507,6 @@ cards:
             name: UV Index
           - entity: binary_sensor.air_quality_alert
             name: Air Quality
+
+  - !include /config/lovelace/include/envcan_alert.yaml
+  - !include /config/lovelace/include/noaa_alert.yaml

@@ -1,0 +1,67 @@
+- id: '1574008313593'
+  alias: Test Device
+  description: A device test.
+  trigger:
+  - above: 75
+    below: 85
+    device_id: 327c66af38ca44f4ae135e5aa81fb2f6
+    domain: sensor
+    entity_id: sensor.upstairs_bathroom_humidity
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    platform: device
+    type: humidity
+  condition: []
+  action:
+  - delay: '5'
+- id: '1574008928926'
+  alias: New Automation
+  description: ''
+  trigger:
+  - above: 50
+    below: 100
+    device_id: e05f3948361c4cd5bb7145c86fce2a89
+    domain: sensor
+    entity_id: sensor.side_entrance_light_level
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    platform: device
+    type: illuminance
+  condition:
+  - condition: device
+    device_id: e05f3948361c4cd5bb7145c86fce2a89
+    domain: binary_sensor
+    entity_id: binary_sensor.side_entrance_motion
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    type: is_motion
+  action:
+  - alias: ''
+    data: {}
+    service: alarm_control_panel.alarm_arm_home
+- id: '1574009703166'
+  alias: New Automation
+  description: ''
+  trigger:
+  - above: 10
+    below: 20
+    device_id: 327c66af38ca44f4ae135e5aa81fb2f6
+    domain: sensor
+    entity_id: sensor.upstairs_bathroom_temperature
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    platform: device
+    type: value
+  condition: []
+  action:
+  - data:
+      entity_id: light.living_room_pot_lights
+    service: light.toggle

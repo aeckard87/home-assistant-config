@@ -76,7 +76,7 @@
       - automation.alarm_clock_radio_station_changed
       - automation.alarm_clock_media_player_changed
       - automation.alarm_clock_media_player_volume_change
-      
+
 #######################################################################################################################
 ## Alarm Clock - Detect Automations
 ## - automations disabled for alarm clock media player changes

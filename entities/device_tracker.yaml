@@ -33,11 +33,11 @@
 ## NMAP Tracker
 ## https://www.home-assistant.io/integrations/nmap_tracker/
 #######################################################################################################################
-  - platform: nmap_tracker
-    hosts: 192.168.1.0/24
-    home_interval: 60
-    exclude:
-      - !secret HASSIO_IP
+  # - platform: nmap_tracker
+  #   hosts: 192.168.1.0/24
+  #   home_interval: 60
+  #   exclude:
+  #     - !secret HASSIO_IP
 
 #######################################################################################################################
 ## Unifi
@@ -45,10 +45,10 @@
 ## https://www.home-assistant.io/components/device_tracker.unifi_direct/
 ## - Use either unifi OR unifi direct - unifi direct doesn't require unifi controller
 #######################################################################################################################
-  - platform: unifi_direct
-    host: !secret UNIFI_IP
-    username: !secret UNIFI_DIRECT_AP_USERNAME
-    password: !secret UNIFI_DIRECT_AP_PASSOWRD
+  # - platform: unifi_direct
+  #   host: !secret UNIFI_IP
+  #   username: !secret UNIFI_DIRECT_AP_USERNAME
+  #   password: !secret UNIFI_DIRECT_AP_PASSOWRD
 
 #######################################################################################################################
 ## Google Maps

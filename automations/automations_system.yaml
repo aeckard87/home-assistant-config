@@ -17,7 +17,7 @@
         timeout: '00:05:00'
         continue_on_timeout: true
 
-      # additional delay to allow all startup to completely finish
+      # additional delay to allow all startup automations to completely finish
       - delay: '00:02:00'
 
       # set log level to value set in front end
@@ -186,11 +186,12 @@
     initial_state: 'on'
 
     trigger:
-      # run when zwave status alert is active
+      # run when zwave_status is off
       - platform: state
         entity_id: binary_sensor.zwave_status
         to: 'off'
-        for: '0:02:00'
+        for:
+          minutes: 5
 
     condition:
       - condition: and
@@ -214,24 +215,21 @@
           notification_id: 'zwave_alert'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *zwave_title
           message: *zwave_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
-              - action: 'zwave_alert_pause'
+              - action: 'pause_zwave_alert'
                 title: "Pause Alerts"
                 icon: !secret PAUSE_BUTTON
             tag: 'zwave_alert'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
             silent: true
             url: '/lovelace/system'
             icon: !secret ZWAVE_ICON
@@ -239,63 +237,82 @@
             badge: !secret ZWAVE_BADGE
 
 #######################################################################################################################
-## System - Zwave Notification Closed
+## System - Close Zwave Status Alert Notifications
 #######################################################################################################################
-  - id: system_zwave_notification_closed
-    alias: "[System] Zwave Notification Closed"
+  - id: system_close_zwave_status_alert_notifications
+    alias: "[System] Close Zwave Status Alert Notifications"
     description: "Dismiss notifications on all devices when closed on one."
     initial_state: 'on'
 
     trigger:
-      # run when notification button clicked
+      # run when the zwave_status turns on
+      - platform: state
+        entity_id: binary_sensor.zwave_status
+        to: 'on'
+        for:
+          minutes: 1
+
+      # run when notification closed
       - platform: event
         event_type: html5_notification.closed
         event_data:
-          action: 'zwave_alert'
+          tag: 'zwave_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'zwave_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.zwave_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if zwave_status has turned off
+          - condition: state
+            entity_id: binary_sensor.zwave_status
+            state: 'off'
+
+          # can run if the push event tag is zwave_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'zwave_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.zwave_alert') == 'unknown' }}"
 
     action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_zwave_status_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'zwave_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'zwave_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'zwave_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_zwave_status_alert_notifications
 
 #######################################################################################################################
-## System - Zwave Alert Cancelled
+## Action - Pause ZWave Status Alerts
 #######################################################################################################################
-  - id: system_zwave_alert_cancelled
-    alias: "[System] Zwave Alert Cancelled"
-    description: "Dismiss notifications when zwave alert turns off."
-    initial_state: 'on'
-
-    trigger:
-      # run when the zwave alert turns off
-      - platform: state
-        entity_id: binary_sensor.zwave_status
-        to: 'off'
-
-    action:
-      # dismiss persistent notification
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: 'zwave_alert'
-
-      # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'zwave_alert'
-
-#######################################################################################################################
-## Action - ZWave Alert Pause
-#######################################################################################################################
-  - id: system_zwave_alert_pause
-    alias: "[System] ZWave Alert Pause"
+  - id: system_pause_zwave_status_alerts
+    alias: "[System] Pause ZWave Status Alerts"
     description: "Dismiss notifications and temporarily turn off alert automation."
     initial_state: 'on'
 
@@ -304,19 +321,27 @@
       - platform: event
         event_type: html5_notification.clicked
         event_data:
-          action: 'zwave_alert_pause'
+          action: 'pause_zwave_alert'
 
     action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_zwave_status_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'zwave_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'zwave_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'zwave_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_zwave_status_alert_notifications
 
       # turn off alert automation
       - service: automation.turn_off
@@ -340,11 +365,12 @@
     initial_state: 'on'
 
     trigger:
-      # run when the processor use alert is active
+      # run when the processor_use_alert is active
       - platform: state
         entity_id: binary_sensor.processor_use_alert
         to: 'on'
-        for: '0:02:00'
+        for:
+          minutes: 5
 
     condition:
       - condition: and
@@ -368,24 +394,21 @@
           notification_id: 'processor_alert'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *processor_title
           message: *processor_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
-              - action: 'processor_alert_pause'
+              - action: 'pause_processor_alert'
                 title: "Pause Alerts"
                 icon: !secret PAUSE_BUTTON
             tag: 'processor_alert'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
             silent: true
             url: '/lovelace/system'
             icon: !secret PROCESSOR_ICON
@@ -393,63 +416,82 @@
             badge: !secret PROCESSOR_BADGE
 
 #######################################################################################################################
-## System - Processor Notification Closed
+## System - Close Processor Use Alert Notifications
 #######################################################################################################################
-  - id: system_processor_notification_closed
-    alias: "[System] Processor Notification Closed"
+  - id: system_close_processor_use_alert_notifications
+    alias: "[System] Close Processor Use Alert Notifications"
     description: "Dismiss notifications on all devices when closed on one."
     initial_state: 'on'
 
     trigger:
-      # run when notification button clicked
-      - platform: event
-        event_type: html5_notification.closed
-        event_data:
-          action: 'processor_alert'
-
-    action:
-      # dismiss persistent notification
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: 'processor_alert'
-
-      # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'processor_alert'
-
-#######################################################################################################################
-## System - Processor Alert Cancelled
-#######################################################################################################################
-  - id: system_processor_alert_cancelled
-    alias: "[System] Processor Alert Cancelled"
-    description: "Dismiss notifications when processor use alert turns off."
-    initial_state: 'on'
-
-    trigger:
-      # run when the processor alert turns off
+      # run when the processor_use_alert turns off
       - platform: state
         entity_id: binary_sensor.processor_use_alert
         to: 'off'
+        for:
+          minutes: 1
+
+      # run when notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'processor_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'processor_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.processor_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if processor_use_alert has turned off
+          - condition: state
+            entity_id: binary_sensor.processor_use_alert
+            state: 'off'
+
+          # can run if the push event tag is processor_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'processor_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.processor_alert') == 'unknown' }}"
 
     action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_processor_use_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'processor_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'processor_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'processor_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_processor_use_alert_notifications
 
 #######################################################################################################################
-## System - Processor Alert Pause
+## System - Pause Processor Use Alerts
 #######################################################################################################################
-  - id: system_processor_alert_pause
-    alias: "[System] Processor Alert Pause"
+  - id: system_pause_processor_use_alerts
+    alias: "[System] Pause Processor Use Alerts"
     description: "Dismiss notifications and temporarily turn off alert automation."
     initial_state: 'on'
 
@@ -458,19 +500,27 @@
       - platform: event
         event_type: html5_notification.clicked
         event_data:
-          action: 'processor_alert_pause'
+          action: 'pause_processor_alert'
 
     action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_processor_use_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'processor_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'processor_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'processor_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_processor_use_alert_notifications
 
       # turn off alert automation
       - service: automation.turn_off
@@ -498,7 +548,8 @@
       - platform: state
         entity_id: binary_sensor.memory_use_alert
         to: 'on'
-        for: '0:02:00'
+        for:
+          minutes: 5
 
     condition:
       - condition: and
@@ -522,24 +573,21 @@
           notification_id: 'memory_alert'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *memory_title
           message: *memory_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
-              - action: 'memory_alert_pause'
+              - action: 'pause_memory_alert'
                 title: "Pause Alerts"
                 icon: !secret PAUSE_BUTTON
             tag: 'memory_alert'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
             silent: true
             url: '/lovelace/system'
             icon: !secret MEMORY_ICON
@@ -547,63 +595,82 @@
             badge: !secret MEMORY_BADGE
 
 #######################################################################################################################
-## System - Memory Notification Closed
+## System - Close Memory Alert Notifications
 #######################################################################################################################
-  - id: system_memory_notification_closed
-    alias: "[System] Memory Notification Closed"
+  - id: system_close_memory_alert_notifications
+    alias: "[System] Close Memory Alert Notifications"
     description: "Dismiss notifications on all devices when closed on one."
     initial_state: 'on'
 
     trigger:
-      # run when notification button clicked
-      - platform: event
-        event_type: html5_notification.closed
-        event_data:
-          action: 'memory_alert'
-
-    action:
-      # dismiss persistent notification
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: 'memory_alert'
-
-      # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'memory_alert'
-
-#######################################################################################################################
-## System - Memory Alert Cancelled
-#######################################################################################################################
-  - id: system_memory_alert_cancelled
-    alias: "[System] Memory Alert Cancelled"
-    description: "Dismiss notifications when memory use alert turns off."
-    initial_state: 'on'
-
-    trigger:
-      # run when the memory alert turns off
+      # run when the memory_use_alert turns off
       - platform: state
         entity_id: binary_sensor.memory_use_alert
         to: 'off'
+        for:
+          minutes: 1
+
+      # run when notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'memory_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'memory_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.memory_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if memory_use_alert has turned off
+          - condition: state
+            entity_id: binary_sensor.memory_use_alert
+            state: 'off'
+
+          # can run if the push event tag is memory_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'memory_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.memory_alert') == 'unknown' }}"
 
     action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_memory_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'memory_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'memory_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'memory_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_memory_alert_notifications
 
 #######################################################################################################################
-## System - Memory Alert Pause
+## System - Pause Memory Alerts
 #######################################################################################################################
-  - id: system_memory_alert_pause
-    alias: "[System] Memory Alert Pause"
+  - id: system_pause_memory_alerts
+    alias: "[System] Pause Memory Alerts"
     description: "Dismiss notifications and temporarily turn off alert automation."
     initial_state: 'on'
 
@@ -612,19 +679,27 @@
       - platform: event
         event_type: html5_notification.clicked
         event_data:
-          action: 'memory_alert_pause'
+          action: 'pause_memory_alert'
 
     action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_memory_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'memory_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'memory_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'memory_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_memory_alert_notifications
 
       # turn off alert automation
       - service: automation.turn_off
@@ -641,7 +716,6 @@
 
 #######################################################################################################################
 ## System - RPI Power Alert
-## - 5 sec delay to avoid false triggers
 #######################################################################################################################
   - id: system_rpi_power_alert
     alias: "[System] RPi Power Alert"
@@ -649,11 +723,12 @@
     initial_state: 'on'
 
     trigger:
-      # run when the rpi power alert is active
+      # run when the rpi_power_alert is active
       - platform: state
         entity_id: binary_sensor.rpi_power_alert
         to: 'on'
-        for: '0:00:05'
+        for:
+          seconds: 5 # only 5 sec false triggers delay
 
     condition:
       - condition: and
@@ -677,24 +752,21 @@
           notification_id: 'power_alert'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *power_title
           message: *power_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
-              - action: 'power_alert_pause'
+              - action: 'pause_power_alert'
                 title: "Pause Alerts"
                 icon: !secret PAUSE_BUTTON
             tag: 'power_alert'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
             silent: true
             url: '/lovelace/system'
             icon: !secret PROCESSOR_ICON
@@ -702,63 +774,82 @@
             badge: !secret PROCESSOR_BADGE
 
 #######################################################################################################################
-## System - RPI Power Notification Closed
+## System - Close RPI Power Alert Notifications
 #######################################################################################################################
-  - id: system_rpi_power_notification_closed
-    alias: "[System] RPi Power Notification Closed"
+  - id: system_close_rpi_power_alert_notifications
+    alias: "[System] Close RPI Power Alert Notifications"
     description: "Dismiss notifications on all devices when closed on one."
     initial_state: 'on'
 
     trigger:
-      # run when notification button clicked
-      - platform: event
-        event_type: html5_notification.closed
-        event_data:
-          action: 'power_alert'
-
-    action:
-      # dismiss persistent notification
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: 'power_alert'
-
-      # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'power_alert'
-
-#######################################################################################################################
-## System - RPI Power Alert Cancelled
-#######################################################################################################################
-  - id: system_rpi_power_alert_cancelled
-    alias: "[System] RPi Power Alert Cancelled"
-    description: "Dismiss notifications when RPi power alert turns off."
-    initial_state: 'on'
-
-    trigger:
-      # run when the rpi power alert turns off
+      # run when the rpi_power_alert turns off
       - platform: state
         entity_id: binary_sensor.rpi_power_alert
         to: 'off'
+        for:
+          minutes: 1
+
+      # run when notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'power_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'power_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.power_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if rpi_power_alert has turned off
+          - condition: state
+            entity_id: binary_sensor.rpi_power_alert
+            state: 'off'
+
+          # can run if the push event tag is power_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'power_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.power_alert') == 'unknown' }}"
 
     action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_rpi_power_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'power_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'power_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'power_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_rpi_power_alert_notifications
 
 #######################################################################################################################
-## System - Power Alert Off
+## System - Pause RPi Power Alerts
 #######################################################################################################################
-  - id: system_rpi_power_alert_pause
-    alias: "[System] RPi Power Alert Pause"
+  - id: system_pause_rpi_power_alerts
+    alias: "[System] ause RPi Power Alerts"
     description: "Dismiss notifications and temporarily turn off alert automation."
     initial_state: 'on'
 
@@ -767,19 +858,27 @@
       - platform: event
         event_type: html5_notification.clicked
         event_data:
-          action: 'power_alert_pause'
+          action: 'pause_power_alert'
 
     action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_rpi_power_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'power_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'power_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'power_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_rpi_power_alert_notifications
 
       # turn off alert automation
       - service: automation.turn_off
@@ -803,10 +902,12 @@
     initial_state: 'on'
 
     trigger:
-      # run when the system disk use alert is active
+      # run when the disk_usage_alert is active
       - platform: state
         entity_id: binary_sensor.disk_usage_alert
         to: 'on'
+        for:
+          minutes: 5
 
     condition:
       - condition: and
@@ -830,24 +931,21 @@
           notification_id: 'disk_alert'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *disk_title
           message: *disk_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
-              - action: 'disk_alert_pause'
+              - action: 'pause_disk_alert'
                 title: "Pause Alerts"
                 icon: !secret PAUSE_BUTTON
             tag: 'disk_alert'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
             silent: true
             url: '/lovelace/system'
             icon: !secret DISK_ICON
@@ -855,63 +953,82 @@
             badge: !secret DISK_BADGE
 
 #######################################################################################################################
-## System - Disk Notification Closed
+## System - Close Disk Alert Notifications
 #######################################################################################################################
-  - id: system_disk_notification_closed
-    alias: "[System] Disk Notification Closed"
+  - id: system_close_disk_alert_notifications
+    alias: "[System] Close Disk Alert Notifications"
     description: "Dismiss notifications on all devices when closed on one."
     initial_state: 'on'
 
     trigger:
+      # run when the disk_usage_alert turns off
+      - platform: state
+        entity_id: binary_sensor.disk_usage_alert
+        to: 'off'
+        for:
+          minutes: 1
+
       # run when notification closed
       - platform: event
         event_type: html5_notification.closed
         event_data:
-          action: 'disk_alert'
+          tag: 'disk_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'disk_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.disk_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if disk_usage_alert has turned off
+          - condition: state
+            entity_id: binary_sensor.disk_usage_alert
+            state: 'off'
+
+          # can run if the push event tag is disk_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'disk_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.disk_alert') == 'unknown' }}"
 
     action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_disk_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'disk_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'disk_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'disk_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_disk_alert_notifications
 
 #######################################################################################################################
-## System - Disk Alert Cancelled
+## System - Pause Disk Alerts
 #######################################################################################################################
-  - id: system_disk_alert_cancelled
-    alias: "[System] Disk Alert Cancelled"
-    description: "Dismiss notifications when disk usage alert turns off."
-    initial_state: 'on'
-
-    trigger:
-      # run when the disk alert turns off
-      - platform: state
-        entity_id: binary_sensor.disk_usage_alert
-        to: 'off'
-
-    action:
-      # dismiss persistent notification
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: 'disk_alert'
-
-      # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'disk_alert'
-
-#######################################################################################################################
-## System - Disk Alert Pause
-#######################################################################################################################
-  - id: system_disk_alert_pause
-    alias: "[System] Disk Alert Pause"
+  - id: system_pause_disk_alerts
+    alias: "[System] Pause Disk Alerts"
     description: "Dismiss notifications and temporarily turn off alert automation."
     initial_state: 'on'
 
@@ -920,19 +1037,27 @@
       - platform: event
         event_type: html5_notification.clicked
         event_data:
-          action: 'disk_alert_pause'
+          action: 'pause_disk_alert'
 
     action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_disk_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'disk_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'disk_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'disk_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_disk_alert_notifications
 
       # turn off alert automation
       - service: automation.turn_off
@@ -956,10 +1081,12 @@
     initial_state: 'on'
 
     trigger:
-      # run when the battery status alert is active
+      # run when the battery_status_alert is active
       - platform: state
         entity_id: binary_sensor.battery_status_alert
         to: 'on'
+        for:
+          minutes: 5
 
       # run whenever the battery alert threshold is changed
       - platform: state
@@ -1002,87 +1129,103 @@
             Low batteries in the following devices: {{ '\n' + low_batteries | title }}
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *battery_title
           message: *battery_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
-              - action: 'battery_alert_pause'
-                title: "Pause Alerts"
+              - action: 'pause_battery_alert'
+                title: "Pause Alert"
                 icon: !secret PAUSE_BUTTON
             tag: 'battery_alert'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
             silent: true
             url: '/lovelace/system'
             icon: !secret BATTERY_ICON
             badge: !secret BATTERY_BADGE
 
 #######################################################################################################################
-## System - Battery Notification Closed
+## System - Close Battery Alert Notifications
 #######################################################################################################################
-  - id: system_battery_notification_closed
-    alias: "[System] Battery Notification Closed"
+  - id: system_close_battery_alert_notifications
+    alias: "[System] Close Battery Alert Notifications"
     description: "Dismiss notifications on all devices when closed on one."
     initial_state: 'on'
 
     trigger:
+      # run when the battery_status_alert turns off
+      - platform: state
+        entity_id: binary_sensor.battery_status_alert
+        to: 'off'
+        for:
+          minutes: 1
+
       # run when notification closed
       - platform: event
         event_type: html5_notification.closed
         event_data:
-          action: 'battery_alert'
+          tag: 'battery_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'battery_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.battery_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if battery_status_alert has turned off
+          - condition: state
+            entity_id: binary_sensor.battery_status_alert
+            state: 'off'
+
+          # can run if the push event tag is battery_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'battery_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.battery_alert') == 'unknown' }}"
 
     action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_battery_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'battery_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'battery_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'battery_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_battery_alert_notifications
 
 #######################################################################################################################
-## System - Battery Alert Cancelled
+## System - Pause Battery Alerts
 #######################################################################################################################
-  - id: system_battery_alert_cancelled
-    alias: "[System] Battery Alert Cancelled"
-    description: "Dismiss notifications when battery level alert turns off."
-    initial_state: 'on'
-
-    trigger:
-      # run when the battery alert turns off
-      - platform: state
-        entity_id: binary_sensor.battery_status_alert
-        to: 'off'
-
-    action:
-      # dismiss persistent notification
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: 'battery_alert'
-
-      # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'battery_alert'
-
-#######################################################################################################################
-## System - Battery Alert Pause
-#######################################################################################################################
-  - id: system_battery_alert_pause
-    alias: "[System] Battery Alert Pause"
+  - id: system_pause_battery_alerts
+    alias: "[System] Pause Battery Alerts"
     description: "Dismiss notifications and temporarily turn off alert automation."
     initial_state: 'on'
 
@@ -1091,19 +1234,27 @@
       - platform: event
         event_type: html5_notification.clicked
         event_data:
-          action: 'battery_alert_pause'
+          action: 'pause_battery_alert'
 
     action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_battery_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'battery_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'battery_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'battery_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_battery_alert_notifications
 
       # turn off alert automation
       - service: automation.turn_off
@@ -1127,12 +1278,12 @@
     initial_state: 'on'
 
     trigger:
-      # run when the cpu temperature alert is active
+      # run when the cpu_temperature_alert is active
       - platform: state
         entity_id: binary_sensor.cpu_temperature_alert
         to: 'on'
         for:
-          minutes: 1
+          minutes: 5
 
     condition:
       - condition: and
@@ -1156,24 +1307,21 @@
           notification_id: 'cpu_temp_alert'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *cputemp_title
           message: *cputemp_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
-              - action: 'cpu_temp_alert_pause'
-                title: "Pause Alerts"
+              - action: 'pause_cpu_temp_alert'
+                title: "Pause Alert"
                 icon: !secret PAUSE_BUTTON
             tag: 'cpu_temp_alert'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
             silent: true
             url: '/lovelace/system'
             icon: !secret PROCESSOR_ICON
@@ -1181,63 +1329,82 @@
             badge: !secret PROCESSOR_BADGE
 
 #######################################################################################################################
-## System - CPU Temperature Notification Closed
+## System - Close CPU Temperature Alert Notifications
 #######################################################################################################################
-  - id: system_cpu_temperature_notification_closed
-    alias: "[System] CPU Temperature Notification Closed"
+  - id: system_close_cpu_temperature_alert_notifications
+    alias: "[System] Close CPU Temperature Alert Notifications"
     description: "Dismiss notifications on all devices when closed on one."
     initial_state: 'on'
 
     trigger:
+      # run when the cpu_temperature_alert turns off
+      - platform: state
+        entity_id: binary_sensor.cpu_temperature_alert
+        to: 'off'
+        for:
+          minutes: 1
+
       # run when notification closed
       - platform: event
         event_type: html5_notification.closed
         event_data:
-          action: 'cpu_temp_alert'
+          tag: 'cpu_temp_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'cpu_temp_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.cpu_temp_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if cpu_temperature_alert has turned off
+          - condition: state
+            entity_id: binary_sensor.cpu_temperature_alert
+            state: 'off'
+
+          # can run if the push event tag is cpu_temp_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'cpu_temp_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.cpu_temp_alert') == 'unknown' }}"
 
     action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_cpu_temperature_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'cpu_temp_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'cpu_temp_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'cpu_temp_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_cpu_temperature_alert_notifications
 
 #######################################################################################################################
-## System - CPU Temperature Alert Cancelled
+## System - Pause CPU Temperature Alerts
 #######################################################################################################################
-  - id: system_cpu_temperature_alert_cancelled
-    alias: "[System] CPU Temperature Alert Cancelled"
-    description: "Dismiss notifications when CPU temperature alert turns off."
-    initial_state: 'on'
-
-    trigger:
-      # run when the CPU temp alert turns off
-      - platform: state
-        entity_id: binary_sensor.cpu_temperature_alert
-        to: 'off'
-
-    action:
-      # dismiss persistent notification
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: 'cpu_temp_alert'
-
-      # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'cpu_temp_alert'
-
-#######################################################################################################################
-## System - CPU Temperature Alert Pause
-#######################################################################################################################
-  - id: system_cpu_temperature_alert_pause
-    alias: "[System] CPU Temperature Alert Pause"
+  - id: system_pause_cpu_temperature_alerts
+    alias: "[System] Pause CPU Temperature Alerts"
     description: "Dismiss notifications and temporarily turn off alert automation."
     initial_state: 'on'
 
@@ -1246,19 +1413,27 @@
       - platform: event
         event_type: html5_notification.clicked
         event_data:
-          action: 'cpu_temp_alert_pause'
+          action: 'pause_cpu_temp_alert'
 
     action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_cpu_temperature_alert_notifications
+
       # dismiss persistent notification
       - service: persistent_notification.dismiss
         data:
           notification_id: 'cpu_temp_alert'
 
       # dismiss push notifications for all devices
-      - service: notify.html5_dismiss
-        data:
-          data:
-            tag: 'cpu_temp_alert'
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'cpu_temp_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_cpu_temperature_alert_notifications
 
       # turn off alert automation
       - service: automation.turn_off
@@ -1272,3 +1447,197 @@
       # turn alert automation back on
       - service: automation.turn_on
         entity_id: automation.system_cpu_temperature_alert
+
+#######################################################################################################################
+## System - Sensor Unavailable Alert
+## - triggers every time the number of unavailable sensors goes up
+## - waits 30 seconds and the rechecks before sending notification so we don't get false alerts
+## - group.delayed_automations
+#######################################################################################################################
+  - id: system_sensor_unavailable_alert
+    alias: "[System] Sensor Unavailable Alert"
+    description: "Send notification when sensor goes offline."
+    initial_state: 'off'
+
+    trigger:
+      # run whenever unavailable sensors sensor state changes
+      - platform: state
+        entity_id: sensor.unavailable_sensors
+
+    condition:
+      - condition: and
+        conditions:
+          # only run if system automation is enabled
+          - condition: state
+            entity_id: input_boolean.system_automation
+            state: 'on'
+
+          # only run if silent mode is off
+          - condition: state
+            entity_id: input_boolean.silent_mode
+            state: 'off'
+
+          # only run if the number of unavailable sensors had gone up
+          - condition: template
+            value_template: "{{ trigger.to_state.state | int > trigger.from_state.state | int }}"
+
+    action:
+      # wait 30 seconds before rechecking sensor state
+      - delay:
+          seconds: 30
+
+      # make sure the sensor is updated before we check the state
+      - service: homeassistant.update_entity
+        entity_id: sensor.unavailable_sensors
+
+      # only continue if current number of sensors is equal or more than the number when triggered
+      - condition: template
+        value_template: "{{ states('sensor.unavailable_sensors') | int >= trigger.to_state.state | int }} "
+
+      # create a persistent notification
+      - service: persistent_notification.create
+        data_template:
+          title: "Unavailable Sensors"
+          message: "{{ state_attr('sensor.unavailable_sensors','sensor_names').split(', ') | join('\n') }}"
+          notification_id: 'sensor_alert'
+
+      # send push notification
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
+        data_template:
+          title: "Unavailable Sensors"
+          message: "{{ state_attr('sensor.unavailable_sensors','sensor_names').split(', ') | join('\n') }}"
+          data:
+            actions:
+              - action: 'pause_sensor_alert'
+                title: "Pause Alerts"
+                icon: !secret PAUSE_BUTTON
+            tag: 'sensor_alert'
+            timestamp: "{{ as_timestamp(now()) }}"
+            renotify: true
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
+            silent: true
+            url: '/lovelace/system'
+            icon: !secret OFFLINE_ICON
+            badge: !secret OFFLINE_BADGE
+
+#######################################################################################################################
+## System - Close Sensor Unavailable Notifications
+#######################################################################################################################
+  - id: system_close_sensor_unavailable_notifications
+    alias: "[System] Close Sensor Unavailable Notifications"
+    description: "Dismiss notifications on all devices when closed on one."
+    initial_state: 'on'
+
+    trigger:
+      # run when there are no more unavailable sensors
+      - platform: numeric_state
+        entity_id: sensor.unavailable_sensors
+        below: 1
+        for:
+          minutes: 1
+
+      # run when notification closed
+      - platform: event
+        event_type: html5_notification.closed
+        event_data:
+          tag: 'sensor_alert'
+
+      # run when notification clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          tag: 'sensor_alert'
+
+      # run when persistent notification state changes #BUGFIX - can't check state from:
+      - platform: event
+        event_type: state_changed
+        event_data:
+          entity_id: persistent_notification.sensor_alert
+
+    condition:
+      - condition: or
+        conditions:
+          # can run if unavailable_sensors is 0
+          - condition: numeric_state
+            entity_id: sensor.unavailable_sensors
+            below: 1
+
+          # can run if the push event tag is cpu_temp_alert
+          # required due to perisitent notification condition #BUGFIX
+          - condition: template
+            value_template: "{{ trigger.event.data['tag'] == 'sensor_alert' }}"
+
+          # can run if the persistent notification state is unknown (was closed) #BUGFIX
+          # state will by 'notifying' when persistent notification is created
+          - condition: template
+            value_template: "{{ states('persistent_notification.sensor_alert') == 'unknown' }}"
+
+    action:
+      # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_sensor_unavailable_notifications
+
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'sensor_alert'
+
+      # dismiss push notifications for all devices
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'sensor_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_sensor_unavailable_notifications
+
+#######################################################################################################################
+## System - Pause Sensor Unavailable Alerts
+#######################################################################################################################
+  - id: system_pause_sensor_unavailable_alerts
+    alias: "[System] Pause Sensor Unavailable Alerts"
+    description: "Dismiss notifications and temporarily turn off alert automation."
+    initial_state: 'on'
+
+    trigger:
+      # run when notification button clicked
+      - platform: event
+        event_type: html5_notification.clicked
+        event_data:
+          action: 'pause_sensor_alert'
+
+    action:
+     # turn off automation to avoid recursive calls
+      - service: automation.turn_off
+        entity_id: automation.system_close_sensor_unavailable_notifications
+
+      # dismiss persistent notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: 'sensor_alert'
+
+      # dismiss push notifications for all devices
+      # - service: notify.html5_dismiss
+      #   data:
+      #     data:
+      #       tag: 'sensor_alert'
+
+      # turn automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_close_sensor_unavailable_notifications
+
+      # turn off alert automation
+      - service: automation.turn_off
+        entity_id: automation.system_sensor_unavailable_alert
+
+      # wait for timeout or automation to be turned back on
+      - wait_template: "{{ is_state('automation.system_sensor_unavailable_alert', 'on') }}"
+        timeout: '04:00:00' # mute alert for 4 hours
+        continue_on_timeout: true
+
+      # turn alert automation back on
+      - service: automation.turn_on
+        entity_id: automation.system_sensor_unavailable_alert

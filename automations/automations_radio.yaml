@@ -59,7 +59,7 @@
   - id: radio_turned_on
     alias: "[Radio] Turned On"
     description: "Play radio with current settings when radio on boolean turned on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio turned on
@@ -92,7 +92,7 @@
   - id: radio_auto_off
     alias: "[Radio] Auto Off"
     description: "Automatically turn off radio when conditions are met."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when silent mode turned on or house alarm goes off
@@ -145,7 +145,7 @@
   - id: radio_hassio_turned_off
     alias: "[Radio] Hassio Turned Off"
     description: "Turn off radio when radio on boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio turned off
@@ -165,7 +165,7 @@
   - id: radio_media_player_turned_off
     alias: "[Radio] Media Player Turned Off"
     description: "Turn radio off when radio media player turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when media player turns off
@@ -225,7 +225,7 @@
   - id: radio_hassio_paused
     alias: "[Radio] Hassio Paused"
     description: "Pause radio when radio paused boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio pause boolean turned on
@@ -250,7 +250,7 @@
   - id: radio_media_player_paused
     alias: "[Radio] Media Player Paused"
     description: "Turn radio pause boolean on when radio media player is paused."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when media player has been paused
@@ -325,7 +325,7 @@
   - id: radio_auto_resume
     alias: "[Radio] Auto Resume"
     description: "Turn radio back on when announcement done playing."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when announcement playing boolean turns off
@@ -353,7 +353,7 @@
   - id: radio_media_player_resumed
     alias: "[Radio] Media Player Resumed"
     description: "Turn radio pause boolean off when radio media player play resumed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when media player has resumed play
@@ -403,7 +403,7 @@
   - id: radio_hassio_resumed
     alias: "[Radio] Hassio Resumed"
     description: "Resume radio when radio pause boolean turned off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio pause boolean turned off
@@ -424,7 +424,7 @@
   - id: radio_hassio_volume_changed
     alias: "[Radio] Hassio Volume Changed"
     description: "Change media player volume when radio volume control changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio input_number value changes
@@ -484,7 +484,7 @@
   - id: radio_media_player_volume_changed
     alias: "[Radio] Media Player Volume Changed"
     description: "Change radio volume control when radio media player volume changes."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # activate when media player state changes
@@ -568,7 +568,7 @@
   - id: radio_station_changed
     alias: "[Radio] Station Changed"
     description: "Restart radio when radio station is changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio station changed
@@ -592,7 +592,7 @@
   - id: radio_media_player_changed
     alias: "[Radio] Media Player Changed"
     description: "Restart radio when radio media player changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when media player selection changes
@@ -622,7 +622,7 @@
   - id: radio_morning_turned_off
     alias: "[Radio] Morning Turned Off"
     description: "Turn off radio when morning preset boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio morning preset boolean turned off
@@ -641,7 +641,7 @@
   - id: radio_night_turned_off
     alias: "[Radio] Night Turned Off"
     description: "Turn off radio when night preset boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio night preset boolean turned off
@@ -660,7 +660,7 @@
   - id: radio_morning_volume_timer_finished
     alias: "[Radio] Morning Volume Timer Finished"
     description: "Adjust radio volume when volume timer finished."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio morning volume timer finished
@@ -701,7 +701,7 @@
   - id: radio_morning_volume_timer_cancelled
     alias: "[Radio] Morning Volume Timer Cancelled"
     description: "Turn off morning radio preset when volume timer cancelled."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio morning volume timer cancelled
@@ -730,7 +730,7 @@
   - id: radio_sleep_timer_finished
     alias: "[Radio] Sleep Timer Finished"
     description: "Turn radio off when sleep timer finished or cancelled."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio sleep timer finished
@@ -756,7 +756,7 @@
   - id: radio_sleep_timer_changed
     alias: "[Radio] Sleep Timer Changed"
     description: "Restart sleep timer when sleep time control changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio sleep time is changed
@@ -784,7 +784,7 @@
   - id: radio_morning_preset_on
     alias: "[Radio] Morning Preset On"
     description: "Play morning radio preset when morning radio boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when preset is turned on
@@ -805,7 +805,7 @@
   - id: radio_night_preset_on
     alias: "[Radio] Night Preset On"
     description: "Play night radio preset when night radio boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when preset is turned on
@@ -825,7 +825,7 @@
   - id: radio_jason_preset_on
     alias: "[Radio] Jason Preset On"
     description: "Play Jason's radio preset when jason radio boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when preset is turned on
@@ -851,7 +851,7 @@
   - id: radio_sheri_preset_on
     alias: "[Radio] Sheri Preset On"
     description: "Play Sheri's radio preset when jason radio boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when preset is turned on
@@ -877,20 +877,22 @@
 #######################################################################################################################
   - id: radio_player_offline
     alias: "[Radio] Player Offline"
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when media player is unavailable
       - platform: state
         entity_id: *radio_media_player_entities
         to: 'unavailable'
-        for: '00:01:00'
+        for:
+          minutes: 5
 
-      # run when media player is unavailable
+      # run when media player is unknown
       - platform: state
         entity_id: *radio_media_player_entities
-        to: 'unknown'
-        for: '00:01:00'
+        to: 'unknown'        
+        for:
+          minutes: 5
 
     condition:
       - condition: and
@@ -919,6 +921,8 @@
       # delay to stagger notifications if radio, announcements, alarm clock using same media player
       - delay: '00:00:10'
 
+      #TODO delay to avoid false notifications
+
       # create persistent notification
       - service: persistent_notification.create
         data_template:
@@ -927,13 +931,10 @@
           notification_id: 'radio_player_offline'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *radio_player_title
           message: *radio_player_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'radio_player_alert_pause'
@@ -1018,7 +1019,7 @@
         data:
           data:
             tag: 'radio_player_offline'
-            
+
 #######################################################################################################################
 ## Radio - Player Offline Alert Pause
 ## - temporarily turn off alert automation to stop notifications, resets after timeout

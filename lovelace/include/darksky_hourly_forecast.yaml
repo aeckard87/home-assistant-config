@@ -1,0 +1,276 @@
+type: entities
+#title: Dark Sky Weather Hourly Forecast
+show_header_toggle: false
+entities:
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_0h
+    items:
+      - sensor.dark_sky_icon_0h
+      - sensor.dark_sky_temperature_0h
+      - sensor.dark_sky_apparent_temperature_0h
+      - sensor.dark_sky_humidity_0h
+      - sensor.dark_sky_pressure_0h
+      - sensor.dark_sky_cloud_coverage_0h
+      - sensor.dark_sky_visibility_0h
+      - sensor.dark_sky_dew_point_0h
+      - sensor.dark_sky_wind_speed_0h
+      - sensor.dark_sky_wind_gust_0h
+      - sensor.dark_sky_wind_bearing_0h
+      - sensor.dark_sky_ozone_0h
+      - sensor.dark_sky_uv_index_0h
+      - sensor.dark_sky_precip_0h
+      - sensor.dark_sky_precip_probability_0h
+      - sensor.dark_sky_precip_accumulation_0h
+      - sensor.dark_sky_precip_intensity_0h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_1h
+    items:
+      - sensor.dark_sky_icon_1h
+      - sensor.dark_sky_temperature_1h
+      - sensor.dark_sky_apparent_temperature_1h
+      - sensor.dark_sky_humidity_1h
+      - sensor.dark_sky_pressure_1h
+      - sensor.dark_sky_cloud_coverage_1h
+      - sensor.dark_sky_visibility_1h
+      - sensor.dark_sky_dew_point_1h
+      - sensor.dark_sky_wind_speed_1h
+      - sensor.dark_sky_wind_gust_1h
+      - sensor.dark_sky_wind_bearing_1h
+      - sensor.dark_sky_ozone_1h
+      - sensor.dark_sky_uv_index_1h
+      - sensor.dark_sky_precip_1h
+      - sensor.dark_sky_precip_probability_1h
+      - sensor.dark_sky_precip_accumulation_1h
+      - sensor.dark_sky_precip_intensity_1h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_2h
+    items:
+      - sensor.dark_sky_icon_2h
+      - sensor.dark_sky_temperature_2h
+      - sensor.dark_sky_apparent_temperature_2h
+      - sensor.dark_sky_humidity_2h
+      - sensor.dark_sky_pressure_2h
+      - sensor.dark_sky_cloud_coverage_2h
+      - sensor.dark_sky_visibility_2h
+      - sensor.dark_sky_dew_point_2h
+      - sensor.dark_sky_wind_speed_2h
+      - sensor.dark_sky_wind_gust_2h
+      - sensor.dark_sky_wind_bearing_2h
+      - sensor.dark_sky_ozone_2h
+      - sensor.dark_sky_uv_index_2h
+      - sensor.dark_sky_precip_2h
+      - sensor.dark_sky_precip_probability_2h
+      - sensor.dark_sky_precip_accumulation_2h
+      - sensor.dark_sky_precip_intensity_2h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_3h
+    items:
+      - sensor.dark_sky_icon_3h
+      - sensor.dark_sky_temperature_3h
+      - sensor.dark_sky_apparent_temperature_3h
+      - sensor.dark_sky_humidity_3h
+      - sensor.dark_sky_pressure_3h
+      - sensor.dark_sky_cloud_coverage_3h
+      - sensor.dark_sky_visibility_3h
+      - sensor.dark_sky_dew_point_3h
+      - sensor.dark_sky_wind_speed_3h
+      - sensor.dark_sky_wind_gust_3h
+      - sensor.dark_sky_wind_bearing_3h
+      - sensor.dark_sky_ozone_3h
+      - sensor.dark_sky_uv_index_3h
+      - sensor.dark_sky_precip_3h
+      - sensor.dark_sky_precip_probability_3h
+      - sensor.dark_sky_precip_accumulation_3h
+      - sensor.dark_sky_precip_intensity_3h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_4h
+    items:
+      - sensor.dark_sky_icon_4h
+      - sensor.dark_sky_temperature_4h
+      - sensor.dark_sky_apparent_temperature_4h
+      - sensor.dark_sky_humidity_4h
+      - sensor.dark_sky_pressure_4h
+      - sensor.dark_sky_cloud_coverage_4h
+      - sensor.dark_sky_visibility_4h
+      - sensor.dark_sky_dew_point_4h
+      - sensor.dark_sky_wind_speed_4h
+      - sensor.dark_sky_wind_gust_4h
+      - sensor.dark_sky_wind_bearing_4h
+      - sensor.dark_sky_ozone_4h
+      - sensor.dark_sky_uv_index_4h
+      - sensor.dark_sky_precip_4h
+      - sensor.dark_sky_precip_probability_4h
+      - sensor.dark_sky_precip_accumulation_4h
+      - sensor.dark_sky_precip_intensity_4h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_5h
+    items:
+      - sensor.dark_sky_icon_5h
+      - sensor.dark_sky_temperature_5h
+      - sensor.dark_sky_apparent_temperature_5h
+      - sensor.dark_sky_humidity_5h
+      - sensor.dark_sky_pressure_5h
+      - sensor.dark_sky_cloud_coverage_5h
+      - sensor.dark_sky_visibility_5h
+      - sensor.dark_sky_dew_point_5h
+      - sensor.dark_sky_wind_speed_5h
+      - sensor.dark_sky_wind_gust_5h
+      - sensor.dark_sky_wind_bearing_5h
+      - sensor.dark_sky_ozone_5h
+      - sensor.dark_sky_uv_index_5h
+      - sensor.dark_sky_precip_5h
+      - sensor.dark_sky_precip_probability_5h
+      - sensor.dark_sky_precip_accumulation_5h
+      - sensor.dark_sky_precip_intensity_5h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_6h
+    items:
+      - sensor.dark_sky_icon_6h
+      - sensor.dark_sky_temperature_6h
+      - sensor.dark_sky_apparent_temperature_6h
+      - sensor.dark_sky_humidity_6h
+      - sensor.dark_sky_pressure_6h
+      - sensor.dark_sky_cloud_coverage_6h
+      - sensor.dark_sky_visibility_6h
+      - sensor.dark_sky_dew_point_6h
+      - sensor.dark_sky_wind_speed_6h
+      - sensor.dark_sky_wind_gust_6h
+      - sensor.dark_sky_wind_bearing_6h
+      - sensor.dark_sky_ozone_6h
+      - sensor.dark_sky_uv_index_6h
+      - sensor.dark_sky_precip_6h
+      - sensor.dark_sky_precip_probability_6h
+      - sensor.dark_sky_precip_accumulation_6h
+      - sensor.dark_sky_precip_intensity_6h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_7h
+    items:
+      - sensor.dark_sky_icon_7h
+      - sensor.dark_sky_temperature_7h
+      - sensor.dark_sky_apparent_temperature_7h
+      - sensor.dark_sky_humidity_7h
+      - sensor.dark_sky_pressure_7h
+      - sensor.dark_sky_cloud_coverage_7h
+      - sensor.dark_sky_visibility_7h
+      - sensor.dark_sky_dew_point_7h
+      - sensor.dark_sky_wind_speed_7h
+      - sensor.dark_sky_wind_gust_7h
+      - sensor.dark_sky_wind_bearing_7h
+      - sensor.dark_sky_ozone_7h
+      - sensor.dark_sky_uv_index_7h
+      - sensor.dark_sky_precip_7h
+      - sensor.dark_sky_precip_probability_7h
+      - sensor.dark_sky_precip_accumulation_7h
+      - sensor.dark_sky_precip_intensity_7h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_8h
+    items:
+      - sensor.dark_sky_icon_8h
+      - sensor.dark_sky_temperature_8h
+      - sensor.dark_sky_apparent_temperature_8h
+      - sensor.dark_sky_humidity_8h
+      - sensor.dark_sky_pressure_8h
+      - sensor.dark_sky_cloud_coverage_8h
+      - sensor.dark_sky_visibility_8h
+      - sensor.dark_sky_dew_point_8h
+      - sensor.dark_sky_wind_speed_8h
+      - sensor.dark_sky_wind_gust_8h
+      - sensor.dark_sky_wind_bearing_8h
+      - sensor.dark_sky_ozone_8h
+      - sensor.dark_sky_uv_index_8h
+      - sensor.dark_sky_precip_8h
+      - sensor.dark_sky_precip_probability_8h
+      - sensor.dark_sky_precip_accumulation_8h
+      - sensor.dark_sky_precip_intensity_8h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_9h
+    items:
+      - sensor.dark_sky_icon_9h
+      - sensor.dark_sky_temperature_9h
+      - sensor.dark_sky_apparent_temperature_9h
+      - sensor.dark_sky_humidity_9h
+      - sensor.dark_sky_pressure_9h
+      - sensor.dark_sky_cloud_coverage_9h
+      - sensor.dark_sky_visibility_9h
+      - sensor.dark_sky_dew_point_9h
+      - sensor.dark_sky_wind_speed_9h
+      - sensor.dark_sky_wind_gust_9h
+      - sensor.dark_sky_wind_bearing_9h
+      - sensor.dark_sky_ozone_9h
+      - sensor.dark_sky_uv_index_9h
+      - sensor.dark_sky_precip_9h
+      - sensor.dark_sky_precip_probability_9h
+      - sensor.dark_sky_precip_accumulation_9h
+      - sensor.dark_sky_precip_intensity_9h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_10h
+    items:
+      - sensor.dark_sky_icon_10h
+      - sensor.dark_sky_temperature_10h
+      - sensor.dark_sky_apparent_temperature_10h
+      - sensor.dark_sky_humidity_10h
+      - sensor.dark_sky_pressure_10h
+      - sensor.dark_sky_cloud_coverage_10h
+      - sensor.dark_sky_visibility_10h
+      - sensor.dark_sky_dew_point_10h
+      - sensor.dark_sky_wind_speed_10h
+      - sensor.dark_sky_wind_gust_10h
+      - sensor.dark_sky_wind_bearing_10h
+      - sensor.dark_sky_ozone_10h
+      - sensor.dark_sky_uv_index_10h
+      - sensor.dark_sky_precip_10h
+      - sensor.dark_sky_precip_probability_10h
+      - sensor.dark_sky_precip_accumulation_10h
+      - sensor.dark_sky_precip_intensity_10h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_11h
+    items:
+      - sensor.dark_sky_icon_11h
+      - sensor.dark_sky_temperature_11h
+      - sensor.dark_sky_apparent_temperature_11h
+      - sensor.dark_sky_humidity_11h
+      - sensor.dark_sky_pressure_11h
+      - sensor.dark_sky_cloud_coverage_11h
+      - sensor.dark_sky_visibility_11h
+      - sensor.dark_sky_dew_point_11h
+      - sensor.dark_sky_wind_speed_11h
+      - sensor.dark_sky_wind_gust_11h
+      - sensor.dark_sky_wind_bearing_11h
+      - sensor.dark_sky_ozone_11h
+      - sensor.dark_sky_uv_index_11h
+      - sensor.dark_sky_precip_11h
+      - sensor.dark_sky_precip_probability_11h
+      - sensor.dark_sky_precip_accumulation_11h
+      - sensor.dark_sky_precip_intensity_11h
+
+  - type: custom:fold-entity-row
+    head: sensor.dark_sky_summary_12h
+    items:
+      - sensor.dark_sky_icon_12h
+      - sensor.dark_sky_temperature_12h
+      - sensor.dark_sky_apparent_temperature_12h
+      - sensor.dark_sky_humidity_12h
+      - sensor.dark_sky_pressure_12h
+      - sensor.dark_sky_cloud_coverage_12h
+      - sensor.dark_sky_visibility_12h
+      - sensor.dark_sky_dew_point_12h
+      - sensor.dark_sky_wind_speed_12h
+      - sensor.dark_sky_wind_gust_12h
+      - sensor.dark_sky_wind_bearing_12h
+      - sensor.dark_sky_ozone_12h
+      - sensor.dark_sky_uv_index_12h
+      - sensor.dark_sky_precip_12h
+      - sensor.dark_sky_precip_probability_12h
+      - sensor.dark_sky_precip_accumulation_12h
+      - sensor.dark_sky_precip_intensity_12h

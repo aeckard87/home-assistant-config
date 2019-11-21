@@ -111,6 +111,7 @@
           - condition: state
             entity_id: input_boolean.schedule_automation
             state: 'on'
+
           # only run if schedule automation is enabled
           - condition: state
             entity_id: input_boolean.light_automation
@@ -153,13 +154,13 @@
           notification_id: 'shift_alert'
 
       # send push notification
-      - service: notify.push
+      - service_template: >
+          {% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason
+          {% else %} notify.jason_away
+          {% endif %}
         data_template:
           title: *shift_title
           message: *shift_message
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'shift_alert'
             timestamp: "{{ as_timestamp(now()) }}"
@@ -181,13 +182,10 @@
   garbage_day_notification:
     sequence:
       # send push notification
-      - service: notify.push
+      - service: notify.everyone
         data_template:
           title: "{{ pickup_type }} Day"
           message: "{{ pickup_type }} Day is tomorrow!."
-          target:
-            - jphone
-            - sphone
           data:
             tag: 'garbage_alert'
             timestamp: "{{ as_timestamp(now()) }}"

@@ -11,10 +11,14 @@ cards:
         state_filter:
           - 'on'
         card:
+          type: glance
           columns: 3
           title: System Alerts
-          type: glance
         entities:
+          - entity: sensor.unavailable_sensors
+            state_filter:
+              - operator: '>'
+                value: '0'
           - entity: binary_sensor.device_connection_alert
             name: Connection
           - entity: binary_sensor.processor_use_alert
@@ -56,14 +60,67 @@ cards:
             show_icon: true
             icon: mdi:developer-board
             severity:
+            - value: 0
+              color: '#00CC0F'
             - value: 10
-              color: '#009933'
+              color: '#19D000'
+            - value: 20
+              color: '#44D400'
             - value: 30
-              color: '#ffff66'
+              color: '#70D800'
             - value: 40
-              color: '#ff3300'
+              color: '#9EDB00'
+            - value: 50
+              color: '#CDE000'
+            - value: 60
+              color: '#CDE000'
+            - value: 70
+              color: '#E4C900'
+            - value: 80
+              color: '#E79F00'
+            - value: 90
+              color: '#EC7300'
             - value: 100
-              color: '#770f0f'
+              color: '#EF4500'
+
+          - type: custom:bar-card
+            entity: sensor.rpi_cpu_temperature
+            title: CPU Temp
+            align: center-split
+            unit_of_measurement: '°C'
+            min: 0
+            max: 100
+            target: 55
+            height: 140px
+            width: 60px
+            direction: up
+            title_position: bottom
+            indicator: auto-vertical
+            show_icon: true
+            icon: mdi:thermometer
+            severity:
+            - value: 30
+              color: '#00CC0F'
+            - value: 40
+              color: '#19D000'
+            - value: 50
+              color: '#44D400'
+            - value: 52
+              color: '#70D800'
+            - value: 55
+              color: '#9EDB00'
+            - value: 58
+              color: '#CDE000'
+            - value: 60
+              color: '#CDE000'
+            - value: 62
+              color: '#E4C900'
+            - value: 65
+              color: '#E79F00'
+            - value: 68
+              color: '#EC7300'
+            - value: 70
+              color: '#EF4500'
 
           - type: custom:bar-card
             entity: sensor.memory_use_percent
@@ -82,44 +139,27 @@ cards:
             icon: mdi:developer-board
             severity:
             - value: 0
-              color: '#ffffff'
+              color: '#00CC0F'
+            - value: 10
+              color: '#19D000'
             - value: 20
-              color: '#009933'
+              color: '#44D400'
+            - value: 30
+              color: '#70D800'
             - value: 40
-              color: '#ffff66'
+              color: '#9EDB00'
+            - value: 45
+              color: '#CDE000'
+            - value: 50
+              color: '#CDE000'
+            - value: 55
+              color: '#E4C900'
             - value: 60
-              color: '#ff3300'
-            - value: 100
-              color: '#770f0f'
-
-          - type: custom:bar-card
-            entity: sensor.rpi_cpu_temperature
-            title: CPU Temp
-            align: center-split
-            unit_of_measurement: '°C'
-            min: 0
-            max: 100
-            target: 55
-            height: 140px
-            width: 60px
-            direction: up
-            title_position: bottom
-            indicator: auto-vertical
-            show_icon: true
-            icon: mdi:thermometer
-            severity:
-            - value: 60
-              color: '#228B22'
+              color: '#E79F00'
             - value: 65
-              color: '#DAA520'
+              color: '#EC7300'
             - value: 70
-              color: '#FF8C00'
-            - value: 75
-              color: '#FF0000'
-            - value: 80
-              color: '#DC143C'
-            - value: 85
-              color: '#8B0000'
+              color: '#EF4500'
 
           - type: custom:bar-card
             entity: sensor.disk_use_percent_home
@@ -137,14 +177,28 @@ cards:
             show_icon: true
             icon: mdi:developer-board
             severity:
+            - value: 0
+              color: '#00CC0F'
+            - value: 10
+              color: '#19D000'
+            - value: 20
+              color: '#44D400'
+            - value: 30
+              color: '#70D800'
             - value: 40
-              color: '#009933'
+              color: '#9EDB00'
+            - value: 50
+              color: '#CDE000'
             - value: 60
-              color: '#ffff66'
+              color: '#CDE000'
             - value: 70
-              color: '#ff3300'
+              color: '#E4C900'
+            - value: 80
+              color: '#E79F00'
+            - value: 90
+              color: '#EC7300'
             - value: 100
-              color: '#770f0f'
+              color: '#EF4500'
 
       - type: horizontal-stack
         cards:
@@ -157,37 +211,30 @@ cards:
             show:
               legend: false
             color_thresholds:
-              - value: 10
-                color: '#009933'
-              - value: 30
-                color: '#ffff66'
-              - value: 40
-                color: '#ff3300'
-              - value: 100
-                color: '#770f0f'
+            - value: 0
+              color: '#00CC0F'
+            - value: 10
+              color: '#19D000'
+            - value: 20
+              color: '#44D400'
+            - value: 30
+              color: '#70D800'
+            - value: 40
+              color: '#9EDB00'
+            - value: 50
+              color: '#CDE000'
+            - value: 60
+              color: '#CDE000'
+            - value: 70
+              color: '#E4C900'
+            - value: 80
+              color: '#E79F00'
+            - value: 90
+              color: '#EC7300'
+            - value: 100
+              color: '#EF4500'
             entities:
               - entity: sensor.processor_use
-
-          - type: custom:mini-graph-card
-            name: Memory Use
-            hours_to_show: 72
-            font_size: 75
-            animate: true
-            show:
-              legend: false
-            lower_bound: 0
-            upper_bound: 100
-            color_thresholds:
-              - value: 20
-                color: '#009933'
-              - value: 40
-                color: '#ffff66'
-              - value: 60
-                color: '#ff3300'
-              - value: 100
-                color: '#770f0f'
-            entities:
-              - entity: sensor.memory_use_percent
 
           - type: custom:mini-graph-card
             name: CPU Temperature
@@ -216,6 +263,91 @@ cards:
             entities:
               - entity: sensor.rpi_cpu_temperature
 
+      - type: horizontal-stack
+        cards:
+
+          - type: custom:mini-graph-card
+            name: Memory Use
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            lower_bound: 0
+            upper_bound: 100
+            color_thresholds:
+            - value: 0
+              color: '#00CC0F'
+            - value: 10
+              color: '#19D000'
+            - value: 20
+              color: '#44D400'
+            - value: 30
+              color: '#70D800'
+            - value: 40
+              color: '#9EDB00'
+            - value: 45
+              color: '#CDE000'
+            - value: 50
+              color: '#CDE000'
+            - value: 55
+              color: '#E4C900'
+            - value: 60
+              color: '#E79F00'
+            - value: 65
+              color: '#EC7300'
+            - value: 70
+              color: '#EF4500'
+            entities:
+              - entity: sensor.memory_use_percent
+
+          - type: custom:mini-graph-card
+            name: Swap File Use
+            hours_to_show: 72
+            font_size: 75
+            animate: true
+            show:
+              legend: false
+            lower_bound: 0
+            upper_bound: 100
+            color_thresholds:
+            - value: 0
+              color: '#00CC0F'
+            - value: 10
+              color: '#19D000'
+            - value: 20
+              color: '#44D400'
+            - value: 30
+              color: '#70D800'
+            - value: 40
+              color: '#9EDB00'
+            - value: 45
+              color: '#CDE000'
+            - value: 50
+              color: '#CDE000'
+            - value: 55
+              color: '#E4C900'
+            - value: 60
+              color: '#E79F00'
+            - value: 65
+              color: '#EC7300'
+            - value: 70
+              color: '#EF4500'
+            entities:
+              - entity: sensor.swap_use_percent
+
+      - type: history-graph
+        title: Processor Load
+        hours_to_show: 12
+        refresh_interval: 300
+        entities:
+          - entity: sensor.load_1m
+            name: 1m
+          - entity: sensor.load_5m
+            name: 5m
+          - entity: sensor.load_15m
+            name: 15m
+
   - type: entities
     title: System Settings
     show_header_toggle: false
@@ -243,14 +375,14 @@ cards:
     title: Hassio Monitor
     show_header_toggle: false
     entities:
-      - entity: binary_sensor.hassio_connected
+      #DISABLED - entity: binary_sensor.hassio_connected
       - entity: sensor.hassio_version
       - entity: binary_sensor.updater
-
+      - entity: sensor.hacs
       - entity: sensor.uptime
         type: "custom:secondaryinfo-entity-row"
         secondary_info: "<b style='color:red'>[[ sensor.ha_uptime ]]</b>"
-
+      - entity: sensor.last_successful_authentication
       - entity: input_select.log_level
 
       - type: custom:fold-entity-row
@@ -299,7 +431,7 @@ cards:
         type: "custom:secondaryinfo-entity-row"
         secondary_info: "<b style='color:red'>[[ sensor.last_boot_date_time ]]</b>"
       - entity: sensor.rpi_power_status
-      - entity: sensor.rpi_cpu_temperature
+      #DISABLED - entity: sensor.rpi_cpu_temperature
       - entity: sensor.ipv4_address_eth0
         name: IPV4
       - entity: sensor.ipv6_address_eth0
@@ -309,29 +441,16 @@ cards:
     title: Device Monitor
     show_header_toggle: false
     entities:
-      - type: custom:fold-entity-row
-        head: binary_sensor.device_connection
-        group_config:
-          secondary_info: last-changed
-        items:
-          - entity: binary_sensor.hassio_connected
-          - entity: binary_sensor.wan
-          - entity: binary_sensor.house_alarm_connected
-          - entity: binary_sensor.upstairs_thermostat_connected
-          - entity: binary_sensor.upstairs_protect_connected
-          - entity: binary_sensor.downstairs_protect_connected
-          - entity: binary_sensor.lutron_connected
-          - entity: binary_sensor.garage_door_connected
-          - entity: binary_sensor.work_calendar_connected
-          - entity: binary_sensor.household_calendar_connected
-          - entity: binary_sensor.traffic_sensor_connected
-          - entity: binary_sensor.hyrdrawise_connected
-          - entity: binary_sensor.pollen_connected
-          - entity: binary_sensor.dark_sky_connected
-          - entity: binary_sensor.openuv_connected
-          - entity: binary_sensor.waqi_connected
-          - entity: binary_sensor.noaa_connected
-          - entity: binary_sensor.envcan_connected
+      - entity: sensor.unavailable_sensors
+      - type: custom:auto-entities
+        card:
+          type: custom:fold-entity-row
+          head: binary_sensor.device_connection
+        filter:
+          include:
+            - group: group.device_connection_sensors
+              options:
+                secondary_info: last-changed
 
       - type: custom:fold-entity-row
         head: binary_sensor.zwave_status

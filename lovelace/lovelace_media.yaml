@@ -54,6 +54,7 @@ cards:
             - type: custom:fold-entity-row
               head: input_boolean.announcement_playing
               entities:
+                - entity: input_select.tts_service
                 - entity: input_select.announcement_media_player
                 - entity: input_number.announcement_volume
                 - entity: input_number.night_announcement_volume

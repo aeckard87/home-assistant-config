@@ -1,3 +1,7 @@
+#######################################################################################################################
+# Lovelace Configuration (ui-lovelace.yaml)
+#######################################################################################################################
+
 title: Home Assistant
 resources: !include /config/lovelace/lovelace_resources.yaml
 
@@ -39,8 +43,8 @@ views:
   - !include lovelace/lovelace_garage.yaml
   - !include lovelace/lovelace_sensors.yaml
   - !include lovelace/lovelace_media.yaml
-  - !include lovelace/lovelace_cameras.yaml
-  - !include lovelace/lovelace_sprinklers.yaml
+  # - !include lovelace/lovelace_cameras.yaml
+  # - !include lovelace/lovelace_sprinklers.yaml
   - !include lovelace/lovelace_weather.yaml
   - !include lovelace/lovelace_system.yaml
   - !include lovelace/lovelace_debugging.yaml

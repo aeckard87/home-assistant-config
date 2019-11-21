@@ -355,13 +355,10 @@
   alarm_clock_notification:
     sequence:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Wake Up Alarm"
           message: "Good morning!\n {{ now().strftime('%H:%M  %Y-%m-%d') }}."
-          target:
-            - jlaptop
-            - jphone
           data:
             actions:
               - action: 'turn_off_alarm_clock'
@@ -419,13 +416,10 @@
           volume: 70
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Alarm Clock Failed"
           message: "The alarm clock has failed to play!"
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'alarm_clock_failed'
             timestamp: "{{ as_timestamp(now()) }}"

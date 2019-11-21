@@ -1,4 +1,18 @@
 #######################################################################################################################
+# System Sensors (sensor_system.yaml)
+#######################################################################################################################
+
+#######################################################################################################################
+## Authenticated Users Sensor
+## https://github.com/custom-components/authenticated
+#######################################################################################################################
+  - platform: authenticated
+    #enable_notification: true
+    #exclude: 192.168.1.110
+    #provider: ipapi  # ipapi, extreme, ipvigilante
+    log_location: /config/home-assistant.log
+
+#######################################################################################################################
 ## DNS IP Sensor
 #######################################################################################################################
   - platform: dnsip
@@ -6,10 +20,11 @@
 #######################################################################################################################
 ## Rpi CPU Temperature
 #######################################################################################################################
-  - platform: command_line
-    name: RPi CPU Temperature
-    command: "cat /sys/class/thermal/thermal_zone0/temp"
-    value_template: "{{ value | multiply(0.001) | round(2) }}"
+  #TODO - platform: command_line
+  #   name: RPi CPU Temperature
+  #   command: "cat /sys/class/thermal/thermal_zone0/temp"
+  #   value_template: "{{ value | multiply(0.001) | round(2) }}"
+  #   scan_interval: 60
 
 #######################################################################################################################
 ## Hassio Database File Size Sensor
@@ -59,6 +74,9 @@
       - type: memory_use_percent
       - type: swap_use_percent
       - type: processor_use
+      - type: load_1m
+      - type: load_5m
+      - type: load_15m
       - type: ipv4_address
         arg: eth0
       - type: ipv6_address
@@ -157,3 +175,51 @@
 
           {{ as_timestamp(states('sensor.last_boot')) | timestamp_custom('%H:%M on %a') }} {{ date }} {{ as_timestamp(states('sensor.last_boot')) | timestamp_custom('%b %Y') }}
 
+
+#######################################################################################################################
+## Unavailable Sensors
+## - state: number of unavailable sensors
+## - attribute: sensor_names - comma separated list of unavailable sensor names
+## - attribute: sensor_entities: - comma separated list of unavailable sensor entity id's
+## - updates every minute (sensor.time)
+## - sensor entity_id's in ignored_sensors are filtered from this sensor
+#######################################################################################################################
+      unavailable_sensors:
+        entity_id: sensor.time
+        friendly_name_template: >
+          {% if states('sensor.unavailable_sensors') | int == 0 %}
+            Sensors All Available
+          {% else %}
+            Sensors Are Unavailable
+          {% endif %}
+        icon_template: >-
+          {% if states('sensor.unavailable_sensors') | int == 0 %}
+            mdi:thumb-up
+          {% else %}
+            mdi:thumb-down
+          {% endif %}
+        value_template: >
+          {% set ignored_sensors = state_attr('group.ignored_sensors', 'entity_id') %}
+          {% set unavail =  states.sensor | selectattr('state', 'eq', 'unavailable')
+                                          | rejectattr('entity_id', 'in', ignored_sensors)
+                                          | map(attribute='name')
+                                          | list
+                                          | length  %}
+          {{ unavail }}
+        attribute_templates:
+          sensor_names: >
+            {% set ignored_sensors = state_attr('group.ignored_sensors', 'entity_id') %}
+            {% set sensor_names =  states.sensor  | selectattr('state', 'eq', 'unavailable')
+                                                  | rejectattr('entity_id', 'in', ignored_sensors)
+                                                  | map(attribute='name')
+                                                  | list
+                                                  | join(', ') %}
+            {{ sensor_names }}
+          sensor_entity_ids: >
+            {% set ignored_sensors = state_attr('group.ignored_sensors', 'entity_id') %}
+            {% set sensor_ids =  states.sensor  | selectattr('state', 'eq', 'unavailable')
+                                                  | rejectattr('entity_id', 'in', ignored_sensors)
+                                                  | map(attribute='entity_id')
+                                                  | list
+                                                  | join(', ') %}
+            {{ sensor_ids }}

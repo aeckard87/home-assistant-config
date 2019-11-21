@@ -55,7 +55,7 @@
       - service: script.turn_off_storm_alerts
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Local Storm Warning"
           message: >-
@@ -67,9 +67,6 @@
               {{ states('sensor.dark_sky_precip') }}{% endif %} storm in the immediate vicinity
             {% endif %}
             .  The current forecast is {{ states('sensor.dark_sky_minutely_summary') | replace('<',' less than ') | replace('>','greater than') }}"
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'storm_alert'
             timestamp: "{{ as_timestamp(now()) }}"
@@ -185,13 +182,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "High Outdoor Temperature Alert"
           message: "The humidex is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'outdoor_high_temp_alert_pause'
@@ -327,13 +321,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Low Outdoor Temperature Alert"
           message: "The apparent temperature is {{ states('sensor.dark_sky_apparent_temperature') }} degrees."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'outdoor_low_temp_alert_pause'
@@ -469,13 +460,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "High UV Alert"
           message: "Today's UV risk level is {{ states('sensor.uv_max_level')}}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'uv_alert_pause'
@@ -611,13 +599,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Air Quality Alert"
           message: "The current index is {{ states('sensor.aqi_risk_level')}}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'aqi_alert_pause'
@@ -753,13 +738,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Allergy Alert"
           message: "{{ states('sensor.allergy_risk_today') }} risk today and {{ states('sensor.allergy_risk_tomorrow') | lower }} risk tomorrow."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'allergy_alert_pause'
@@ -895,13 +877,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Asthma Alert"
           message: "{{ states('sensor.asthma_risk_today') }} risk today and {{ states('sensor.asthma_risk_tomorrow') | lower }} risk tomorrow."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'asthma_alert_pause'
@@ -1022,7 +1001,7 @@
     initial_state: 'on'
 
     trigger:
-      # run when weather alert state changes (refire if updated/new alert)
+      # run when weather alert state changes (triggers if updated/new alert)
       - platform: state
         entity_id: sensor.noaa_alerts_miz076
 
@@ -1046,7 +1025,7 @@
           {% if state_attr('sensor.noaa_alerts_miz076', 'event_severity')  == 'Severe'
              or state_attr('sensor.noaa_alerts_miz076', 'event_severity')  == 'Extreme' %}
             script.play_alert
-          {% else %} script.play_announcement
+          {% else %} script.null_script  {# #TODO script.play_announcement #}
           {% endif %}
         data_template:
           play_message: >-
@@ -1060,17 +1039,13 @@
           quiet_play: 'true'
 
       # send push notification
-      - service: notify.push
+      - service: notify.everyone
         data_template:
           title: "{{ state_attr('sensor.noaa_alerts_miz076', 'event_type') }}"
           message: >-
               Urgency: {{ state_attr('sensor.noaa_alerts_miz076', 'urgency') }}
               Severity: {{ state_attr('sensor.noaa_alerts_miz076', 'event_severity') }}
               {{ state_attr('sensor.noaa_alerts_miz076', 'headline') }}
-          target:
-            - jphone
-            - sphone
-            - jlaptop
           data:
             tag: 'noaa_alert'
             timestamp: "{{ as_timestamp(now()) }}"
@@ -1134,10 +1109,22 @@
       # only fires if top priority alert has changed
       - condition: template
         value_template: >-
-          {% if not is_state('sensor.warnings', '') %}{% if not state_attr( 'sensor.warnings', 'alert time' ) == states('input_text.warnings_alert_time') %} true {% endif %}
-          {% elif not is_state('sensor.watches', '') %}{% if not state_attr( 'sensor.watches', 'alert time' ) == states('input_text.watches_alert_time') %} true {% endif %}
-          {% elif not is_state('sensor.advisories', '') %}{% if not state_attr( 'sensor.advisories', 'alert time' ) == states('input_text.advisories_alert_time') %} true {% endif %}
-          {% elif not is_state('sensor.statements', '') %}{% if not state_attr( 'sensor.statements', 'alert time' ) == states('input_text.statements_alert_time') %} true {% endif %}
+          {% if not is_state('sensor.warnings', '') %}
+            {% if not state_attr( 'sensor.warnings', 'alert time' ) == states('input_text.warnings_alert_time') %} true
+            {% else %} false
+            {% endif %}
+          {% elif not is_state('sensor.watches', '') %}
+            {% if not state_attr( 'sensor.watches', 'alert time' ) == states('input_text.watches_alert_time') %} true
+            {% else %} false
+            {% endif %}
+          {% elif not is_state('sensor.advisories', '') %}
+            {% if not state_attr( 'sensor.advisories', 'alert time' ) == states('input_text.advisories_alert_time') %} true
+            {% else %} false
+            {% endif %}
+          {% elif not is_state('sensor.statements', '') %}
+            {% if not state_attr( 'sensor.statements', 'alert time' ) == states('input_text.statements_alert_time') %} true
+            {% else %} false
+            {% endif %}
           {% else %} false
           {% endif %}
 
@@ -1181,26 +1168,39 @@
             Attention! Weather Alert!
             Environment Canada has issued a
              {% if not states('sensor.warnings') == '' %}{% set prev = true %} {{ states('sensor.warnings') }}{% endif %}
-             {% if prev == true %} and a {% endif %}
+             {% if prev == true and not states('sensor.watches') == '' %} and a {% endif %}
              {% if not states('sensor.watches') == '' %}{% set prev = true %} {{ states('sensor.watches') }}{% endif %}
-             {% if prev == true %} and a {% endif %}
-             {% if not states('sensor.advisories') == '' %}{% set prev = true %} {{ states('sensor.advisories') }}{% endif %}
-             {% if prev == true %} and a {% endif %}
-             {% if not states('sensor.statements') == '' %} {{ states('sensor.statements') }}{% endif %}
-             for your immediate area.
-            Again, Environment Canada has issued a
-             {% if not states('sensor.warnings') == '' %}{% set prev = true %} {{ states('sensor.warnings') }}{% endif %}
-             {% if prev == true %} and a {% endif %}
-             {% if not states('sensor.watches') == '' %}{% set prev = true %} {{ states('sensor.watches') }}{% endif %}
-             {% if prev == true %} and a {% endif %}
-             {% if not states('sensor.advisories') == '' %}{% set prev = true %} {{ states('sensor.advisories') }}{% endif %}
-             {% if prev == true %} and a {% endif %}
-             {% if not states('sensor.statements') == '' %} {{ states('sensor.statements') }}{% endif %}
              for your immediate area.
           quiet_play: 'true'
 
+      #TODO   {% if not states('sensor.warnings') == '' %} script.play_alert
+      #   {% else %} script.play_announcement
+      #   {% endif %}
+      # data_template:
+      #   play_message: >-
+      #     Attention! Weather Alert!
+      #     Environment Canada has issued a
+      #     {% if not states('sensor.warnings') == '' %}{% set prev = true %} {{ states('sensor.warnings') }}{% endif %}
+      #     {% if prev == true %} and a {% endif %}
+      #     {% if not states('sensor.watches') == '' %}{% set prev = true %} {{ states('sensor.watches') }}{% endif %}
+      #     {% if prev == true %} and a {% endif %}
+      #     {% if not states('sensor.advisories') == '' %}{% set prev = true %} {{ states('sensor.advisories') }}{% endif %}
+      #     {% if prev == true %} and a {% endif %}
+      #     {% if not states('sensor.statements') == '' %} {{ states('sensor.statements') }}{% endif %}
+      #     for your immediate area.
+      #     Again, Environment Canada has issued a
+      #     {% if not states('sensor.warnings') == '' %}{% set prev = true %} {{ states('sensor.warnings') }}{% endif %}
+      #     {% if prev == true %} and a {% endif %}
+      #     {% if not states('sensor.watches') == '' %}{% set prev = true %} {{ states('sensor.watches') }}{% endif %}
+      #     {% if prev == true %} and a {% endif %}
+      #     {% if not states('sensor.advisories') == '' %}{% set prev = true %} {{ states('sensor.advisories') }}{% endif %}
+      #     {% if prev == true %} and a {% endif %}
+      #     {% if not states('sensor.statements') == '' %} {{ states('sensor.statements') }}{% endif %}
+      #     for your immediate area.
+      #   quiet_play: 'true'
+
       # send push notification
-      - service: notify.push
+      - service: notify.everyone
         data_template:
           title: >-
             Environment Canada
@@ -1223,10 +1223,6 @@
             {% elif not is_state('sensor.statements','') and not states('sensor.statements') == 'unknown' %}
               {{ state_attr('sensor.statements', 'alert detail')}}
             {% endif %}
-          target:
-            - jphone
-            - sphone
-            - jlaptop
           data:
             tag: 'envcan_alert'
             timestamp: "{{ as_timestamp(now()) }}"

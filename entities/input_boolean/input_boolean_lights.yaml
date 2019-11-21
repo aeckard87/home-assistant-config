@@ -15,12 +15,83 @@
     initial: 'off'
 
 #######################################################################################################################
-## Living Room Pot Lights In Use
+## Bedroom Lights In Use
 #TEMP - placeholder boolean for turn_light_on script until bedroom light swtiches are installed
 ## - turned on, leave it on so we're not turning living room lights on (temp assigned to bedroom lights)
-## - other group lights we're just ignoring user state for now
 #######################################################################################################################
   bedroom_lights:
     name: Bedroom Lights
     icon: mdi:light-switch
     initial: 'on'
+
+#######################################################################################################################
+## Garage Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  garage_lights:
+    name: Garage Lights
+    icon: mdi:light-switch
+    initial: 'off'
+
+#######################################################################################################################
+## Home Sunset Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  home_sunset_lights:
+    name: Home Sunset Lights
+    icon: mdi:light-switch
+    initial: 'off'
+
+#######################################################################################################################
+## Away Sunset Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  away_sunset_lights:
+    name: Away Sunset Lights
+    icon: mdi:light-switch
+    initial: 'off'
+
+#######################################################################################################################
+## Alarm Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  alarm_lights:
+    name: Alarm Lights
+    icon: mdi:light-switch
+    initial: 'off'
+
+#######################################################################################################################
+## Arrive Home Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  arrive_home_lights:
+    name: Arrive Home Lights
+    icon: mdi:light-switch
+    initial: 'off'
+
+#######################################################################################################################
+## Leave Home Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  leave_home_lights:
+    name: Leave Home Lights
+    icon: mdi:light-switch
+    initial: 'off'
+
+#######################################################################################################################
+## Bedtime Lights Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  bedtime_lights:
+    name: Bedtime Lights
+    icon: mdi:light-switch
+    initial: 'off'
+
+#######################################################################################################################
+## Goodnight Lights Lights In Use
+#TEMP - placeholder boolean for turn_light_on script until light swtiches are installed
+#######################################################################################################################
+  goodnight_lights:
+    name: Goodnight Lights
+    icon: mdi:light-switch
+    initial: 'off'

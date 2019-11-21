@@ -24,7 +24,7 @@
     name: Bedroom Lights
     entities:
       - light.living_room_pot_lights #TEMP
-      
+
 #######################################################################################################################
 ## Garage Lights Group
 #######################################################################################################################
@@ -32,7 +32,7 @@
     name: Garage Lights
     entities:
       - light.living_room_pot_lights #TEMP
-      
+
 #######################################################################################################################
 ## Home Sunset Lights Group
 ## - lights turned on at sunset when somebody is home
@@ -48,15 +48,6 @@
 #######################################################################################################################
   - platform: group
     name: Away Sunset Lights
-    entities:
-      - light.living_room_pot_lights #TEMP
-
-#######################################################################################################################
-## Garage Lights Group
-## - interior garage lights
-#######################################################################################################################
-  - platform: group
-    name: Garage Lights
     entities:
       - light.living_room_pot_lights #TEMP
 
@@ -102,14 +93,5 @@
 #######################################################################################################################
   - platform: group
     name: Goodnight Lights
-    entities:
-      - light.living_room_pot_lights #TEMP
-
-#######################################################################################################################
-## Away Lights Group
-## - lights that turn on at night when nobody is home
-#######################################################################################################################
-  - platform: group
-    name: Away Lights
     entities:
       - light.living_room_pot_lights #TEMP

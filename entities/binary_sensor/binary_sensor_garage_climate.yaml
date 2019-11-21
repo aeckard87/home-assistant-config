@@ -1,4 +1,9 @@
 #######################################################################################################################
+## Template Binary Sensors
+#######################################################################################################################
+  - platform: template
+    sensors:
+#######################################################################################################################
 ## Garage Climate Low Temp Alert
 ## - sensor always on when heat first turned on (if outside temp < set temp)
 ## - set alert to longer to allow garage to warm up
@@ -6,8 +11,6 @@
 ## - freeze protection on and less than freeze temp
 ## - heat on and less than set temp
 #######################################################################################################################
-  - platform: template
-    sensors:
       garage_low_temperature:
         friendly_name: Garage Low Temp
         icon_template: mdi:snowflake
@@ -27,8 +30,6 @@
 ## - heat on, furnace on, current temp > thermostat max_temp (+5)
 ## - heat off, freeze protection on, furnace on, current temp >  freeze temp (+ 5) and furnace is running
 #######################################################################################################################
-  - platform: template
-    sensors:
       garage_high_temperature:
         friendly_name: Garage High Temp
         icon_template: mdi:fire

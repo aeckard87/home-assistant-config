@@ -110,12 +110,6 @@
         icon_template: mdi:server-network
         device_class: connectivity
         value_template: "{{ not states('sensor.dark_sky_temperature') == 'unknown' }}"
-        
-#######################################################################################################################
-## Template Binary Sensors
-#######################################################################################################################
-  - platform: template
-    sensors:
 
 #######################################################################################################################
 ## Active Weather Alert
@@ -171,4 +165,4 @@
          {% else %} mdi:server-network-off
          {% endif %}
         device_class: connectivity
-        value_template: "{{ not states('sensor.temperature') == 'unknown' }}"        
+        value_template: "{{ not states('sensor.temperature') == 'unknown' }}"

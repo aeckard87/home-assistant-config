@@ -770,6 +770,7 @@
             {% elif is_state('calendar.afternoons','on') %} Days
             {% else %} {{ states('input_select.shift_selection') }}
             {% endif %}
+            
 
 #######################################################################################################################
 ## Schedule - Shift Override Alert Sunday Alert
@@ -890,13 +891,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Google Calendar Offline"
           message: "Calendar is offline.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'calendar_alert_pause'
@@ -1185,13 +1183,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Hot Tub Maintenance"
           message: "Hot tub needs weekly maintenance."
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'hottub_alert'
             timestamp: "{{ as_timestamp(now()) }}"

@@ -1,0 +1,73 @@
+---
+127.0.0.1:
+  city: null
+  country: null
+  hostname: localhost
+  last_used_at: '2019-11-21T01:20:13.741721+00:00'
+  prev_used_at: '2019-11-21T00:42:09.842513+00:00'
+  region: null
+  user_id: 91f5fa97ee94495eab585bd81516b840
+  username: Jason
+172.30.32.2:
+  city: null
+  country: null
+  hostname: supervisor.local.hass.io
+  last_used_at: '2019-11-19T22:22:55.144040+00:00'
+  prev_used_at: '2019-11-19T18:33:57.256823+00:00'
+  region: null
+  user_id: dc0f2d6ea00e4ac8acc75c523499a17e
+  username: Hass.io
+172.30.33.2:
+  city: null
+  country: null
+  hostname: core-nginx-proxy.local.hass.io
+  last_used_at: '2019-11-19T18:20:15.115291+00:00'
+  prev_used_at: '2019-11-19T17:32:32.341351+00:00'
+  region: null
+  user_id: 91f5fa97ee94495eab585bd81516b840
+  username: Jason
+172.30.33.3:
+  city: null
+  country: null
+  hostname: core-nginx-proxy.local.hass.io
+  last_used_at: '2019-11-21T04:19:34.255788+00:00'
+  prev_used_at: '2019-11-21T03:47:05.202084+00:00'
+  region: null
+  user_id: 91f5fa97ee94495eab585bd81516b840
+  username: Jason
+192.168.1.1:
+  city: null
+  country: null
+  hostname: null
+  last_used_at: '2019-11-10T06:27:41.902249+00:00'
+  prev_used_at: null
+  region: null
+  user_id: c1832d8c7d2b4eacab096110f87d8b8f
+  username: Sheri
+192.168.1.141:
+  city: null
+  country: null
+  hostname: null
+  last_used_at: '2019-11-17T02:18:25.419727+00:00'
+  prev_used_at: null
+  region: null
+  user_id: 91f5fa97ee94495eab585bd81516b840
+  username: Jason
+192.168.1.146:
+  city: null
+  country: null
+  hostname: null
+  last_used_at: '2019-10-15T21:52:04.043223+00:00'
+  prev_used_at: null
+  region: null
+  user_id: c1832d8c7d2b4eacab096110f87d8b8f
+  username: Sheri
+207.219.108.137:
+  city: Scarborough
+  country: Canada
+  hostname: null
+  last_used_at: '2019-10-11T07:12:04.945052+00:00'
+  prev_used_at: null
+  region: Ontario
+  user_id: c1832d8c7d2b4eacab096110f87d8b8f
+  username: Sheri

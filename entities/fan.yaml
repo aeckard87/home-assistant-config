@@ -1,4 +1,7 @@
-  # Creates a template fan to be able to control the HVAC fan independently of heating and cooling.
+#######################################################################################################################
+## HVAC Fan
+## Creates a template fan to be able to control the HVAC fan independently of heating and cooling.
+#######################################################################################################################
   - platform: template
     fans:
       hvac_fan:

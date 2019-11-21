@@ -262,7 +262,7 @@
   - id: alarm_clock_detect_snooze
     alias: "[Alarm Clock] Detect Snooze"
     description: "Detect alarm snooze (media player pause) and turn on snooze boolean."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock media player state is paused
@@ -299,7 +299,7 @@
   - id: alarm_clock_auto_resume
     alias: "[Alarm Clock] Auto Resume"
     description: "Resume alarm clock play when announcement finished."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when announcement playing boolean turns off
@@ -327,7 +327,7 @@
   - id: alarm_clock_restart_timer_finished
     alias: "[Alarm Clock] Restart Timer Finished"
     description: "Restart alarm when restart timer finished (for alarm sounds only, not radio)"
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when restart timer has finished
@@ -362,7 +362,7 @@
   - id: alarm_clock_alarm_activate_check
     alias: "[Alarm Clock] Alarm Activate Check"
     description: "Turn master active alarm boolean back off if no alarm is active."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock active turned on
@@ -392,7 +392,7 @@
   - id: alarm_clock_active_off
     alias: "[Alarm Clock] Active Off"
     description: "Stop alarm clock when master active alarm boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when master alarm clock active boolean turned off
@@ -411,7 +411,7 @@
   - id: alarm_clock_nap_on
     alias: "[Alarm Clock] Nap On"
     description: "Start nap timer when nap alarm boolean turned on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when nap alarm turned on
@@ -459,7 +459,7 @@
   - id: alarm_clock_nap_on_check
     alias: "[Alarm Clock] Nap On Check"
     description: "Turn nap boolean back off if another alarm is active."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when nap alarm turned on
@@ -493,7 +493,7 @@
   - id: alarm_clock_nap_off
     alias: "[Alarm Clock] Nap Off"
     description: "Cancel nap timer when nap alarm boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when nap alarm turned off
@@ -512,7 +512,7 @@
   - id: alarm_clock_nap_timer_finished
     alias: "[Alarm Clock] Nap Timer Finished"
     description: "Turn on active nap alarm boolean when nap timer finished."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when nap timer finished
@@ -539,7 +539,7 @@
   - id: alarm_clock_nap_active_on
     alias: "[Alarm Clock] Nap Active On"
     description: "Play alarm clock when active nap alarm boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock active boolean turned on
@@ -597,7 +597,7 @@
   - id: alarm_clock_nap_active_on_check
     alias: "[Alarm Clock] Nap Active On Check"
     description: "Turn nap active alarm boolean back of if another alarm is active."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock active boolean turned on
@@ -631,7 +631,7 @@
   - id: alarm_clock_nap_active_off
     alias: "[Alarm Clock] Nap Active Off"
     description: "Turn off master active alarm clock boolean when nap active alarm boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when nap active boolean turned off
@@ -651,7 +651,7 @@
   - id: alarm_clock_manual_off
     alias: "[Alarm Clock] Manual Off"
     description: "Turn off alarm clock when manual alarm clock boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when manual alarm turned off
@@ -706,7 +706,7 @@
   - id: alarm_clock_manual_active_on
     alias: "[Alarm Clock] Manual Active On"
     description: "Play alarm clock when manual active boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock active boolean turned on
@@ -760,7 +760,7 @@
   - id: alarm_clock_manual_active_on_check
     alias: "[Alarm Clock] Manual Active On Check"
     description: "Turn manual active boolean back off if another alarm is active."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when manual alarm clock active boolean turned on
@@ -794,7 +794,7 @@
   - id: alarm_clock_manual_active_off
     alias: "[Alarm Clock] Manual Active Off"
     description: "Turn off master active boolean when manual active boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when manual active boolean turned off
@@ -813,7 +813,7 @@
   - id: alarm_clock_auto_off
     alias: "[Alarm Clock] Auto Off"
     description: "Stop alarm clock when auto active boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when auto alarm clock enabled boolean is turned off
@@ -838,7 +838,7 @@
   - id: alarm_clock_auto_active_on
     alias: "[Alarm Clock] Auto Active On"
     description: "Play alarm clock when auto active boolean turns on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock active boolean turned on
@@ -888,7 +888,7 @@
   - id: alarm_clock_auto_active_on_check
     alias: "[Alarm Clock] Auto Active On Check"
     description: "Turn off auto active boolean back off if another alarm already active."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock active boolean turned on
@@ -922,7 +922,7 @@
   - id: alarm_clock_auto_active_off
     alias: "[Alarm Clock] Auto Active Off"
     description: "Turn off master active boolean when auto active boolean turns off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when auto active boolean turned off
@@ -941,7 +941,7 @@
   - id: alarm_clock_snooze_on
     alias: "[Alarm Clock] Snooze On"
     description: "Pause media player and start snooze timer when snooze turned on."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when snooze boolean turned on
@@ -999,7 +999,7 @@
   - id: alarm_clock_snooze_check
     alias: "[Alarm Clock] Snooze Check"
     description: "Turn snooze boolean back off if alarm isn't active."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm snooze is turned on
@@ -1033,7 +1033,7 @@
   - id: alarm_clock_snooze_turned_off
     alias: "[Alarm Clock] Snooze Turned Off"
     description: "Turn off alarm clock when snooze turned off."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when snooze boolean turned off
@@ -1059,7 +1059,7 @@
   - id: alarm_clock_snooze_timer_finished
     alias: "[Alarm Clock] Snooze Timer Finished"
     description: "Turn off snooze and restart alarm when snooze timer finished."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when snooze timer is done
@@ -1101,7 +1101,7 @@
   - id: alarm_clock_volume_change
     alias: "[Alarm Clock] Volume Change"
     description: "Change media player volume when alarm clock volume control changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm clock volume input value changes
@@ -1170,7 +1170,7 @@
   - id: alarm_clock_media_player_volume_change
     alias: "[Alarm Clock] Media Player Volume Change"
     description: "Change volume on alarm clock control when volume on media player changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # activate when media player state changes
@@ -1252,7 +1252,7 @@
   - id: alarm_clock_volume_timer_finished
     alias: "[Alarm Clock] Volume Timer Finished"
     description: "Turn up alarm clock volume when timer finished."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when volume step timer finished
@@ -1305,7 +1305,7 @@
   - id: alarm_clock_sound_changed
     alias: "[Alarm Clock] Sound Changed"
     description: "Restart alarm clock when alarm sound is changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when alarm sound changed
@@ -1337,7 +1337,7 @@
   - id: alarm_clock_radio_station_changed
     alias: "[Alarm Clock] Radio Station Changed"
     description: "Restart alarm clock when radio station is changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when radio station changed
@@ -1369,7 +1369,7 @@
   - id: alarm_clock_media_player_changed
     alias: "[Alarm Clock] Media Player Changed"
     description: "Restart alarm clock when media player is changed."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when media player selection changes
@@ -1438,7 +1438,7 @@
   - id: alarm_clock_player_offline
     alias: "[Alarm Clock] Player Offline"
     description: "Send notification when alarm clock media player goes offline."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when media player is unavailable
@@ -1457,13 +1457,15 @@
           - media_player.jwork_chrome
           - media_player.sphone_chrome
         to: 'unavailable'
-        for: '00:01:00'
+        for:
+          minutes: 5
 
       # run when media player is unknown
       - platform: state
         entity_id: *alarm_clock_media_player_entities
         to: 'unknown'
-        for: '00:01:00'
+        for:
+          minutes: 5
 
     condition:
       - condition: and
@@ -1494,13 +1496,10 @@
           notification_id: 'alarm_clock_player_offline'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *alarm_clock_player_title
           message: *alarm_clock_player_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'alarm_clock_player_alert_pause'

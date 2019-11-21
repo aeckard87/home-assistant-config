@@ -579,7 +579,7 @@
       # turn away lighting group on
       - service: script.turn_light_on
         data:
-          light_name: 'away_lights'
+          light_name: 'away_sunset_lights'
           ignore_user_state: 'true'
           brightness: 10
 
@@ -682,21 +682,18 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Jason Almost Home"
           message: "Get ready for him!"
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'jason_almost_home'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 600
-            priority: high
-            requireInteraction: true
-            silent: false
+            ttl: 600 # 10m
+            priority: normal
+            requireInteraction: false
+            silent: true
             url: '/lovelace/presence'
 
 #######################################################################################################################
@@ -759,21 +756,18 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Sheri Almost Home"
           message: "Hide the hookers and cocaine!"
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'sheri_almost_home'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 600
-            priority: high
-            requireInteraction: true
-            silent: false
+            ttl: 600 # 10m
+            priority: normal
+            requireInteraction: false
+            silent: true
             url: '/lovelace/presence'
 
 #######################################################################################################################
@@ -864,13 +858,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Occupancy Mode"
           message: "The house went into {{ states('input_select.occupancy_mode') }} mode at {{ now().strftime('%H:%M  %Y-%m-%d') }}."
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'occupancy_mode_alert_pause'
@@ -879,8 +870,8 @@
             tag: 'occupancy_mode'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true # must be true to update occupancy mode
-            ttl: 43200
-            priority: high
+            ttl: 43200 # 12h
+            priority: normal
             requireInteraction: false
             silent: true
             url: '/lovelace/presence'
@@ -947,13 +938,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Someone Home - Occupancy Mode"
           message: "Someone is home and the house is in {{ states('input_select.occupancy_mode') }} mode.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'occupancy_mode_alert_pause'
@@ -962,10 +950,10 @@
             tag: 'occupancy_mode'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
-            silent: false
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
+            silent: true
             url: '/lovelace/presence'
             icon: !secret HOME_ICON
             badge: !secret HOME_BADGE
@@ -1019,13 +1007,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Nobody Home - Occupancy Mode"
           message: "Nobody is home and the house is in {{ states('input_select.occupancy_mode') }} mode.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'occupancy_mode_alert_pause'
@@ -1034,10 +1019,10 @@
             tag: 'occupancy_mode'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
-            silent: false
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
+            silent: true
             url: '/lovelace/presence'
             icon: !secret AWAY_ICON
             badge: !secret AWAY_BADGE
@@ -1088,6 +1073,25 @@
         to: 'off'
 
     action:
+      # turn off automation to avoid recursive call
+      - service: automation.turn_off
+        entity_id: automation.presence_occupancy_mode_alert_pause
+
+      # turn off occupancy alerts boolean (req if triggered from push notification)
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.occupancy_mode_alerts
+
+      # turn automation back on
+      - service: automation.turn_off
+        entity_id: automation.presence_occupancy_mode_alert_pause
+
+      # turn off alert automations
+      - service: automation.turn_off
+        entity_id: &occupancy_alert_automations
+          - automation.presence_occupancy_mode_changed_alert
+          - automation.presence_home_occupancy_mode_alert
+          - automation.presence_away_occupancy_mode_alert
+
       # start timer to re-enable alerts if triggered by notification
       # cancel timer if triggered from input_boolean
       - service_template: >-
@@ -1096,17 +1100,6 @@
           {% endif %}
         data:
           entity_id: timer.occupancy_mode_alerts
-
-      # turn off occupancy alerts boolean (req if triggered from push notification)
-      - service: input_boolean.turn_off
-        entity_id: input_boolean.occupancy_mode_alerts
-
-      # turn off alert automations
-      - service: automation.turn_off
-        entity_id: &occupancy_alert_automations
-          - automation.presence_occupancy_mode_changed_alert
-          - automation.presence_home_occupancy_mode_alert
-          - automation.presence_away_occupancy_mode_alert
 
 #######################################################################################################################
 ## Presence - Occupancy Mode Alerts On
@@ -1176,7 +1169,7 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: "Phone Offline"
           message: >-
@@ -1186,9 +1179,6 @@
               {{- Unknown -}}
             {% endif %}
             phone is offline.
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'phone_offline_alert_pause'
@@ -1197,10 +1187,10 @@
             tag: 'phone_offline'
             timestamp: "{{ as_timestamp(now()) }}"
             renotify: true
-            ttl: 43200
-            priority: high
-            requireInteraction: true
-            silent: false
+            ttl: 43200 # 12h
+            priority: normal
+            requireInteraction: false
+            silent: true
             url: '/lovelace/presence'
             icon: !secret OFFLINE_ICON
             image: !secret OFFLINE_IMAGE

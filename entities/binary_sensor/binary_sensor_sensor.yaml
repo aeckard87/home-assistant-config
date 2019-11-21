@@ -3,7 +3,6 @@
 #######################################################################################################################
   - platform: template
     sensors:
-
 #######################################################################################################################
 ## Upstairs Protect Connected
 ## - redefine connected sensor if the nest platform doesn't load the built in sensor is not available.
@@ -92,7 +91,7 @@
           {% elif states('sensor.upstairs_bathroom_humidity') == 'unknown' %}
             {{ states('sensor.upstairs_bathroom_humidity') | int > states('input_number.high_humidity_threshold') | int }}
           {% elif states('sensor.side_entrance_humidity') == 'unknown' %}
-            {{ states('sensor.side_entrance_humidity') | int > states('input_number.high_humidity_threshold') | int }}            
+            {{ states('sensor.side_entrance_humidity') | int > states('input_number.high_humidity_threshold') | int }}
           {% endif %}
 
 #######################################################################################################################

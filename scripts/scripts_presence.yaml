@@ -149,10 +149,10 @@
       # delay to allow alarm to enter pending state before wait template
       - delay: '0:00:15'
 
-      # wait for alarm to finish arming
-      - wait_template: "{{ not is_state('alarm_control_panel.house', 'pending') }}"
-        timeout: '0:02:00'
-        continue_on_timeout: false
+      #DELETE wait for alarm to finish arming
+      #- wait_template: "{{ not is_state('alarm_control_panel.house', 'pending') }}"
+      #  timeout: '0:02:00'
+      #  continue_on_timeout: false
 
       # turn volume down on all media players
       - service_template: script.media_players_night_volume

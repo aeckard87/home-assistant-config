@@ -17,17 +17,9 @@
 
 #######################################################################################################################
 ## Push Notifications
-## https://www.home-assistant.io/components/notify.html5/
 ## https://www.home-assistant.io/components/notify/
+## https://www.home-assistant.io/components/notify.html5/
 ## https://www.home-assistant.io/components/notify.group/
-## https://www.home-assistant.io/docs/ecosystem/ios/notifications/actions/
-
-## HTML5 PUSH NOTIFICATION IMAGE SIZES
-## - image 512x256
-## - icon 320x320
-## - button 128x128
-## - badge 96x96
-
 #######################################################################################################################
   - platform: html5
     name: push
@@ -36,9 +28,50 @@
     vapid_email: !secret J_GMAIL_EMAIL
 
 #######################################################################################################################
-## TTS - Text To Speech
-## https://www.home-assistant.io/components/tts
-## https://www.home-assistant.io/components/tts.amazon_polly/
-## https://aws.amazon.com/polly/
-## https://docs.aws.amazon.com/polly/latest/dg/supported-ssml.html
+## Notify Group - Everyone
 #######################################################################################################################
+  - platform: group
+    name: everyone
+    services:
+      - service: push
+        data:
+          target:
+           - jphone
+           - jlaptop
+           - sphone
+           - stablet
+           
+#######################################################################################################################
+## Notify Group - Jason
+#######################################################################################################################
+  - platform: group
+    name: jason
+    services:
+      - service: push
+        data:
+          target:
+           - jphone
+           - jlaptop
+
+#######################################################################################################################
+## Notify Group - Jason Away
+#######################################################################################################################
+  - platform: group
+    name: jason_away
+    services:
+      - service: push
+        data:
+          target:
+           - jphone
+
+#######################################################################################################################
+## Notify Group - Sheri
+#######################################################################################################################
+  - platform: group
+    name: sheri
+    services:
+      - service: push
+        data:
+          target:
+           - sphone
+           - stablet

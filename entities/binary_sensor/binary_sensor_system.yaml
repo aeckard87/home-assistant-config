@@ -11,9 +11,10 @@
 
 #######################################################################################################################
 ## Uptime Robot  https://uptimerobot.com/
+#DISABLED
 #######################################################################################################################
-  - platform: uptimerobot
-    api_key: !secret UPTIME_API
+  # - platform: uptimerobot
+  #   api_key: !secret UPTIME_API
 
 #######################################################################################################################
 ## Template Binary Sensors
@@ -24,17 +25,14 @@
 ## Hassio Connection Status - Uptimerobot
 ## - if uptime robot component not connected binary_sensor.hassio is unknown
 #######################################################################################################################
-      hassio_connected:
-        friendly_name: Hassio Connected
-        icon_template: >
-          {% if is_state('binary_sensor.hassio_connected','on') %} mdi:server-network
-          {% else %} mdi:server-network-off
-          {% endif %}
-        device_class: connectivity
-        value_template: >-
-          {% if not states('binary_sensor.hassio') == 'unknown' %}
-            {% if is_state('binary_sensor.hassio','on') %} true {% endif %}
-          {% endif %}
+#DISABLED       hassio_connected:
+#         friendly_name: Hassio Connected
+#         icon_template: >
+#           {% if is_state('binary_sensor.hassio_connected','on') %} mdi:server-network
+#           {% else %} mdi:server-network-off
+#           {% endif %}
+#         device_class: connectivity
+#         value_template: "{{ is_state('binary_sensor.hassio','on') }}"
 
 #######################################################################################################################
 ## Device Connection
@@ -47,29 +45,7 @@
           {% else %} mdi:server-network-off
           {% endif %}
         device_class: connectivity
-        value_template: >-
-          {% if not is_state('binary_sensor.dark_sky_connected','on') %} false
-          {% elif not is_state('binary_sensor.downstairs_protect_connected','on') %} false
-          {% elif not is_state('binary_sensor.envcan_connected','on') %} false
-          {% elif not is_state('binary_sensor.garage_door_connected','on') %} false
-          {% elif not is_state('binary_sensor.google_location_connected','on') %} false
-          {% elif not is_state('binary_sensor.hassio_connected','on') %} false
-          {% elif not is_state('binary_sensor.house_alarm_connected','on') %} false
-          {% elif not is_state('binary_sensor.household_calendar_connected','on') %} false
-          {% elif not is_state('binary_sensor.hyrdrawise_connected','on') %} false
-          {% elif not is_state('binary_sensor.lutron_connected','on') %} false
-          {% elif not is_state('binary_sensor.noaa_connected','on') %} false
-          {% elif not is_state('binary_sensor.openuv_connected','on') %} false
-          {% elif not is_state('binary_sensor.pollen_connected','on') %} false
-          {% elif not is_state('binary_sensor.traffic_sensor_connected','on') %} false
-          {% elif not is_state('binary_sensor.upstairs_protect_connected','on') %} false
-          {% elif not is_state('binary_sensor.upstairs_thermostat_connected','on') %} false
-          {% elif not is_state('binary_sensor.wan','on') %} false
-          {% elif not is_state('binary_sensor.waqi_connected','on') %} false
-          {% elif not is_state('binary_sensor.work_calendar_connected','on') %} false
-          {% elif not is_state('binary_sensor.zwave_status','on') %} false
-          {% else %} true
-          {% endif %}
+        value_template: "{{ is_state('group.device_connection_sensors','on') }}"
 
 #######################################################################################################################
 ## Device Connection Alert
@@ -77,6 +53,7 @@
 #######################################################################################################################
       device_connection_alert:
         friendly_name: Device Connection Alert
+        entity_id: sensor.time
         icon_template: >-
           {% if is_state('binary_sensor.device_connection_alert','on') %} mdi:server-network
           {% else %} mdi:server-network-off
@@ -98,21 +75,19 @@
         value_template: "{{ not states('binary_sensor.sprinklers_status') == 'unknown' }}"
 
 #######################################################################################################################
-## ZWave Network
+## ZWave Network Status
 #######################################################################################################################
       zwave_status:
-        friendly_name: ZWave Status
+        friendly_name: ZWave Network Status
+        entity_id: sensor.time
         icon_template: mdi:z-wave
         device_class: connectivity
-        value_template: >-
-          {% if not states('zwave.zwave_hub') == 'ready' %} false
-          {% elif not states('zwave.garage_thermostat') == 'unknown' %} false
-          {% elif not states('zwave.side_entrance_sensor') == 'ready' %} false
-          {% elif not states('zwave.upstairs_bathroom_sensor') == 'ready' %} false
-          {% elif not states('zwave.office_fan') == 'ready' %} false
-          {% elif not states('zwave.upstairs_bedroom_fan') == 'ready' %} false
-          {% else %} true
-          {% endif %}
+        value_template: >
+          {% set zwave_devices = state_attr('group.zwave_devices', 'entity_id') %}
+          {{ zwave_devices | length == states.zwave | selectattr('entity_id','in', zwave_devices)
+                                                    | selectattr('state','eq', 'ready')
+                                                    | list
+                                                    | length }}
 
 #######################################################################################################################
 ## Battery Status
@@ -126,7 +101,7 @@
           {% endif %}
         device_class: battery
         value_template: >-
-          {%- set battery_alert_threshold = states('input_number.battery_alert_threshold') | int -%}
+          {% set battery_alert_threshold = states('input_number.battery_alert_threshold') | int %}
           {% if not states('sensor.downstairs_nest_protect_battery_health') == 'Ok'
              and not states('sensor.downstairs_nest_protect_battery_health')  == 'unknown' %}
             true

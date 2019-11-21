@@ -3,27 +3,75 @@ icon: mdi:android-debug-bridge
 path: debugging
 cards:
 
-  - type: custom:auto-entities
-    show_empty: true
-    card:
-      type: entities
-      title: Disabled Automations
-      show_header_toggle: false
-    filter:
-      include:
-        - group: group.all_automations
-      exclude:
-        - state: 'on'
+  - type: entities
+    title: DarkSky Hourly Forecast
+    show_header_toggle: false
+    entities:
+      - entity: sensor.forecast_0h
+      - entity: sensor.forecast_1h
+      - entity: sensor.forecast_2h
+      - entity: sensor.forecast_3h
+      - entity: sensor.forecast_4h
+      - entity: sensor.forecast_5h
+      - entity: sensor.forecast_6h
+      - entity: sensor.forecast_7h
+      - entity: sensor.forecast_8h
+      - entity: sensor.forecast_9h
+      - entity: sensor.forecast_10h
+      - entity: sensor.forecast_11h
+      - entity: sensor.forecast_12h
 
-  - type: custom:auto-entities
-    show_empty: true
-    card:
-      type: entities
-      title: Running Scripts
-      show_header_toggle: true
-    filter:
-      include:
-        - group: group.all_scripts
+  - type: entities
+    entities:
+     - alert.buster_medication
+     - sensor.memory_use_percent
+     - sensor.swap_use_percent
+     - sensor.processor_use
+     - sensor.load_1m
+     - sensor.load_5m
+     - sensor.load_15m
+     - sensor.rpi_cpu_temperature
+     - sensor.illuminance
 
-      exclude:
-        - state: 'off'
+  - type: vertical-stack
+    cards:
+
+      - type: conditional
+        conditions:
+          - entity: sensor.unavailable_sensors
+            state_not: '15'
+        card:
+          type: markdown
+          title: Unavailable Sensors
+          content: "{{ '\n' + state_attr('sensor.unavailable_sensors','sensor_names').split(', ') | join('\n') }}"
+
+  - type: vertical-stack
+    cards:
+
+      - type: custom:auto-entities
+        show_empty: true
+        card:
+          type: entities
+          title: Running Scripts
+          show_header_toggle: true
+        filter:
+          include:
+            - group: group.all_scripts
+
+          exclude:
+            - state: 'off'
+
+  - type: vertical-stack
+    cards:
+
+      - type: custom:auto-entities
+        show_empty: true
+        card:
+          type: entities
+          title: Disabled Automations
+          show_header_toggle: false
+        filter:
+          include:
+            - group: group.all_automations
+          exclude:
+            - state: 'on'

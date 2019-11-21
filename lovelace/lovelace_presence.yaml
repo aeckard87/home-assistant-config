@@ -107,7 +107,7 @@ cards:
               secondary_info: last-changed
             items:
               - entity: sensor.jphone_last_update
-              - entity: binary_sensor.jason_phone_ping
+              - entity: device_tracker.jphone_ping
 
           - !include /config/lovelace/include/jason_radio_settings_entity.yaml
 
@@ -162,7 +162,7 @@ cards:
             head: binary_sensor.sheri_phone_connected
             items:
               - entity: sensor.sphone_last_update
-              - entity: binary_sensor.sheri_phone_ping
+              - entity: device_tracker.sphone_ping
 
           - !include /config/lovelace/include/radio_settings_sheri_entity.yaml
 

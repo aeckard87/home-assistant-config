@@ -8,15 +8,16 @@
     control: hidden
     all: true
     entities:
+      - binary_sensor.zwave_status
       - binary_sensor.dark_sky_connected
       - binary_sensor.downstairs_protect_connected
       - binary_sensor.envcan_connected
       - binary_sensor.garage_door_connected
-      - binary_sensor.google_location_connected   
-      - binary_sensor.hassio_connected
+      - binary_sensor.google_location_connected
+      #DISABLED - binary_sensor.hassio_connected
       - binary_sensor.house_alarm_connected
       - binary_sensor.household_calendar_connected
-      - binary_sensor.hyrdrawise_connected
+      #DISABLED - binary_sensor.hyrdrawise_connected
       - binary_sensor.lutron_connected
       - binary_sensor.noaa_connected
       - binary_sensor.openuv_connected
@@ -27,21 +28,23 @@
       - binary_sensor.wan_connected
       - binary_sensor.waqi_connected
       - binary_sensor.work_calendar_connected
-      - binary_sensor.zwave_status
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
 
-      
-      
-      
-      
-      
+#######################################################################################################################
+## System - ZWave Devices
+#######################################################################################################################
+  zwave_devices:
+    entities:
+      - zwave.zwave_hub
+      - zwave.side_entrance_sensor
+      - zwave.upstairs_bathroom_sensor
+      - zwave.office_fan
+      - zwave.upstairs_bedroom_fan
+      #DISABLED - zwave.garage_thermostat
 
+#######################################################################################################################
+## System - Ignored Sensors
+## - sensors ignored by sensor.unavailable_sensors
+#######################################################################################################################
+  ignored_sensors:
+    entities:
+      - sensor.ssl_certificate_expiry

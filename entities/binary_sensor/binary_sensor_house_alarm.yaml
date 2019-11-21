@@ -1,9 +1,12 @@
 #######################################################################################################################
-## House Alarm Active Alert Sensor
-## - used to display when alarm has been triggered (active alert)
+## Template Binary Sensors
 #######################################################################################################################
   - platform: template
     sensors:
+#######################################################################################################################
+## House Alarm Active Alert Sensor
+## - used to display when alarm has been triggered (active alert)
+#######################################################################################################################
       house_alarm_active_alert:
         friendly_name: Active Alarm
         icon_template: >
@@ -17,8 +20,6 @@
 ## House Alarm Disabled Sensor
 ## - used to display alert, send notifications when alarm is disabled
 #######################################################################################################################
-  - platform: template
-    sensors:
       house_alarm_disabled:
         friendly_name: House Alarm Disabled
         icon_template: >
@@ -32,8 +33,6 @@
 ## House Alarm Auto Arming Disabled Sensor
 ## - used to display lovelace alert and send notifications when alarm is disabled
 #######################################################################################################################
-  - platform: template
-    sensors:
       house_alarm_auto_arming_disabled:
         friendly_name: House Alarm Auto Disarming Disabled
         icon_template: >
@@ -47,8 +46,6 @@
 ## House Alarm Connected Sensor
 ## - used to display lovelace alert and send notifications when alarm is disconnected
 #######################################################################################################################
-  - platform: template
-    sensors:
       house_alarm_connected:
         friendly_name: House Alarm
         icon_template: >

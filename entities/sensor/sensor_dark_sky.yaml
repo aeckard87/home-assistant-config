@@ -57,7 +57,7 @@
       - sunrise_time
       - sunset_time
       - moon_phase
-
+      - alerts
 
 #######################################################################################################################
 ## Dark Sky Current Text
@@ -81,6 +81,36 @@
           {% elif is_state("sensor.dark_sky_icon","lightning") %} Lightning
           {% elif is_state("sensor.dark_sky_icon","thunderstorm") %} Thunderstorm
           {% endif %}
+
+#######################################################################################################################
+## Override Dark Sky Current Text - Dark Sky Lovelace Card
+## https://github.com/iammexx/home-assistant-config/tree/master/ui/darksky
+#######################################################################################################################
+      dark_sky_alt_current_text:
+        value_template: >-
+          {% if is_state("sensor.dark_sky_icon","clear-day") %} Clear
+          {% elif is_state("sensor.dark_sky_icon","clear-night") %} Clear
+          {% elif is_state("sensor.dark_sky_icon","rain") %} Rain
+          {% elif is_state("sensor.dark_sky_icon","snow") %} Snowy
+          {% elif is_state("sensor.dark_sky_icon","fog") %} Foggy
+          {% elif is_state("sensor.dark_sky_icon","sleet") %} Sleet
+          {% elif is_state("sensor.dark_sky_icon","wind") %} Windy
+          {% elif is_state("sensor.dark_sky_icon","cloudy") %} Cloudy
+          {% elif is_state("sensor.dark_sky_icon","partly-cloudy-day") %} Partly Cloudy
+          {% elif is_state("sensor.dark_sky_icon","partly-cloudy-night") %} Partly Cloudy
+          {% elif is_state("sensor.dark_sky_icon","hail") %} Hailing
+          {% elif is_state("sensor.dark_sky_icon","lightning") %} Lightning
+          {% elif is_state("sensor.dark_sky_icon","thunderstorm") %} Thunderstorm
+          {% endif %}
+
+#######################################################################################################################
+## Dark Sky Alt Wind - Dark Sky Lovelace Card
+#https://github.com/iammexx/home-assistant-config/tree/master/ui/darksky
+#######################################################################################################################
+      dark_sky_alt_wind:
+        value_template: >-
+          {% set winddir = ['North','North-Northeast','Northeast','East-Northeast','East','East-Southeast','Southeast','South-Southeast','South','South-Southwest','Southwest','West-Southwest','West','West-Northwest','Northwest','North-Northwest','North'] %}
+          {{ states('sensor.dark_sky_wind_speed') | round }} mi/h from the {{ winddir[((states('sensor.dark_sky_wind_bearing') | float / 360)*16) | round]}}
 
 #######################################################################################################################
 ## Wind Direction - Cardinal
@@ -174,7 +204,12 @@
         value_template: >-
           {{states.sensor.dark_sky_daytime_high_temperature_0d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_0d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_0d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_0d.state ~ '.png'}}
+          {% if states('sensor.dark_sky_icon_0d') == 'partly-cloudy-day' %}
+            {% set icon_name = 'cloudy-day-1' %}
+          {% else %}
+            {% set icon_name = states('sensor.dark_sky_icon_0d') %}
+          {% endif %}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_0d.state ~ '.svg'}}
 
       forecast_1d:
         friendly_name_template: >
@@ -187,7 +222,7 @@
         value_template: >
           {{states.sensor.dark_sky_daytime_high_temperature_1d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_1d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_1d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_1d.state ~ '.png'}}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_1d.state ~ '.svg'}}
 
       forecast_2d:
         friendly_name_template: >
@@ -200,7 +235,7 @@
         value_template: >
           {{states.sensor.dark_sky_daytime_high_temperature_2d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_2d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_2d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_2d.state ~ '.png'}}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_2d.state ~ '.svg'}}
 
       forecast_3d:
         friendly_name_template: >
@@ -213,7 +248,7 @@
         value_template: >
           {{states.sensor.dark_sky_daytime_high_temperature_3d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_3d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_3d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_3d.state ~ '.png'}}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_3d.state ~ '.svg'}}
 
       forecast_4d:
         friendly_name_template: >
@@ -226,7 +261,7 @@
         value_template: >
           {{states.sensor.dark_sky_daytime_high_temperature_4d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_4d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_4d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_4d.state ~ '.png'}}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_4d.state ~ '.svg'}}
 
       forecast_5d:
         friendly_name_template: >
@@ -239,7 +274,7 @@
         value_template: >
           {{states.sensor.dark_sky_daytime_high_temperature_5d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_5d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_5d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_5d.state ~ '.png'}}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_5d.state ~ '.svg'}}
 
       forecast_6d:
         friendly_name_template: >
@@ -252,7 +287,7 @@
         value_template: >
           {{states.sensor.dark_sky_daytime_high_temperature_6d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_6d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_6d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_6d.state ~ '.png'}}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_6d.state ~ '.svg'}}
 
       forecast_7d:
         friendly_name_template: >
@@ -263,36 +298,140 @@
           - sensor.dark_sky_overnight_low_temperature_7d
           - sensor.dark_sky_precip_probability_7d
         value_template: >
-          {{states.sensor.dark_sky_daytime_high_temperature_7d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_7d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_7d.state|round(0)}}%
+          {{ states.sensor.dark_sky_daytime_high_temperature_7d.state|round(0)}}°/{{states.sensor.dark_sky_overnight_low_temperature_7d.state|round(0)}}°/{{states.sensor.dark_sky_precip_probability_7d.state|round(0)}}%
         entity_picture_template: >-
-          {{ '/local/icons/dark_sky/' ~ states.sensor.dark_sky_icon_7d.state ~ '.png'}}
+          {{ '/local/icons/weather_icons/animated/' ~ states.sensor.dark_sky_icon_7d.state ~ '.svg'}}
+
 
 #######################################################################################################################
-## Override Dark Sky Current Text - Dark Sky Lovelace Card
-#https://github.com/iammexx/home-assistant-config/tree/master/ui/darksky
+## Dark Sky Hourly Forecast Sensors
 #######################################################################################################################
-      dark_sky_alt_current_text:
-        value_template: >-
-          {% if is_state("sensor.dark_sky_icon","clear-day") %} Clear
-          {% elif is_state("sensor.dark_sky_icon","clear-night") %} Clear
-          {% elif is_state("sensor.dark_sky_icon","rain") %} Rain
-          {% elif is_state("sensor.dark_sky_icon","snow") %} Snowy
-          {% elif is_state("sensor.dark_sky_icon","fog") %} Foggy
-          {% elif is_state("sensor.dark_sky_icon","sleet") %} Sleet
-          {% elif is_state("sensor.dark_sky_icon","wind") %} Windy
-          {% elif is_state("sensor.dark_sky_icon","cloudy") %} Cloudy
-          {% elif is_state("sensor.dark_sky_icon","partly-cloudy-day") %} Partly Cloudy
-          {% elif is_state("sensor.dark_sky_icon","partly-cloudy-night") %} Partly Cloudy
-          {% elif is_state("sensor.dark_sky_icon","hail") %} Hailing
-          {% elif is_state("sensor.dark_sky_icon","lightning") %} Lightning
-          {% elif is_state("sensor.dark_sky_icon","thunderstorm") %} Thunderstorm
-          {% endif %}
+      forecast_0h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_0h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_0h') ~ '    ' ~ states('sensor.dark_sky_temperature_0h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_0h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_0h') ~ '.svg' }}
 
-#######################################################################################################################
-## Dark Sky Alt Wind - Dark Sky Lovelace Card
-#https://github.com/iammexx/home-assistant-config/tree/master/ui/darksky
-#######################################################################################################################
-      dark_sky_alt_wind:
-        value_template: >-
-          {% set winddir = ['North','North-Northeast','Northeast','East-Northeast','East','East-Southeast','Southeast','South-Southeast','South','South-Southwest','Southwest','West-Southwest','West','West-Northwest','Northwest','North-Northwest','North'] %}
-          {{ states('sensor.dark_sky_wind_speed') | round }} mi/h from the {{ winddir[((states('sensor.dark_sky_wind_bearing') | float / 360)*16) | round]}}
+      forecast_1h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 2 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_1h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_1h') ~ '    ' ~ states('sensor.dark_sky_temperature_1h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_1h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_1h') ~ '.svg' }}
+
+      forecast_2h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 3 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_2h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_2h') ~ '    ' ~ states('sensor.dark_sky_temperature_2h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_2h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_2h') ~ '.svg' }}
+
+      forecast_3h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 4 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_3h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_3h') ~ '    ' ~ states('sensor.dark_sky_temperature_3h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_3h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_3h') ~ '.svg' }}
+
+      forecast_4h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 5 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_4h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_4h') ~ '    ' ~ states('sensor.dark_sky_temperature_4h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_4h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_4h') ~ '.svg' }}
+
+      forecast_5h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 6 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_5h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_5h') ~ '    ' ~ states('sensor.dark_sky_temperature_5h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_5h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_5h') ~ '.svg' }}
+
+      forecast_6h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 7 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_6h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_6h') ~ '    ' ~ states('sensor.dark_sky_temperature_6h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_6h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_6h') ~ '.svg' }}
+
+      forecast_7h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 8 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_7h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_7h') ~ '    ' ~ states('sensor.dark_sky_temperature_7h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_7h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_7h') ~ '.svg' }}
+
+      forecast_8h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 9 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_8h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_8h') ~ '    ' ~ states('sensor.dark_sky_temperature_8h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_8h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_8h') ~ '.svg' }}
+
+      forecast_9h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 10 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_9h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_9h') ~ '    ' ~ states('sensor.dark_sky_temperature_9h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_9h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_9h') ~ '.svg' }}
+
+      forecast_10h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 11 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_10h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_10h') ~ '    ' ~ states('sensor.dark_sky_temperature_10h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_10h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_10h') ~ '.svg' }}
+
+      forecast_11h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 12 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_11h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_11h') ~ '    ' ~ states('sensor.dark_sky_temperature_11h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_11h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_11h') ~ '.svg' }}
+
+      forecast_12h:
+        friendly_name_template: >
+          {{- ( as_timestamp( strptime( states('sensor.date_time'), "%Y-%m-%d, %H:%M" )) | float + 13 * 3600 ) | timestamp_custom('%H:%M') -}}
+        entity_id:
+          - sensor.dark_sky_temperature_12h
+        value_template: >
+          {{- states('sensor.dark_sky_icon_12h') ~ '    ' ~ states('sensor.dark_sky_temperature_12h') | round(0) ~ '° / ' ~ states('sensor.dark_sky_precip_probability_12h') | round(0) -}}%
+        entity_picture_template: >-
+          {{ '/local/icons/weather_icons/animated/' ~ states('sensor.dark_sky_icon_12h') ~ '.svg' }}

@@ -9,13 +9,18 @@
   - platform: moon
 
 #######################################################################################################################
+## Illuminance Sensor
+## https://github.com/pnbruckner/ha-illuminance
+#######################################################################################################################
+  - platform: illuminance
+    name: Illuminance
+    entity_id: sensor.dark_sky_icon
+
+#######################################################################################################################
 ## Environment Canada Weather Sensor
 ## https://www.home-assistant.io/integrations/environment_canada
 #######################################################################################################################
   - platform: environment_canada
-    #latitude:
-    #longitude:
-    #station:
     language: english
     scan_interval: 600
 

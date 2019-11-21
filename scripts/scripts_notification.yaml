@@ -84,7 +84,12 @@
             {% endif %}
 
       # play the message on annoucment media player
-      - service: tts.google_say
+      #TODO SSML tags for polly
+      - service_template: >
+          {% if is_state('input_select.tts_service','Google Cloud') %} tts.google_cloud_say
+          {% elif is_state('input_select.tts_service','Polly') %} tts.amazon_polly_say
+          {% else %} tts.google_say
+          {% endif %}
         data_template:
           entity_id: "{{ states('sensor.announcement_media_player') }}"
           message: "{{ play_message }}"

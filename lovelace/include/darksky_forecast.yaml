@@ -5,6 +5,11 @@ entities:
   - type: custom:fold-entity-row
     head: sensor.forecast_0d
     items:
+      - sensor.dark_sky_icon_0d
+      - sensor.dark_sky_summary_0d
+      - sensor.dark_sky_sunrise_0d
+      - sensor.dark_sky_sunset_0d
+      - sensor.dark_sky_moon_phase_0d
       - sensor.dark_sky_daytime_high_temperature_0d
       - sensor.dark_sky_overnight_low_temperature_0d
       - sensor.dark_sky_daytime_high_apparent_temperature_0d
@@ -15,6 +20,7 @@ entities:
       - sensor.dark_sky_visibility_0d
       - sensor.dark_sky_dew_point_0d
       - sensor.dark_sky_wind_speed_0d
+      - sensor.dark_sky_wind_gust_0d
       - sensor.dark_sky_wind_bearing_0d
       - sensor.dark_sky_ozone_0d
       - sensor.dark_sky_uv_index_0d
@@ -27,6 +33,11 @@ entities:
   - type: custom:fold-entity-row
     head: sensor.forecast_1d
     items:
+      - sensor.dark_sky_icon_1d
+      - sensor.dark_sky_summary_1d
+      - sensor.dark_sky_sunrise_1d
+      - sensor.dark_sky_sunset_1d
+      - sensor.dark_sky_moon_phase_1d
       - sensor.dark_sky_daytime_high_temperature_1d
       - sensor.dark_sky_overnight_low_temperature_1d
       - sensor.dark_sky_daytime_high_apparent_temperature_1d
@@ -37,6 +48,7 @@ entities:
       - sensor.dark_sky_visibility_1d
       - sensor.dark_sky_dew_point_1d
       - sensor.dark_sky_wind_speed_1d
+      - sensor.dark_sky_wind_gust_1d
       - sensor.dark_sky_wind_bearing_1d
       - sensor.dark_sky_ozone_1d
       - sensor.dark_sky_uv_index_1d
@@ -49,6 +61,11 @@ entities:
   - type: custom:fold-entity-row
     head: sensor.forecast_2d
     items:
+      - sensor.dark_sky_icon_2d
+      - sensor.dark_sky_summary_2d
+      - sensor.dark_sky_sunrise_2d
+      - sensor.dark_sky_sunset_2d
+      - sensor.dark_sky_moon_phase_2d
       - sensor.dark_sky_daytime_high_temperature_2d
       - sensor.dark_sky_overnight_low_temperature_2d
       - sensor.dark_sky_daytime_high_apparent_temperature_2d
@@ -59,6 +76,7 @@ entities:
       - sensor.dark_sky_visibility_2d
       - sensor.dark_sky_dew_point_2d
       - sensor.dark_sky_wind_speed_2d
+      - sensor.dark_sky_wind_gust_2d
       - sensor.dark_sky_wind_bearing_2d
       - sensor.dark_sky_ozone_2d
       - sensor.dark_sky_uv_index_2d
@@ -71,6 +89,11 @@ entities:
   - type: custom:fold-entity-row
     head: sensor.forecast_3d
     items:
+      - sensor.dark_sky_icon_3d
+      - sensor.dark_sky_summary_3d
+      - sensor.dark_sky_sunrise_3d
+      - sensor.dark_sky_sunset_3d
+      - sensor.dark_sky_moon_phase_3d
       - sensor.dark_sky_daytime_high_temperature_3d
       - sensor.dark_sky_overnight_low_temperature_3d
       - sensor.dark_sky_daytime_high_apparent_temperature_3d
@@ -81,6 +104,7 @@ entities:
       - sensor.dark_sky_visibility_3d
       - sensor.dark_sky_dew_point_3d
       - sensor.dark_sky_wind_speed_3d
+      - sensor.dark_sky_wind_gust_3d
       - sensor.dark_sky_wind_bearing_3d
       - sensor.dark_sky_ozone_3d
       - sensor.dark_sky_uv_index_3d
@@ -115,6 +139,11 @@ entities:
   - type: custom:fold-entity-row
     head: sensor.forecast_5d
     items:
+      - sensor.dark_sky_icon_5d
+      - sensor.dark_sky_summary_5d
+      - sensor.dark_sky_sunrise_5d
+      - sensor.dark_sky_sunset_5d
+      - sensor.dark_sky_moon_phase_5d
       - sensor.dark_sky_daytime_high_temperature_5d
       - sensor.dark_sky_overnight_low_temperature_5d
       - sensor.dark_sky_daytime_high_apparent_temperature_5d
@@ -125,6 +154,7 @@ entities:
       - sensor.dark_sky_visibility_5d
       - sensor.dark_sky_dew_point_5d
       - sensor.dark_sky_wind_speed_5d
+      - sensor.dark_sky_wind_gust_5d
       - sensor.dark_sky_wind_bearing_5d
       - sensor.dark_sky_ozone_5d
       - sensor.dark_sky_uv_index_5d
@@ -137,6 +167,11 @@ entities:
   - type: custom:fold-entity-row
     head: sensor.forecast_6d
     items:
+      - sensor.dark_sky_icon_6d
+      - sensor.dark_sky_summary_6d
+      - sensor.dark_sky_sunrise_6d
+      - sensor.dark_sky_sunset_6d
+      - sensor.dark_sky_moon_phase_6d
       - sensor.dark_sky_daytime_high_temperature_6d
       - sensor.dark_sky_overnight_low_temperature_6d
       - sensor.dark_sky_daytime_high_apparent_temperature_6d
@@ -147,6 +182,7 @@ entities:
       - sensor.dark_sky_visibility_6d
       - sensor.dark_sky_dew_point_6d
       - sensor.dark_sky_wind_speed_6d
+      - sensor.dark_sky_wind_gust_6d
       - sensor.dark_sky_wind_bearing_6d
       - sensor.dark_sky_ozone_6d
       - sensor.dark_sky_uv_index_6d
@@ -159,6 +195,11 @@ entities:
   - type: custom:fold-entity-row
     head: sensor.forecast_7d
     items:
+      - sensor.dark_sky_icon_7d
+      - sensor.dark_sky_summary_7d
+      - sensor.dark_sky_sunrise_7d
+      - sensor.dark_sky_sunset_7d
+      - sensor.dark_sky_moon_phase_7d
       - sensor.dark_sky_daytime_high_temperature_7d
       - sensor.dark_sky_overnight_low_temperature_7d
       - sensor.dark_sky_daytime_high_apparent_temperature_7d
@@ -169,6 +210,7 @@ entities:
       - sensor.dark_sky_visibility_7d
       - sensor.dark_sky_dew_point_7d
       - sensor.dark_sky_wind_speed_7d
+      - sensor.dark_sky_wind_gust_7d
       - sensor.dark_sky_wind_bearing_7d
       - sensor.dark_sky_ozone_7d
       - sensor.dark_sky_uv_index_7d
@@ -176,4 +218,4 @@ entities:
       - sensor.dark_sky_precip_probability_7d
       - sensor.dark_sky_precip_accumulation_7d
       - sensor.dark_sky_precip_intensity_7d
-      - sensor.dark_sky_daily_max_precip_intensity_7d
+      - sensor.dark_sky_daily_max_precip_intensity_7

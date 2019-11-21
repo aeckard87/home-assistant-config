@@ -1,0 +1,25 @@
+buster_medication:
+  name: "Buster's Medication"
+  entity_id: input_boolean.buster_medication_active
+  state: 'on'
+  repeat: 15
+  can_acknowledge: true
+  skip_first: false
+  message: "Buster needs his medication!"
+  data:
+    actions:
+      - action: 'buster_medication_done'
+        title: "Medication Done"
+        icon: !secret CHECK_BUTTON
+    tag: buster_medication
+    timestamp: "{{ as_timestamp(now()) }}"
+    renotify: true
+    ttl: 43200
+    priority: high
+    requireInteraction: true
+    silent: false
+    url: /lovelace/schedule
+    icon: !secret BUSTER_ICON
+    image: !secret BUSTER_IMAGE
+    badge: !secret BUSTER_BADGE
+  notifiers: jason

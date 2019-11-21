@@ -133,14 +133,10 @@
           play_message: "Alert! {{ states('input_text.current_house_alarm') }}"
 
       # send push notification
-      - service: notify.push
+      - service: notify.everyone
         data_template:
           title: House Alarm Triggered
           message: "{{ play_message | striptags | title | replace('_',' ') }}"
-          target:
-            - jphone
-            - sphone
-            - jlaptop
           data:
             tag: alarm_triggered_alert
             timestamp: "{{ as_timestamp(now()) }}"
@@ -218,13 +214,10 @@
           notification_id: house_alarm_disabled
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *alarm_disabled_title
           message: *alarm_disabled_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: enable_house_alarm
@@ -407,7 +400,7 @@
       # wait for any other announcments to finish, avoid skipping play if script already running
       # do not continue after timeout, either long gone or alarm may have already been disaremd so out of sync
       - wait_template: "{{ is_state('script.play_announcement', 'off') }} }}"
-        timeout: '00:01:00'
+        timeout: '00:00:45'
         continue_on_timeout: false
 
       # play announcement, override away mode
@@ -419,7 +412,6 @@
 
 #######################################################################################################################
 ## House Alarm - Night Mode
-## this should never fire, armed_night disabled
 #######################################################################################################################
   - id: house_alarm_armed_night_mode
     alias: "[House Alarm] Armed Night Mode"
@@ -493,25 +485,27 @@
         state: 'on'
 
     action:
-      # turn off occupancy mode alarm control automation to avoid recursive call
-      - service: automation.turn_off
-        entity_id: automation.house_alarm_occupancy_mode_control
+      # disabled because MQTT alarm app doesn't support armed_night
+      # we don't want occupancy mode switching to home when we arm the alarm at night
 
-      # put the house into night mode if not already there
-      # use night mode instead of home mode due to android app incompatibity
-      - service_template: >-
-          {% if not is_state('input_select.occupancy_mode','Night') and is_state('input_boolean.house_alarm_auto_arming','on') %}
-            input_select.select_option
-          {% else %}
-            script.null_script
-          {% endif %}
-        data_template:
-          entity_id: input_select.occupancy_mode
-          option: Night
+      #DISABLED # turn off occupancy mode alarm control automation to avoid recursive call
+      # - service: automation.turn_off
+      #   entity_id: automation.house_alarm_occupancy_mode_control
 
-      # turn occupancy mode alarm control automation back on
-      - service: automation.turn_on
-        entity_id: automation.house_alarm_occupancy_mode_control
+      # # put the house into home mode if not already there
+      # - service_template: >-
+      #     {% if not is_state('input_select.occupancy_mode','Home') and is_state('input_boolean.house_alarm_auto_arming','on') %}
+      #       input_select.select_option
+      #     {% else %}
+      #       script.null_script
+      #     {% endif %}
+      #   data_template:
+      #     entity_id: input_select.occupancy_mode
+      #     option: Home
+
+      # # turn occupancy mode alarm control automation back on
+      # - service: automation.turn_on
+      #   entity_id: automation.house_alarm_occupancy_mode_control
 
       # wait for any other announcments to finish, avoid skipping play because script already running
       - wait_template: "{{ is_state('script.play_announcement', 'off') }}"
@@ -850,13 +844,10 @@
           notification_id: house_alarm_offline
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *alarm_offline_title
           message: *alarm_offline_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: house_alarm_offline_alert_pause
@@ -1022,13 +1013,10 @@
 
     action:
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: Alarm Not Armed
           message: "No one is home and alarm is disarmed.\n{{ as_timestamp(now()) | timestamp_custom('%I:%M%p', true) }}"
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: arm_house_alarm

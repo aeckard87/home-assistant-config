@@ -16,3 +16,4 @@ logs:
   #homeassistant.helpers.script: info
   googleapiclient.discovery: warn # google calendar, updates every 15 min
   #pyupdate: warn
+  custom_components.sensor.authenticated: debug

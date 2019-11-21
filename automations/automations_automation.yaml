@@ -21,13 +21,13 @@
 
       # waits for zwave network to be complete
       - wait_template: "{{ is_state('binary_sensor.zwave_status','on') }}"
-        timeout: '0:05:00'
+        timeout: '0:02:00'
         continue_on_timeout: true
 
-      #IDEA this works but better to listen for a specific event to know everything has been loaded?
-
-      # additional delay to allow all components to finish loading
-      - delay: '00:00:30'
+      # wait for the rest of components to connect
+      - wait_template: "{{ is_state('group.device_connection_sensors', 'on') }}"
+        timeout: '00:02:00'
+        continue_on_timeout: true
 
       # turn on delayed automations on
       - service: homeassistant.turn_on
@@ -68,13 +68,10 @@
           notification_id: 'hassio_startup'
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *start_title
           message: *start_message
-          target:
-            - jphone
-            - jlaptop
           data:
             tag: 'hassio_startup'
             timestamp: "{{ as_timestamp(now()) }}"
@@ -86,24 +83,6 @@
             url: '/lovelace/home'
             icon: !secret HASSIO_ICON
             badge: !secret HASSIO_BADGE
-
-#######################################################################################################################
-# Automation - Hassio Shutdown
-#######################################################################################################################
-  - id: automation_hassio_shtudown
-    alias: "[Automation] Hassio Shutdown"
-    description: "Turn off delayed automations that might fire at shutdown."
-    initial_state: 'on'
-
-    trigger:
-      # run when home assistant started
-      - platform: homeassistant
-        event: shutdown
-
-    action:
-      # turn off all media player offline automations
-      - service: homeassistant.turn_off
-        entity_id: group.delayed_automations
 
 #######################################################################################################################
 ## Automation - Manual Mode Enabled
@@ -352,4 +331,3 @@
         data:
           data:
             tag: 'hassio_startup'
-

@@ -225,7 +225,7 @@
   - id: notification_announcement_player_offline
     alias: "[Notification] Announcement Player Offline"
     description: "Send notification when announcement media player goes offline."
-    initial_state: 'off'
+    initial_state: 'on' #VERIFY
 
     trigger:
       # run when announcement media player is unavailable
@@ -236,13 +236,15 @@
           - media_player.bedroom_speaker
           - media_player.jlaptop_chrome
         to: 'unavailable'
-        for: '00:01:00'
+        for:
+          minutes: 5
 
       # run when announcement media player is unknown
       - platform: state
         entity_id: *announcement_media_players
-        to: 'unknown'
-        for: '00:01:00'
+        to: 'unknown'        
+        for:
+          minutes: 5
 
     condition:
       - condition: and
@@ -276,13 +278,10 @@
           notification_id: announcement_player_offline
 
       # send push notification
-      - service: notify.push
+      - service_template: "{% if is_state('binary_sensor.notify_jason_laptop','on' ) %} notify.jason {% else %} notify.jason_away {% endif %}"
         data_template:
           title: *announcement_player_title
           message: *announcement_player_message
-          target:
-            - jphone
-            - jlaptop
           data:
             actions:
               - action: 'announcement_player_offline_alert_pause'

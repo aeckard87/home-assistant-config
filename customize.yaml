@@ -186,3 +186,8 @@ sensor.sheri_time_to_work:
   icon: mdi:timer
 camera.windsor_radar:
   control: hidden
+sensor.hacs:
+  friendly_name: HACS
+alert.buster_medication:
+  friendly_name: Buster's Medication
+  icon: mdi:cat

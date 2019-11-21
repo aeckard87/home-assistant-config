@@ -1,53 +1,56 @@
-###############################################################################
-## Home Assistant Configuration
-## configuration.yaml
-###############################################################################
+#######################################################################################################################
+## Home Assistant Configuration (configuration.yaml)
+#######################################################################################################################
 homeassistant:
   customize: !include customize.yaml
   whitelist_external_dirs:
     - /config
 
 http:
-  base_url: !secret BASE_URL
-  ssl_certificate: /ssl/fullchain.pem
-  ssl_key: /ssl/privkey.pem
   ip_ban_enabled: true
   login_attempts_threshold: 5
-
-frontend:
-  javascript_version: latest
-  themes: !include_dir_merge_named themes
 
 lovelace:
   mode: yaml
 
-browser_mod: !include resources/browser_mod.yaml
-
-default_config:
-discovery:
-python_script:
-ffmpeg:
-
-updater:
+# disable default_config so we can disabled zeroconf
+#DC = default config integrations manually included
+#DISABLED default_config:
+cloud: #DC
+config: #DC
+map: #DC
+mobile_app: #DC
+person: #DC
+frontend: #DC
+  themes: !include_dir_merge_named themes
+ssdp: #DC
+sun: #DC
+system_health: #DC
+#disabled because Lutron bridge keeps being discovered as a HomeKit device by zeroconf.
+#DISABLED zeroconf: #DC
+updater: #DC
   include_used_components: true
 
-history: !include logging/history.yaml
-logbook: !include logging/logbook.yaml
+history: !include logging/history.yaml #DC
+logbook: !include logging/logbook.yaml #DC
 logger: !include logging/logger.yaml
 recorder: !include logging/recorder.yaml
 
+conversation:
+python_script:
+ffmpeg:
+
+automation: !include_dir_merge_list automations #DC
+script: !include_dir_merge_named scripts #DC
+group: !include_dir_merge_named groups
+scene: !include_dir_merge_named scenes
 panel_iframe: !include panels/panels.yaml
 panel_custom: !include panels/panel_custom.yaml
 
-automation: !include_dir_merge_list automations
-script: !include_dir_merge_named scripts
-group: !include_dir_merge_named groups
-scene: !include_dir_merge_named scenes
-
+alert: !include /config/entities/alert.yaml
 alarm_control_panel: !include /config/resources/bwalarm/bwalarm.yaml
 binary_sensor: !include_dir_merge_list /config/entities/binary_sensor
 camera: !include_dir_merge_list /config/entities/camera
-climate: !include /config/entities/climate.yaml
 counter: !include_dir_merge_named /config/entities/counter
 cover: !include  /config/entities/cover.yaml
 device_tracker: !include  /config/entities/device_tracker.yaml
@@ -67,7 +70,8 @@ switch: !include_dir_merge_list /config/entities/switch
 timer: !include_dir_merge_named /config/entities/timer
 tts: !include /config/entities/tts.yaml
 
-## External Components ##
+## External Integrations ##
+browser_mod: !include resources/browser_mod.yaml
 
 lutron_caseta:
   host: !secret LUTRON_IP
@@ -75,14 +79,14 @@ lutron_caseta:
   certfile: /ssl/lutron/caseta.crt
   ca_certs: /ssl/lutron/caseta-bridge.crt
 
-spotcast:
-  username: !secret SPOTIFY_USERNAME
-  password: !secret SPOTIFY_PASSWORD
+#DISABLED spotcast:
+#   username: !secret SPOTIFY_USERNAME
+#   password: !secret SPOTIFY_PASSWORD
 
 google:
   client_id: !secret GOOGLECAL_CLIENTID
   client_secret: !secret GOOGLECAL_SECRET
   track_new_calendar: false
 
-hydrawise:
-  access_token: !secret HYRDRAWISE_API
+#DISABLED hydrawise:
+#   access_token: !secret HYRDRAWISE_API

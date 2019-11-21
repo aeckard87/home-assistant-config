@@ -5,18 +5,18 @@
     name: Media Player
     icon: mdi:speaker
     options: &alarm_clock_media_player_names
-        - All Speakers
-        - Broadcast Speakers
-        - Music Speakers
-        - Dining Room Speaker
-        - Bedroom Speaker
-        - Living Room TV
-        - Bedroom TV
-        - Deck TV
-        - Jason Phone
-        - Jason Laptop
-        - Jason Work
-        - Sheri Phone
+      - All Speakers
+      - Broadcast Speakers
+      - Music Speakers
+      - Dining Room Speaker
+      - Bedroom Speaker
+      - Living Room TV
+      - Bedroom TV
+      - Deck TV
+      - Jason Phone
+      - Jason Laptop
+      - Jason Work
+      - Sheri Phone
 
 #######################################################################################################################
 ## Auto Alarm Clock Media Player
